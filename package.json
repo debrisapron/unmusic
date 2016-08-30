@@ -1,0 +1,21 @@
+{
+  "name": "songform",
+  "version": "0.0.1",
+  "description": "",
+  "main": "src",
+  "scripts": {
+    "test": "node tests/fast-tests.js | tap-colorize"
+  },
+  "author": "",
+  "dependencies": {
+    "lodash": "^4.14.1",
+    "lodash.isplainobject": "^3.2.0",
+    "ramda": "latest",
+    "teoria": "latest",
+    "tone": "^0.6.1"
+  },
+  "devDependencies": {
+    "tap-colorize": "latest",
+    "tape": "latest"
+  }
+}
