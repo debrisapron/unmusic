@@ -1,15 +1,14 @@
 'use strict'
 
-let _ = require('./prelude')
+let _ = require('lodash/fp')
 let parser = require('./seq-parser')
-let eh = require('./event-helpers')
 let score = require('./score')
 
 let seq = (...args) => {
   let eventLists = args.map((arg) => arg.events || parser.parse(arg))
   let sequenced = eventLists.reduce((acc, curr) => {
     let prevEv = _.last(acc)
-    let prevEnd = eh.endOf(prevEv)
+    let prevEnd = endOf(prevEv)
     return acc.concat(nudge(prevEnd, curr))
   })
   return score(clean(sequenced))
@@ -17,23 +16,28 @@ let seq = (...args) => {
 
 let mix = (...args) => {
   let eventLists = args.map((arg) => arg.events || parser.parse(arg))
-  let mixed = _.unnest(eventLists)
-  let sorted = _.sortBy(_.prop(0), mixed)
+  let mixed = _.flatten(eventLists)
+  let sorted = _.sortBy('time', mixed)
   return score(clean(sorted))
 }
 
 let nudge = (amount, events) => {
-  return events.map((ev) => _.adjust((t) => t + amount, 0, ev))
+  return events.map((ev) => _.set('time', ev.time + amount, ev))
 }
+
+let endOf = (ev) => ev.time + (ev.dur || 0)
 
 // Remove any redundant placeholder instructions
 let clean = (events) => {
   let lastIndex = events.length - 1
   return events.filter((ev, i) => {
-    if (eh.actionOf(ev)) { return true }
+    // Include all non-meta events
+    if (!ev.meta) { return true }
+    // Reject meta events unless they are at the end
     if (i !== lastIndex) { return false }
+    // Reject redundant meta events (i.e. onset during a non-meta event)
     let prevEv = events[i - 1]
-    return eh.timeOf(ev) > eh.endOf(prevEv)
+    return ev.time > endOf(prevEv)
   })
 }
 

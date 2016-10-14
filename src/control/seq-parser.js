@@ -1,17 +1,17 @@
 'use strict'
 
-let _ = require('./prelude')
+let _ = require('lodash/fp')
 let music = require('./music')
 
 const DEFAULT_PERIOD = 1/4
 
 let parse = (raw) => {
-  let words = _.words(raw)
+  let words = raw.split(' ').filter((w) => w)
   return processWords(words)
 }
 
 let processWords = (words) => {
-  let instrs = []
+  let evs = []
   let time = 0
   let settings = { dur: DEFAULT_PERIOD }
   let delimit
@@ -21,23 +21,25 @@ let processWords = (words) => {
       settings = _.merge(settings, parseSetting(word))
       return
     }
-    let instr = parseCommand(time, word, settings)
-    if (instr) { instrs.push(instr) }
+    let ev = parseCommand(time, word, settings)
+    if (ev) { evs.push(ev) }
     time += settings.dur
-    delimit = !instr
+    delimit = !ev
   })
 
   if (delimit) {
-    instrs.push([time])
+    evs.push({ time, meta: true })
   }
 
-  return instrs
+  return evs
 }
 
-let isSetting = (word) => _.strContains('=', word) || _.strContains('/', word)
+let strContains = (needle, haystack) => haystack.indexOf(needle) > -1
+
+let isSetting = (word) => strContains('=', word) || strContains('/', word)
 
 let parseSetting = (setting) => {
-  let [val, name] = _.reverse(_.split('=', setting))
+  let [val, name] = setting.split('=').reverse()
   name = name || 'dur'
   if(name === 'd') { name = 'dur' }
   if(name === 'v') { name = 'vel' }
@@ -47,9 +49,8 @@ let parseSetting = (setting) => {
 }
 
 let parseSettingVal = (val) => {
-  // This is messy
-  if(_.strContains('/', val)) {
-    let [a, b] = _.map((i) => parseInt(i || 1), _.split('/', val))
+  if(strContains('/', val)) {
+    let [a, b] = val.split('/').map((i) => parseInt(i || 1))
     return a / b
   }
   if(_.isNumeric(val)) {
@@ -59,23 +60,14 @@ let parseSettingVal = (val) => {
 }
 
 let parseCommand = (time, word, settings) => {
-  let action = actionFor(word)
-  if (!action) { return null }
-  let data = _.merge(settings, dataFor(word))
-  return makeInstr(time, action, data)
-}
-
-let actionFor = (word) => {
   if (word === '_') return null
-  return 'TRIG'
+  return _.mergeAll([settings, dataFor(word), { time }])
 }
 
 let dataFor = (word) => {
-  if (_.isNumeric(word)) return { nn: parseInt(word) }
+  if (!isNaN(word)) return { nn: parseFloat(word) }
   if (music.isNoteName(word)) return { nn: music.noteNumber(word) }
   return { word }
 }
-
-let makeInstr = (...args) => args
 
 module.exports = { parse }

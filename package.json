@@ -4,7 +4,8 @@
   "description": "",
   "main": "src",
   "scripts": {
-    "test": "node tests/fast-tests.js | tap-colorize"
+    "test": "browserify tests/all-tests.js | tape-run | tap-colorize",
+    "test:fast": "node tests/fast-tests.js | tap-colorize"
   },
   "author": "",
   "dependencies": {
