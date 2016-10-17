@@ -1,26 +1,21 @@
 'use strict'
 let _ = require('lodash/fp')
+let scoring = require('./control/scoring')
 
 let route = (...args) => {
-  args.reduce(connectPair)
-  let first = _.first(args)
-  let last = _.last(args)
-  return {
-    input: first.input,
-    trigger: first.trigger,
-    events: first.events,
-    connect: last.connect
-  }
+  return args.reverse().reduce(_connectPair)
 }
 
-let connectPair = (src, dest) => {
-  if (!src.connect) {
-    throw new Error(
-      'You tried to route from an object that does not have a connect method'
-    )
+let _connectPair = (dest, src) => {
+  console.log(src, dest)
+  if (src.events) {
+    return scoring.setDest(dest, src)
   }
-  src.connect(dest)
-  return dest
+  if (src.connect) {
+    src.connect(dest)
+    return src
+  }
+  throw new Error('You tried to route from an object that neither is a score nor has a connect method')
 }
 
 module.exports = { route }

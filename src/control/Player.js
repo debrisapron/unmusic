@@ -1,8 +1,7 @@
 'use strict'
 
 let Tone = require('tone')
-let _ = require('./prelude')
-let ih = require('./instr-helpers')
+let _ = require('lodash/fp')
 
 // let DEFAULT_TEMPO = 120
 let playingPart
@@ -13,29 +12,34 @@ let wholeNotesToSecs = (wholeNotes) => {
   return Tone.Transport.notationToSeconds('2n') * 2 * wholeNotes
 }
 
-let toneEventsFrom = (instrs) => {
-  return instrs
-    .filter(ih.actionOf)
-    .map((instr) => {
-      let time = wholeNotesToSecs(ih.timeOf(instr))
-      return { time, instr }
+let toneEventsFrom = (score) => {
+  return score.events
+    .filter((ev) => !ev.meta)
+    .map((ev) => {
+      let time = wholeNotesToSecs(ev.time)
+      return { time, ev }
     })
 }
 
-let lengthInWholeNotesOf = (instrs) => ih.endOf(_.last(instrs))
-
-let fireEvent = (time, ev) => {
-  let data = ih.dataOf(ev.instr)
-  if (data.dest) { data.dest(time, data) }
+let lengthInWholeNotesOf = (score) => {
+  let lastEv = _.last(score.events)
+  return lastEv.time + (lastEv.dur || 0)
 }
 
-let play = (instrs) => {
-  let length = lengthInWholeNotesOf(instrs)
-  let evs = toneEventsFrom(instrs)
+let fireEvent = (time, { ev }) => {
+  if (!ev.dest) return
+  let fn = ev.dest.trigger || ev.dest 
+  if (!_.isFunction(fn)) return
+  fn(time, ev)
+}
+
+let play = (score) => {
+  let length = lengthInWholeNotesOf(score)
+  let tevs = toneEventsFrom(score)
   if (playingPartLength === length) {
-    mutatePlayingPart(evs)
+    mutatePlayingPart(tevs)
   } else {
-    replacePlayingPart(evs, length)
+    replacePlayingPart(tevs, length)
   }
   start()
 }
@@ -76,9 +80,9 @@ let stop = () => {
   }
 }
 
-let init = (audioContext) => {
+let Player = (audioContext) => {
   if (audioContext) { Tone.Transport.context = audioContext }
   return { play, start, stop }
 }
 
-module.exports = init
+module.exports = Player

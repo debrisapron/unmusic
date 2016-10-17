@@ -1,12 +1,11 @@
 'use strict'
-
 let _ = require('lodash')
 
 let twelveTet = (nn) => {
   return nn && Math.pow(2, ((nn - 69) / 12)) * 440
 }
 
-let synth = _.curry((um, defaultParams) => {
+let Synth = _.curry((um, defaultParams) => {
   // TODO Input (e.g. vocoder)
   // TODO Expose (creates an input which goes to dest on every voice)
   // TODO Set (goes to all voices)
@@ -42,4 +41,4 @@ let synth = _.curry((um, defaultParams) => {
   return { connect, play }
 })
 
-module.exports = synth
+module.exports = Synth

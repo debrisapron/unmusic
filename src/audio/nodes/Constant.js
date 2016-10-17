@@ -1,8 +1,7 @@
 'use strict'
-
 let wh = require('./waa-helpers')
 
-let constant = (audioContext) => {
+let Constant = (audioContext) => {
   let buffer = audioContext.createBuffer(1, 128, audioContext.sampleRate)
   let arr = buffer.getChannelData(0)
   arr.forEach((_, i) => arr[i] = 1)
@@ -16,4 +15,4 @@ let constant = (audioContext) => {
   return constantNode
 }
 
-module.exports = constant
+module.exports = Constant

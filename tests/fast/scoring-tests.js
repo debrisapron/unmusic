@@ -1,7 +1,7 @@
 'use strict'
 
 let test = require('tape')
-let { mix, seq } = require('../../src/control/operators')
+let { mix, seq, setDest } = require('../../src/control/scoring')
 
 let score = (events) => ({ events })
 
@@ -57,5 +57,27 @@ test('Can sequence a score with a string', (assert) => {
     { time: 1/2, nn: 70, dur: 1/4 }
   ])
   assert.deepEqual(seq(s1, s2), expected)
+  assert.end()
+})
+
+test('Can route a score to a dest', (assert) => {
+  let fn = () => {}
+  let s = score([
+    { time: 0, nn: 69 }
+  ])
+  let expected = score([
+    { time: 0, dest: fn, nn: 69 }
+  ])
+  assert.deepEqual(setDest(fn, s), expected)
+  assert.end()
+})
+
+test('Can route a string to a dest', (assert) => {
+  let fn = () => {}
+  let s = '69'
+  let expected = score([
+    { time: 0, dest: fn, nn: 69, dur: 1/4 }
+  ])
+  assert.deepEqual(setDest(fn, s), expected)
   assert.end()
 })

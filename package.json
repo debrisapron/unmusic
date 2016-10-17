@@ -10,13 +10,14 @@
   "author": "",
   "dependencies": {
     "lodash": "^4.14.1",
-    "lodash.isplainobject": "^3.2.0",
     "ramda": "latest",
     "teoria": "latest",
     "tone": "^0.6.1"
   },
   "devDependencies": {
+    "browserify": "^13.1.0",
     "tap-colorize": "latest",
-    "tape": "latest"
+    "tape": "latest",
+    "tape-run": "^2.1.4"
   }
 }
