@@ -1,5 +1,4 @@
 'use strict'
 
-require('./fast/router-tests')
-require('./fast/scoring-tests')
-require('./fast/seq-parser-tests')
+require('./fast/routing-tests')
+require('./fast/composition-tests')

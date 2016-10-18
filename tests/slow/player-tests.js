@@ -1,7 +1,7 @@
 'use strict'
 let _ = require('lodash/fp')
 let test = require('tape')
-let Player = require('../../src/control/Player')
+let Player = require('../../src/Player')
 
 let Recorder = (length, cb) => {
   let log = []

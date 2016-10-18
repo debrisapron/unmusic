@@ -1,6 +1,6 @@
 'use strict'
 let _ = require('lodash/fp')
-let scoring = require('./control/scoring')
+let composition = require('./composition')
 
 let route = (...args) => {
   return args.reverse().reduce(_connectPair)
@@ -8,7 +8,7 @@ let route = (...args) => {
 
 let _connectPair = (dest, src) => {
   if (src.events) {
-    return scoring.setDest(dest, src)
+    return composition.setDest(dest, src)
   }
   if (src.connect) {
     src.connect(dest)
