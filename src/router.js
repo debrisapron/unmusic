@@ -7,7 +7,6 @@ let route = (...args) => {
 }
 
 let _connectPair = (dest, src) => {
-  console.log(src, dest)
   if (src.events) {
     return scoring.setDest(dest, src)
   }
