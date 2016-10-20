@@ -23,11 +23,11 @@ let mix = (...args) => {
   return wrap(clean(sorted))
 }
 
-let setDest = (dest, scoreOrStr) => {
+let setDest = _.curry((dest, scoreOrStr) => {
   let events = unwrapOrParse(scoreOrStr)
   events = events.map((ev) => ev.meta ? ev : _.set('dest', dest, ev))
   return wrap(events)
-}
+})
 
 // ***** PRIVATE *****
 

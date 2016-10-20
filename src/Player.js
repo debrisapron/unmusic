@@ -9,7 +9,7 @@ let playingPartLength
 
 let wholeNotesToSecs = (wholeNotes) => {
   // We avoid using 1n because Tone translates 1n to 1m
-  return Tone.Transport.notationToSeconds('2n') * 2 * wholeNotes
+  return Tone.Transport.toSeconds('2n') * 2 * wholeNotes
 }
 
 let toneEventsFrom = (score) => {
@@ -26,11 +26,16 @@ let lengthInWholeNotesOf = (score) => {
   return lastEv.time + (lastEv.dur || 0)
 }
 
-let fireEvent = (time, { ev }) => {
+let triggerEvent = (time, { ev }) => {
   if (!ev.dest) return
-  let fn = ev.dest.trigger || ev.dest 
+  let fn = ev.dest.trigger || ev.dest
   if (!_.isFunction(fn)) return
-  fn(time, ev)
+  let endFn = fn(time, ev)
+  if (!_.isFunction(endFn)) return
+  // FIXME AFAIK this only works correctly if the tick length > lookahead
+  // Really we need a way of knowing what the Transport Time *will be* at [time]
+  let endTime = Tone.Transport.seconds + wholeNotesToSecs(ev.dur || 0)
+  Tone.Transport.schedule(endFn, endTime)
 }
 
 let play = (score) => {
@@ -50,14 +55,10 @@ let mutatePlayingPart = (evs) => {
 }
 
 let replacePlayingPart = (evs, length) => {
-  let newPart = new Tone.Part(fireEvent, evs)
+  let newPart = new Tone.Part(triggerEvent, evs)
   newPart.loop = true
   newPart.loopEnd = wholeNotesToSecs(length)
   // TODO snap to nearest quarter note
-  startNewPart(newPart)
-}
-
-let startNewPart = (newPart) => {
   if (playingPart) {
     playingPart.stop()
     playingPart.dispose()
