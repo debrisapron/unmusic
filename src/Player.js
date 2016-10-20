@@ -1,11 +1,12 @@
 'use strict'
-
-let Tone = require('tone')
 let _ = require('lodash/fp')
+let shortid = require('shortid')
+let Tone = require('tone')
 
 // let DEFAULT_TEMPO = 120
 let playingPart
 let playingPartLength
+let stopCbs = {}
 
 let wholeNotesToSecs = (wholeNotes) => {
   // We avoid using 1n because Tone translates 1n to 1m
@@ -13,12 +14,21 @@ let wholeNotesToSecs = (wholeNotes) => {
 }
 
 let toneEventsFrom = (score) => {
-  return score.events
+  let nestedDisorderedEvents = score.events
     .filter((ev) => !ev.meta)
     .map((ev) => {
       let time = wholeNotesToSecs(ev.time)
-      return { time, ev }
+      let id = shortid.generate()
+      let start = { id, time, ev }
+      if (!ev.dur) return [start]
+      // TODO when we move to independent duration & period, it will be possible
+      // for end of event to be after end of part, in which case it will need to
+      // wrap to beginning to part
+      let endTime = time + wholeNotesToSecs(ev.dur)
+      let stop = { id, time: endTime }
+      return [start, stop]
     })
+  return _.sortBy('time', _.flatten(nestedDisorderedEvents))
 }
 
 let lengthInWholeNotesOf = (score) => {
@@ -26,16 +36,21 @@ let lengthInWholeNotesOf = (score) => {
   return lastEv.time + (lastEv.dur || 0)
 }
 
-let triggerEvent = (time, { ev }) => {
+let triggerEvent = (time, { id, ev }) => {
+  if (!ev) {
+    let stopCb = stopCbs[id]
+    if (stopCb) {
+      stopCbs[id] = undefined
+      stopCb(time)
+    }
+    return
+  }
   if (!ev.dest) return
   let fn = ev.dest.trigger || ev.dest
   if (!_.isFunction(fn)) return
-  let endFn = fn(time, ev)
-  if (!_.isFunction(endFn)) return
-  // FIXME AFAIK this only works correctly if the tick length > lookahead
-  // Really we need a way of knowing what the Transport Time *will be* at [time]
-  let endTime = Tone.Transport.seconds + wholeNotesToSecs(ev.dur || 0)
-  Tone.Transport.schedule(endFn, endTime)
+  let stopCb = fn(time, ev)
+  if (!_.isFunction(stopCb)) return
+  stopCbs[id] = stopCb
 }
 
 let play = (score) => {
@@ -79,6 +94,10 @@ let stop = () => {
     playingPart.dispose()
     playingPart = null
   }
+  _.forEach((stopCb) => {
+    if (stopCb) stopCb(Tone.Transport.context.currentTime)
+  }, stopCbs)
+  stopCbs = {}
 }
 
 let Player = (audioContext) => {
