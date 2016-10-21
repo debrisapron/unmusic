@@ -14,18 +14,15 @@ let wholeNotesToSecs = (wholeNotes) => {
 }
 
 let toneEventsFrom = (score) => {
+  let length = lengthInWholeNotesOf(score)
   let nestedDisorderedEvents = score.events
     .filter((ev) => !ev.meta)
     .map((ev) => {
-      let time = wholeNotesToSecs(ev.time)
       let id = shortid.generate()
-      let start = { id, time, ev }
+      let start = { id, ev, time: wholeNotesToSecs(ev.time) }
       if (!ev.dur) return [start]
-      // TODO when we move to independent duration & period, it will be possible
-      // for end of event to be after end of part, in which case it will need to
-      // wrap to beginning to part
-      let endTime = time + wholeNotesToSecs(ev.dur)
-      let stop = { id, time: endTime }
+      let endTime = (ev.time + ev.dur) % length
+      let stop = { id, time: wholeNotesToSecs(endTime) }
       return [start, stop]
     })
   return _.sortBy('time', _.flatten(nestedDisorderedEvents))
