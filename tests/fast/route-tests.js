@@ -1,8 +1,6 @@
 'use strict'
-
 let test = require('tape')
-let { route } = require('../../src/routing')
-let _ = require('lodash/fp')
+let route = require('../../src/route')
 
 test('Can route connectables to each other returning first', (assert) => {
   let conns = {}

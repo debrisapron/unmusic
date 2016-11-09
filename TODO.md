@@ -1,5 +1,7 @@
 NOW
 
+- tempo, duh
+- octave numbers
 - snap to nearest quarter note when swapping in song with different length
 
 NEXT

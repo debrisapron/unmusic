@@ -3,10 +3,12 @@ let _ = require('lodash/fp')
 let composition = require('./composition')
 
 let route = (...args) => {
-  return args.reverse().reduce(_connectPair)
+  return args.reverse().reduce(connectPair)
 }
 
-let _connectPair = (dest, src) => {
+////////////////////////////////////////////////////////////////////////////////
+
+let connectPair = (dest, src) => {
   if (src.events) {
     return composition.setDest(dest, src)
   }
@@ -17,4 +19,4 @@ let _connectPair = (dest, src) => {
   throw new Error('You tried to route from an object that neither is a score nor has a connect method')
 }
 
-module.exports = { route }
+module.exports = route

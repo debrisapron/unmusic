@@ -1,4 +1,4 @@
 'use strict'
 
-require('./fast/routing-tests')
+require('./fast/route-tests')
 require('./fast/composition-tests')

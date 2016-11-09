@@ -4,69 +4,14 @@ let teoria = require('teoria')
 
 const DEFAULT_PERIOD = 1/4
 
-// ***** PUBLIC *****
-
-let seq = (...args) => {
-  let eventLists = args.map(unwrapOrParse)
-  let sequenced = eventLists.reduce((acc, curr) => {
-    let prevEv = _.last(acc)
-    let prevEnd = endOf(prevEv)
-    return acc.concat(nudge(prevEnd, curr))
-  })
-  return wrap(clean(sequenced))
-}
-
-let mix = (...args) => {
-  let eventLists = args.map(unwrapOrParse)
-  let mixed = _.flatten(eventLists)
-  let sorted = _.sortBy('time', mixed)
-  return wrap(clean(sorted))
-}
-
-let setDest = _.curry((dest, scoreOrStr) => {
-  let events = unwrapOrParse(scoreOrStr)
-  events = events.map((ev) => ev.meta ? ev : _.set('dest', dest, ev))
-  return wrap(events)
-})
-
-// ***** PRIVATE *****
-
-let nudge = (amount, events) => {
-  return events.map((ev) => _.set('time', ev.time + amount, ev))
-}
-
-let endOf = (ev) => {
-  return ev.time + (ev.dur || 0)
-}
-
-// Remove any redundant placeholder instructions
-let clean = (events) => {
-  let lastIndex = events.length - 1
-  return events.filter((ev, i) => {
-    // Include all non-meta events
-    if (!ev.meta) { return true }
-    // Reject meta events unless they are at the end
-    if (i !== lastIndex) { return false }
-    // Reject redundant meta events (i.e. onset during a non-meta event)
-    let prevEv = events[i - 1]
-    return ev.time > endOf(prevEv)
-  })
-}
-
-let unwrapOrParse = (scoreOrStr) => {
-  return scoreOrStr.events || parse(scoreOrStr)
-}
-
-let wrap = (events) => {
-  return { events }
-}
-
-// ***** PARSING *****
+// PUBLIC
 
 let parse = (raw) => {
   let words = raw.split(' ').filter((w) => w)
   return processWords(words)
 }
+
+// PRIVATE
 
 let processWords = (words) => {
   let evs = []
@@ -142,4 +87,4 @@ let isNoteName = (str) => {
   }
 }
 
-module.exports = { seq, mix, setDest }
+module.exports = parse
