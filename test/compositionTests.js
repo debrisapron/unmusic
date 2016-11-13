@@ -1,7 +1,7 @@
 'use strict'
 let _ = require('lodash/fp')
 let test = require('tape')
-let { mix, seq, loop, setDest } = require('../../src/composition')
+let { mix, seq, loop, setDest } = require('../src/composition')
 
 let sort = (score) => {
   let sortedEvents = _.sortBy(['time', 'nn'], score.events)

@@ -4,8 +4,8 @@
   "description": "",
   "main": "src",
   "scripts": {
-    "test": "browserify tests/all-tests.js | tape-run | tap-colorize",
-    "test:fast": "node tests/fast-tests.js | tap-colorize"
+    "test:browser": "browserify tests/all-tests.js | tape-run | tap-colorize",
+    "test:node": "node ./test/nodeTests.js | tap-colorize"
   },
   "author": "",
   "dependencies": {
@@ -16,10 +16,14 @@
     "tone": "^0.8.0"
   },
   "devDependencies": {
-    "browserify": "^13.1.0",
+    "browserify": "^13.1.1",
+    "karma": "^1.3.0",
+    "karma-browserify": "^5.1.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-spec-reporter": "0.0.26",
+    "karma-tape": "0.0.1",
     "soundfont-player": "^0.10.5",
-    "tap-colorize": "latest",
-    "tape": "latest",
-    "tape-run": "^2.1.4"
+    "tap-colorize": "^1.2.0",
+    "tape": "^4.6.2"
   }
 }

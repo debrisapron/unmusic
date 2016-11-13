@@ -1,18 +1,18 @@
 'use strict'
-let _ = require('lodash')
-let wh = require('../waa-helpers')
+let _ = require('lodash/fp')
+let h = require('./helpers')
 
-let NodeFactory = _.curry((opts, audioContext) => {
+let UmNode = _.curry((opts, audioContext) => {
   return (...args) => {
-    let node = opts.makeNode(audioContext)
+    let node = opts.Node(audioContext)
 
     node.set = (...args) => {
       if (!args.length) { return node }
       let paramObjs = args.map((arg) => {
         return _.isPlainObject(arg) ? arg : { [opts.primaryParam]: arg }
       })
-      let params = _.merge({}, ...paramObjs)
-      wh.setNodeParams(node, params)
+      let params = _.mergeAll(paramObjs)
+      h.setNodeParams(node, params)
     }
 
     if (opts.defaultParams) {
@@ -26,4 +26,4 @@ let NodeFactory = _.curry((opts, audioContext) => {
   }
 })
 
-module.exports = NodeFactory
+module.exports = UmNode

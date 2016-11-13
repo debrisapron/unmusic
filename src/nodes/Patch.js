@@ -1,7 +1,6 @@
 'use strict'
-
 let _ = require('lodash')
-let wh = require('./waa-helpers')
+let wh = require('./helpers')
 
 let getConnPairs = (plan) => {
   let connStrs = (plan.conns || plan.connections || [])
@@ -128,11 +127,11 @@ let wrap = ({ audioContext, nodes, inputs, noteInputs, outputs }) => {
   return self
 }
 
-let patch = _.curry((audioContext, plan) => {
+let Patch = _.curry((audioContext, plan) => {
   let nodes = plan.nodes
   let connPairs = getConnPairs(plan)
   let { inputs, noteInputs, outputs } = connectNodes(nodes, connPairs)
   return wrap({ audioContext, nodes, inputs, noteInputs, outputs })
 })
 
-module.exports = { patch }
+module.exports = Patch

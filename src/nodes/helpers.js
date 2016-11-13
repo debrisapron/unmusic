@@ -1,6 +1,5 @@
 'use strict'
-
-let _ = require('lodash')
+let _ = require('lodash/fp')
 
 let PARAM_ALIASES = {
   freq: 'frequency',
@@ -12,7 +11,7 @@ let normalizeParamName = (name) => {
 }
 
 let normalizeParamNames = (params) => {
-  return _.mapKeys(params, (_, key) => normalizeParamName(key))
+  return _.mapKeys((_, key) => normalizeParamName(key), params)
 }
 
 let isAudioNode = (obj) => {
@@ -25,14 +24,14 @@ let isAudioParam = (obj) => {
 
 let setNodeParams = (node, params) => {
   params = normalizeParamNames(params)
-  _.forIn(params, (val, key) => {
+  _.forIn((val, key) => {
     let attr = node[key]
     if (isAudioParam(attr)) {
       attr.value = val
     } else {
       node[key] = val
     }
-  })
+  }, params)
 }
 
 module.exports = { normalizeParamName, isAudioNode, isAudioParam, setNodeParams }

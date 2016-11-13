@@ -1,0 +1,2 @@
+require('./compositionTests')
+require('./routeTests')
