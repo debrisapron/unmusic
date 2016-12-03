@@ -1,8 +1,8 @@
 'use strict' 
 let ADSR = require('adsr')
-let NodeFactory = require('./NodeFactory')
+let UmNode = require('./support/UmNode')
 
-let Adsr = NodeFactory({
+let Adsr = UmNode({
   makeNode: (audioContext) => {
     let node = ADSR(audioContext)
     node.finish = node.stop

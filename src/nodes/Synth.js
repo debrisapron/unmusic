@@ -1,5 +1,5 @@
 'use strict'
-let _ = require('lodash')
+let _ = require('lodash/fp')
 
 let twelveTet = (nn) => {
   return nn && Math.pow(2, ((nn - 69) / 12)) * 440
@@ -11,22 +11,22 @@ let Synth = _.curry((um, defaultParams) => {
   // TODO Set (goes to all voices)
   // TODO Tunings!!!
 
-  let output = um.gain()
+  let output = um.Gain()
   let isConnected = false
 
   let play = (when, params) => {
-    params = _.merge({}, defaultParams, params)
-    let voice = params.makeVoice(um)
+    params = _.merge(defaultParams, params)
+    let voice = params.Voice(um)
     voice.set(params)
     voice.connect(output)
     if (voice.noteInput) {
       let nn = params.noteNumber || params.nn
       if (nn) {
-        let freqSignal = p.signal(twelveTet(nn))
+        let freqSignal = um.Signal(twelveTet(nn))
         freqSignal.connect(voice.noteInput)
       }
     }
-    if (!isConnected) { connect(p.master) }
+    if (!isConnected) { connect(um.master) }
     voice.start(when)
     return voice
   }

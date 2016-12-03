@@ -1,12 +1,12 @@
 'use strict'
-let wh = require('./waa-helpers')
+let h = require('./support/helpers')
 
 let Constant = (audioContext) => {
   let buffer = audioContext.createBuffer(1, 128, audioContext.sampleRate)
   let arr = buffer.getChannelData(0)
   arr.forEach((_, i) => arr[i] = 1)
   let constantNode = audioContext.createBufferSource()
-  wh.setNodeParams(constantNode, {
+  h.setNodeParams(constantNode, {
     buffer,
     channelCount: 1,
     channelCountMode: 'explicit',

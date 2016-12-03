@@ -30,6 +30,26 @@ let drumSlice = um.slice(
   )
 )
 
+// MUSIX: This...
+um.route(
+  um.grid({
+    kick:  'x---|x---|x---|x---  x---|x---|x---|x-x-  x---|x---|x---|x---  x---|x---|x---|x-x-',
+    snare: '----|x---|----|x---  ----|x---|----|x---  ----|x---|----|x--x  ----|x---|---x|-x--'
+  }),
+  drums, phaser, um.master
+)
+// ...is equivalent to this...
+um.master(
+  phaser(
+    drums(
+      um.grid({
+        kick:  'x---|x---|x---|x---  x---|x---|x---|x-x-  x---|x---|x---|x---  x---|x---|x---|x-x-',
+        snare: '----|x---|----|x---  ----|x---|----|x---  ----|x---|----|x--x  ----|x---|---x|-x--'
+      })
+    )
+  )
+)
+
 let verse = um.mix(
   um.route(
     um.mix(

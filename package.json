@@ -4,7 +4,7 @@
   "description": "",
   "main": "src",
   "scripts": {
-    "test:browser": "browserify tests/all-tests.js | tape-run | tap-colorize",
+    "test:browser": "karma start test/config/karma.watch.config.js",
     "test:node": "node ./test/nodeTests.js | tap-colorize"
   },
   "author": "",
@@ -22,6 +22,7 @@
     "karma-chrome-launcher": "^2.0.0",
     "karma-spec-reporter": "0.0.26",
     "karma-tape": "0.0.1",
+    "sinon": "^1.17.6",
     "soundfont-player": "^0.10.5",
     "tap-colorize": "^1.2.0",
     "tape": "^4.6.2"

@@ -1,5 +1,5 @@
 'use strict' 
-let NodeFactory = require('./NodeFactory')
+let UmNode = require('./support/UmNode')
 let Constant = require('./Constant')
 
 let globalConstantNode
@@ -11,7 +11,7 @@ let provideConstantNode = (audioContext) => {
   return globalConstantNode
 }
 
-let Signal = NodeFactory({
+let Signal = UmNode({
   makeNode: (audioContext) => {
     let signalGain = audioContext.createGain()
     provideConstantNode(audioContext).connect(signalGain)

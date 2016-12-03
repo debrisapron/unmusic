@@ -1,65 +1,16 @@
 'use strict'
-let _ = require('lodash/fp')
-let UmNode = require('./support/UmNode')
-
-let Biquad = UmNode({
-  Node: (audioContext) => audioContext.createBiquadFilter(),
-  primaryParam: 'frequency',
-  defaultParams: { freq: 0 }
-})
-
-let BuffSrc = UmNode({
-  Node: (audioContext) => audioContext.createBufferSource(),
-  primaryParam: 'buffer'
-})
-
-let Delay = UmNode({
-  // TODO maxDelayTime creation param
-  Node: (audioContext) => audioContext.createDelay(),
-  primaryParam: 'delayTime'
-})
-
-let Gain = UmNode({
-  Node: (audioContext) => audioContext.createGain(),
-  primaryParam: 'gain'
-})
-
-let makeOscFactory = (type = 'sine') => {
-  return UmNode({
-    Node: (audioContext) => audioContext.createOscillator(),
-    primaryParam: 'frequency',
-    defaultParams: { type, freq: 0 }
-  })
-}
-
-let Osc = makeOscFactory()
-let Sin = makeOscFactory('sine')
-let Sqr = makeOscFactory('square')
-let Saw = makeOscFactory('sawtooth')
-let Tri = makeOscFactory('triangle')
-
-module.exports = { Biquad, BuffSrc, Delay, Gain, Osc, Sin, Sqr, Saw, Tri }
-
-////////////////////////////////////////////////////////////////////////////////
-
-'use strict'
 let sinon = require('sinon')
 let BuggedAudioContext = require('./BuggedAudioContext')
-let nns = require('../src/nodes/native')
+let Unmusic = require('..')
 
 let ac = BuggedAudioContext()
+let um = Unmusic(ac)
 
 test('can create native nodes', (assert) => {
-  assert.ok(nns.Gain(ac)() instanceof GainNode)
-  assert.ok(nns.Delay(ac)() instanceof DelayNode)
-  assert.ok(nns.Osc(ac)() instanceof OscillatorNode)
-  assert.ok(nns.Biquad(ac)() instanceof BiquadFilterNode)
-  assert.end()
-})
-
-test('can create native node with default parameter', (assert) => {
-  let gain = nns.Gain(ac)(0.5)
-  assert.equal(gain.gain.value, 0.5)
+  assert.ok(um.Gain() instanceof GainNode)
+  assert.ok(um.Delay() instanceof DelayNode)
+  assert.ok(um.Osc() instanceof OscillatorNode)
+  assert.ok(um.Biquad() instanceof BiquadFilterNode)
   assert.end()
 })
 
@@ -125,4 +76,3 @@ test('can create native node with default parameter', (assert) => {
 //   half.render()
 //   ac.nodes[0].gain.value.should.eq(0.5)
 // })
-

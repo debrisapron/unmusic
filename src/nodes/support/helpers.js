@@ -11,7 +11,7 @@ let normalizeParamName = (name) => {
 }
 
 let normalizeParamNames = (params) => {
-  return _.mapKeys((_, key) => normalizeParamName(key), params)
+  return _.mapKeys((key) => normalizeParamName(key), params)
 }
 
 let isAudioNode = (obj) => {
@@ -24,14 +24,15 @@ let isAudioParam = (obj) => {
 
 let setNodeParams = (node, params) => {
   params = normalizeParamNames(params)
-  _.forIn((val, key) => {
+  Object.keys(params).forEach((key) => {
+    let val = params[key]
     let attr = node[key]
     if (isAudioParam(attr)) {
       attr.value = val
     } else {
       node[key] = val
     }
-  }, params)
+  })
 }
 
 module.exports = { normalizeParamName, isAudioNode, isAudioParam, setNodeParams }

@@ -1,6 +1,6 @@
 'use strict'
 let _ = require('lodash')
-let wh = require('./helpers')
+let h = require('./support/helpers')
 
 let getConnPairs = (plan) => {
   let connStrs = (plan.conns || plan.connections || [])
@@ -17,7 +17,7 @@ let connectNodes = (nodes, connPairs) => {
   connPairs.forEach(([from, to]) => {
     let [fromName, _] = from.split('.')
     let [toName, toParamName] = to.split('.')
-    toParamName = wh.normalizeParamName(toParamName)
+    toParamName = h.normalizeParamName(toParamName)
     let isPatchIn = fromName === 'in' || fromName === 'input'
     let isNoteIn = fromName === 'noteIn' || fromName === 'noteInput'
     let isPatchOut = toName === 'out' || toName === 'output'
@@ -117,7 +117,7 @@ let wrap = ({ audioContext, nodes, inputs, noteInputs, outputs }) => {
       if (node.set) {
         node.set(nodeParams)
       } else {
-        wh.setNodeParams(node, nodeParams)
+        h.setNodeParams(node, nodeParams)
       }
     })
     return self
