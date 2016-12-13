@@ -8,7 +8,7 @@ module.exports = loop
 
 ////////////////////////////////////////////////////////////////////////////////
 
-if (!global.test) return
+if (!process.env.TEST) return
 
 test('Can loop a seq', (assert) => {
   let s = '69'

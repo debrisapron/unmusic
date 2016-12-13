@@ -10,7 +10,7 @@ module.exports = seq
 
 ////////////////////////////////////////////////////////////////////////////////
 
-if (!global.test) return
+if (!process.env.TEST) return
 
 test('Can parse a seq string with just a command', (assert) => {
   let s = '69'

@@ -1,2 +1,0 @@
-require('./compositionTests')
-require('./routeTests')

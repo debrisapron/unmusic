@@ -92,7 +92,7 @@ module.exports = parse
 
 ////////////////////////////////////////////////////////////////////////////////
 
-if (!global.test) return
+if (!process.env.TEST) return
 
 test('Can parse a string with just a command', (assert) => {
   let s = '69'

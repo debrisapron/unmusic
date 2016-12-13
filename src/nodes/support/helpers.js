@@ -25,6 +25,7 @@ let isAudioParam = (obj) => {
 let setNodeParams = (node, params) => {
   params = normalizeParamNames(params)
   Object.keys(params).forEach((key) => {
+    if (!(key in node)) return
     let val = params[key]
     let attr = node[key]
     if (isAudioParam(attr)) {

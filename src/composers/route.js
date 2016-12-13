@@ -27,7 +27,7 @@ module.exports = route
 
 ////////////////////////////////////////////////////////////////////////////////
 
-if (!global.test) return
+if (!process.env.TEST) return
 
 test('Can route connectables to each other returning first', (assert) => {
   let conns = {}

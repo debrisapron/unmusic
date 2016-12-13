@@ -3,16 +3,20 @@ let _ = require('lodash/fp')
 let h = require('./helpers')
 
 let UmNode = _.curry((opts, audioContext) => {
+
+  let paramsFromArgs = (args) => {
+    let paramObjs = args.map((arg) => {
+      return _.isPlainObject(arg) ? arg : { [opts.primaryParam]: arg }
+    })
+    return _.mergeAll(paramObjs) || {}
+  }
+
   return (...args) => {
-    let node = opts.Node(audioContext)
+    let node = opts.Node(audioContext, paramsFromArgs(args))
 
     node.set = (...args) => {
       if (!args.length) { return node }
-      let paramObjs = args.map((arg) => {
-        return _.isPlainObject(arg) ? arg : { [opts.primaryParam]: arg }
-      })
-      let params = _.mergeAll(paramObjs)
-      h.setNodeParams(node, params)
+      h.setNodeParams(node, paramsFromArgs(args))
     }
 
     if (opts.defaultParams) {

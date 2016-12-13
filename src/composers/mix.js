@@ -5,7 +5,7 @@ let h = require('./support/helpers')
 let mix = (...args) => {
   let [loops, nonLoops] = _.partition((arg) => arg.loop, args)
     .map((args) => args.map(h.getActions))
-    
+
   if (loops.length) {
     // If there are any non-loops, adjust the length of any loops to the length
     // of the longest non-loop.
@@ -16,7 +16,7 @@ let mix = (...args) => {
       : lcm(loops.map(h.lengthOf))
     loops = loops.map(extend(length))
   }
-  
+
   let actionLists = loops.concat(nonLoops)
   let mixed = _.flatten(actionLists)
   let sorted = _.sortBy('payload.time', mixed)
@@ -81,7 +81,7 @@ module.exports = mix
 
 ////////////////////////////////////////////////////////////////////////////////
 
-if (!global.test) return
+if (!process.env.TEST) return
 
 let sort = (score) => {
   let sortedActions = _.sortBy(['payload.time', 'payload.nn'], score.actions)

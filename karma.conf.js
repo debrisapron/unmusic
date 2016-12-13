@@ -2,14 +2,12 @@ module.exports = (config) => {
   config.set({
     browsers: ['Chrome'],
     frameworks: ['browserify', 'tape'],
-    files: ['./test/*Tests.js'],
-    preprocessors: {
-      './test/*Tests.js': ['browserify']
-    },
+    files: ['index.js'],
+    preprocessors: { 'index.js': ['browserify'] },
     browserify: {
-      debug: true
+      debug: true,
+      transform: [['envify', { TEST: true }]]
     },
-    reporters: ['spec'],
-    singleRun: true
+    reporters: ['spec']
   })
 }
