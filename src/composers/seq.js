@@ -1,4 +1,3 @@
-'use strict'
 let h = require('./support/helpers')
 
 let seq = (...args) => {

@@ -1,4 +1,3 @@
-'use strict' 
 let UmNode = require('./support/UmNode')
 let Constant = require('./Constant')
 

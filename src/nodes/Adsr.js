@@ -1,4 +1,3 @@
-'use strict' 
 let ADSR = require('adsr')
 let UmNode = require('./support/UmNode')
 

@@ -25,6 +25,7 @@
     "karma-tape": "0.0.1",
     "sinon": "^1.17.6",
     "soundfont-player": "^0.10.5",
+    "strictify": "^0.2.0",
     "tap-colorize": "^1.2.0",
     "tape": "^4.6.2",
     "watchify": "^3.7.0"

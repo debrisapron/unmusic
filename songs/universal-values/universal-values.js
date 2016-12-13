@@ -1,5 +1,3 @@
-'use strict'
-
 let um = require('unmusic')
 let tr606 = um.synths.twoHundredDrumMachines({ kit: 'Roland Tr-606' })
 

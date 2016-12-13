@@ -6,7 +6,10 @@ module.exports = (config) => {
     preprocessors: { 'index.js': ['browserify'] },
     browserify: {
       debug: true,
-      transform: [['envify', { TEST: true }]]
+      transform: [
+        'strictify',
+        ['envify', { TEST: true }]
+      ]
     },
     reporters: ['spec']
   })

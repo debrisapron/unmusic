@@ -1,4 +1,3 @@
-'use strict'
 let _ = require('lodash/fp')
 let shortid = require('shortid')
 let Tone = require('tone')

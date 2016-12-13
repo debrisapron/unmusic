@@ -1,4 +1,3 @@
-'use strict'
 let sinon = require("sinon")
 
 let BuggedAudioContext = () => {
@@ -8,7 +7,7 @@ let BuggedAudioContext = () => {
   let wrapNativeNodeFn = (name) => {
     let createFnName = `create${ name }`
     let createFn = ac[createFnName]
-  
+
     sandbox.stub(ac, createFnName, (...args) => {
       var newNode = createFn.apply(ac, args)
       if(newNode.connect) sandbox.spy(newNode, 'connect')
@@ -18,7 +17,7 @@ let BuggedAudioContext = () => {
       return newNode
     })
   }
-  
+
   let init = () => {
     ac.nodes = []
     sandbox.restore()

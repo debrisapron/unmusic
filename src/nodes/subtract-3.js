@@ -1,4 +1,3 @@
-'use strict'
 let _ = require('lodash/fp')
 
 let Subtract3 = _.curry((um, params) => {
