@@ -1,5 +1,7 @@
 let sinon = require("sinon")
 
+let buggedAudioContext = null
+
 let BuggedAudioContext = () => {
   let ac = new window.AudioContext()
   let sandbox = sinon.sandbox.create()
@@ -13,13 +15,13 @@ let BuggedAudioContext = () => {
       if(newNode.connect) sandbox.spy(newNode, 'connect')
       if(newNode.start) sandbox.spy(newNode, 'start')
       if(newNode.stop) sandbox.spy(newNode, 'stop')
-      ac.nodes.push(newNode)
+      ac.__nodes.push(newNode)
       return newNode
     })
   }
 
-  let init = () => {
-    ac.nodes = []
+  let initBugging = () => {
+    ac.__nodes = []
     sandbox.restore()
 
     wrapNativeNodeFn('Gain')
@@ -28,8 +30,12 @@ let BuggedAudioContext = () => {
     wrapNativeNodeFn('Oscillator')
   }
 
-  ac.init = init
+  ac.__initBugging = initBugging
   return ac
 }
 
-module.exports = BuggedAudioContext
+let getBuggedAudioContext = () => {
+  return buggedAudioContext || (buggedAudioContext = BuggedAudioContext())
+}
+
+module.exports = getBuggedAudioContext

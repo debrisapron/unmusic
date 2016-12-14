@@ -134,3 +134,51 @@ let Patch = _.curry((audioContext, plan) => {
 })
 
 module.exports = Patch
+
+////////////////////////////////////////////////////////////////////////////////
+
+if (!process.env.TEST) return
+
+let BuggedAudioContext = require('./support/BuggedAudioContext')
+let { Osc, Gain } = require('./native')
+
+let ac = BuggedAudioContext()
+
+test('can connect two nodes', (assert) => {
+  ac.__initBugging()
+  let osc = ac.createOscillator()
+  let gain = Gain(ac)()
+  let p = Patch(ac, {
+    nodes: { osc, gain },
+    conns: ['osc > gain']
+  })
+  assert.ok(osc.connect.calledWith(gain))
+  assert.end()
+})
+
+test('should expose patched nodes', (assert) => {
+  ac.__initBugging()
+  let osc = Osc(ac)()
+  let gain = ac.createGain()
+  let p = Patch(ac, {
+    nodes: { osc, gain },
+    conns: ['osc > gain']
+  })
+  assert.equal(p.nodes.osc, osc)
+  assert.equal(p.nodes.gain, gain)
+  assert.end()
+})
+
+test('can set node params', (assert) => {
+  ac.__initBugging()
+  let osc = ac.createOscillator()
+  let gain = Gain(ac)()
+  let p = Patch(ac, {
+    nodes: { osc, gain },
+    conns: ['osc > gain']
+  })
+  p.set({ osc: { freq: 666 }, gain: 0.5 })
+  assert.equal(osc.frequency.value, 666)
+  assert.equal(gain.gain.value, 0.5)
+  assert.end()
+})
