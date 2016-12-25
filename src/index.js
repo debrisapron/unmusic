@@ -2,11 +2,11 @@ let _ = require('lodash')
 
 let loop = require('./composers/loop')
 let mix = require('./composers/mix')
-let route = require('./composers/route')
+let part = require('./composers/part')
 let seq = require('./composers/seq')
 
 let Player = require('./Player')
-let nativeNodes = require('./nodes/native')
+let NativeNodes = require('./nodes/NativeNodes')
 let Patch = require('./nodes/Patch')
 // let Synth = require('./src/nodes/Synth')
 
@@ -20,23 +20,24 @@ let getDefaultAudioContext = () => {
 
 let Unmusic = (audioContext = getDefaultAudioContext()) => {
   let player = Player(audioContext)
+  let nativeNodes = NativeNodes(audioContext)
 
   let um = {
     audioContext,
     master: audioContext.destination,
 
-    loop, mix, route, seq,
+    loop, mix, part, seq,
 
     play: player.play,
     stop: player.stop,
 
     patch: Patch(audioContext),
     // adsr: nodes.adsr(audioContext),
-    Biquad: nativeNodes.Biquad(audioContext),
-    BuffSrc: nativeNodes.BuffSrc(audioContext),
-    Delay: nativeNodes.Delay(audioContext),
-    Gain: nativeNodes.Gain(audioContext),
-    Osc: nativeNodes.Osc(audioContext),
+    Biquad: nativeNodes.Biquad,
+    BuffSrc: nativeNodes.BuffSrc,
+    Delay: nativeNodes.Delay,
+    Gain: nativeNodes.Gain,
+    Osc: nativeNodes.Osc,
     // signal: nodes.signal(audioContext),
     // synth: synthNode(um)
   }

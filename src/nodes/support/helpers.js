@@ -21,8 +21,9 @@ let isAudioParam = (obj) => {
   return obj instanceof AudioParam
 }
 
-let setNodeParams = (node, params) => {
-  params = normalizeParamNames(params)
+let setNodeParams = (node, argObjs) => {
+  let primaryParam = (node.__um || {}).primaryParam
+  let params = normalizeParamNames(paramsFromArgObjects(primaryParam, argObjs))
   Object.keys(params).forEach((key) => {
     if (!(key in node)) return
     let val = params[key]
@@ -35,4 +36,13 @@ let setNodeParams = (node, params) => {
   })
 }
 
-module.exports = { normalizeParamName, isAudioNode, isAudioParam, setNodeParams }
+let paramsFromArgObjects = (primaryParam, argObjs) => {
+  let paramObjs = argObjs.map((a) => {
+    return _.isPlainObject(a)
+      ? a
+      : (primaryParam && { [primaryParam]: a })
+  })
+  return _.mergeAll(paramObjs) || {}
+}
+
+module.exports = { normalizeParamName, isAudioNode, isAudioParam, setNodeParams, paramsFromArgObjects }

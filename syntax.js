@@ -64,3 +64,10 @@ let verse = um.mix(
     bass, um.master
   )
 )
+
+let Arpeg = UmNode({
+  note: (node, action) => { ... },
+  tick: (node, action) => { ... },
+  noteThru: false,
+  tickThru: true // By default
+})
