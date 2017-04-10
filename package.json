@@ -2,7 +2,6 @@
   "name": "unmusic",
   "version": "0.0.1",
   "description": "",
-  "main": "src",
   "scripts": {
     "docker:build": "docker build -t unmusic-test .",
     "docker:test": "docker run -i -t -v $(PWD):/tmp unmusic-test /bin/bash -c \"npm test\"",
@@ -13,10 +12,9 @@
   "author": "",
   "dependencies": {
     "lodash": "^4.14.1",
-    "ramda": "latest",
     "shortid": "^2.2.6",
     "teoria": "latest",
-    "tone": "^0.8.0"
+    "waaclock": "^0.5.3"
   },
   "devDependencies": {
     "browserify": "^13.1.1",

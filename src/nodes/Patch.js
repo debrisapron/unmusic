@@ -109,20 +109,20 @@ let wrap = ({ audioContext, nodes, inputs, noteInputs, outputs }) => {
     return self
   }
 
-  let set = (...args) => {
-    let params = _.merge(...args)
-    _.forEach(nodes, (node, name) => {
-      let nodeParams = params[name]
-      if (node.set) {
-        node.set(nodeParams)
-      } else {
-        h.setNodeParams(node, nodeParams)
-      }
-    })
-    return self
-  }
+  // let set = (...args) => {
+  //   let params = _.merge(...args)
+  //   _.forEach(nodes, (node, name) => {
+  //     let nodeParams = params[name]
+  //     if (node.set) {
+  //       node.set(nodeParams)
+  //     } else {
+  //       h.setNodeParams(node, nodeParams)
+  //     }
+  //   })
+  //   return self
+  // }
 
-  self = { nodes, input, noteInput, connect, start, stop, finish, sound, set }
+  self = { nodes, input, noteInput, connect, start, stop, finish, sound }
   return self
 }
 

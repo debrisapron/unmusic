@@ -1,4 +1,5 @@
 let _ = require('lodash/fp')
+let h = require('./support/helpers')
 
 let twelveTet = (nn) => {
   return nn && Math.pow(2, ((nn - 69) / 12)) * 440
@@ -12,11 +13,13 @@ let Synth = _.curry((um, defaultParams) => {
 
   let output = um.Gain()
   let isConnected = false
+  let playingVoices = {}
 
-  let play = (when, params) => {
+  let noteOn = (params) => {
+    let when = params.when
     params = _.merge(defaultParams, params)
     let voice = params.Voice(um)
-    voice.set(params)
+    h.setNodeParams(voice, params)
     voice.connect(output)
     if (voice.noteInput) {
       let nn = params.noteNumber || params.nn
@@ -27,7 +30,11 @@ let Synth = _.curry((um, defaultParams) => {
     }
     if (!isConnected) { connect(um.master) }
     voice.start(when)
-    return voice
+    playingVoices[params.id] = voice
+  }
+
+  let noteOff = (params) => {
+    playingVoices[params.id]
   }
 
   let connect = (dest) => {

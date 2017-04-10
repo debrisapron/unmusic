@@ -24,16 +24,21 @@ let isAudioParam = (obj) => {
 let setNodeParams = (node, argObjs) => {
   let primaryParam = (node.__um || {}).primaryParam
   let params = normalizeParamNames(paramsFromArgObjects(primaryParam, argObjs))
+  let childNodes = node.nodes || {}
   Object.keys(params).forEach((key) => {
-    if (!(key in node)) return
     let val = params[key]
-    let attr = node[key]
-    if (isAudioParam(attr)) {
-      attr.value = val
-    } else {
-      node[key] = val
-    }
+    if (key in childNodes) setNodeParams(childNodes[key], val)
+    if (key in node) setNodeParam(node, key, val)
   })
+}
+
+let setNodeParam = (node, key, val) => {
+  let attr = node[key]
+  if (isAudioParam(attr)) {
+    attr.value = val
+  } else {
+    node[key] = val
+  }
 }
 
 let paramsFromArgObjects = (primaryParam, argObjs) => {

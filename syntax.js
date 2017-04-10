@@ -71,3 +71,13 @@ let Arpeg = UmNode({
   noteThru: false,
   tickThru: true // By default
 })
+
+route(
+  mix(
+    'k k k k k k k k',
+    seq('_ s _ s _ s _', route('s', $delay$({ time: 0.1 }))
+  ),
+  drumBox$({ kit: '808' }),
+  $merge$,
+  $distort$({ gain: 2 })
+)

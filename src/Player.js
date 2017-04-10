@@ -1,152 +1,101 @@
 let _ = require('lodash/fp')
 let shortid = require('shortid')
-let Tone = require('tone')
 
-// let DEFAULT_TEMPO = 120
-let playingPart
-let playingPartLength
-let stopCbs = {}
+let Player = (sequencer) => {
+  let stopCbs = {}
 
-let wholeNotesToSecs = (wholeNotes) => {
-  // We avoid using 1n because Tone translates 1n to 1m
-  return Tone.Transport.toSeconds('2n') * 2 * wholeNotes
-}
+  let play = (score) => {
+    let events = sequencerEventsFrom(score)
+    sequencer.play(events)
+  }
 
-let toneEventsFrom = (score) => {
-  let length = lengthInWholeNotesOf(score)
-  let nestedDisorderedEvents = score.events
-    .filter((ev) => !ev.meta)
-    .map((ev) => {
-      let id = shortid.generate()
-      let start = { id, ev, time: wholeNotesToSecs(ev.time) }
-      if (!ev.dur) return [start]
-      let endTime = (ev.time + ev.dur) % length
-      let stop = { id, time: wholeNotesToSecs(endTime) }
-      return [start, stop]
+  let stop = () => {
+    let stopTime = sequencer.stop()
+    _.forEach((stopCb) => {
+      if (stopCb) stopCb(stopTime)
+    }, stopCbs)
+    stopCbs = {}
+  }
+
+  let sequencerEventsFrom = (score) => {
+    let lastPayload = _.last(score.actions).payload
+    let length = lastPayload.time + (lastPayload.dur || 0)
+    let nestedDisorderedEvents = score.actions
+      .filter((action) => action.type != 'NOOP')
+      .map((action) => {
+        let { payload } = action
+        let id = shortid.generate()
+        let startEvent = [payload.time, (time) => startAction(time, id, action)]
+        if (!payload.dur) return [startEvent]
+        let endTime = (payload.time + payload.dur) % length
+        let stopEvent = [endTime, (time) => endAction(time, id)]
+        return [startEvent, stopEvent]
+      })
+    let events = _.sortBy(0, _.flatten(nestedDisorderedEvents))
+    if (_.last(events)[0] < length) events.push([length])
+    return events.map((ev, i) => {
+      if (i == 0) return ev
+      return _.set(0, ev[0] - events[i - 1][0], ev)
     })
-  return _.sortBy('time', _.flatten(nestedDisorderedEvents))
-}
+  }
 
-let lengthInWholeNotesOf = (score) => {
-  let lastEv = _.last(score.events)
-  return lastEv.time + (lastEv.dur || 0)
-}
+  let startAction = (time, id, action) => {
+    let { payload } = action
+    if (!payload.dest) return
+    let fn = payload.dest.trigger || payload.dest
+    if (!_.isFunction(fn)) return
+    let stopCb = fn(time, action)
+    if (!_.isFunction(stopCb)) return
+    stopCbs[id] = stopCb
+  }
 
-let triggerEvent = (time, { id, ev }) => {
-  if (!ev) {
+  let endAction = (time, id) => {
     let stopCb = stopCbs[id]
-    if (stopCb) {
-      stopCbs[id] = undefined
-      stopCb(time)
-    }
-    return
+    if (!stopCb) return
+    stopCbs[id] = undefined
+    stopCb(time)
   }
-  if (!ev.dest) return
-  let fn = ev.dest.trigger || ev.dest
-  if (!_.isFunction(fn)) return
-  let stopCb = fn(time, ev)
-  if (!_.isFunction(stopCb)) return
-  stopCbs[id] = stopCb
-}
 
-let play = (score) => {
-  let length = lengthInWholeNotesOf(score)
-  let tevs = toneEventsFrom(score)
-  if (playingPartLength === length) {
-    mutatePlayingPart(tevs)
-  } else {
-    replacePlayingPart(tevs, length)
-  }
-  start()
-}
-
-let mutatePlayingPart = (evs) => {
-  playingPart.removeAll()
-  evs.forEach((ev) => playingPart.add(ev))
-}
-
-let replacePlayingPart = (evs, length) => {
-  let newPart = new Tone.Part(triggerEvent, evs)
-  newPart.loop = true
-  newPart.loopEnd = wholeNotesToSecs(length)
-  // TODO snap to nearest quarter note
-  if (playingPart) {
-    playingPart.stop()
-    playingPart.dispose()
-  }
-  newPart.start()
-  playingPart = newPart
-  playingPartLength = length
-}
-
-let start = () => {
-  if (Tone.Transport.state !== 'started') { Tone.Transport.start() }
-}
-
-let stop = () => {
-  Tone.Transport.stop()
-  if (playingPart) {
-    playingPart.stop()
-    playingPart.dispose()
-    playingPart = null
-  }
-  _.forEach((stopCb) => {
-    if (stopCb) stopCb(Tone.Transport.context.currentTime)
-  }, stopCbs)
-  stopCbs = {}
-}
-
-let Player = (audioContext) => {
-  if (audioContext) { Tone.Transport.context = audioContext }
-  return { play, start, stop }
+  return { play, stop }
 }
 
 module.exports = Player
 
 ////////////////////////////////////////////////////////////////////////////////
 
-if (!process.env.SLOW_TEST) return
+if (!process.env.TEST) return
 
-// lodash fp round doesn't support precision
-let round = require('lodash').round
-
-let Recorder = () => {
-  let log = []
-  let stop = (time) => {
-    log.push({ time })
-  }
-  let trigger = (time, ev) => {
-    log.push({ time, ev })
-    return stop
-  }
-  return { trigger, log }
-}
-
-let approxEqual = (a, b) => round(a, 5) === round(b, 5)
-
-test('simple sequence', (assert) => {
-  let dest = Recorder()
+test('player can play a simple score', (assert) => {
+  let events
+  let starts = []
+  let stops = []
   let dur = 1/4
-  let score = { events: [
-    { time: 0,   nn: 0, dur, dest },
-    { time: 1/4, nn: 1, dur, dest },
-    { time: 1/2, nn: 2, dur, dest },
-    { time: 3/4, nn: 3, dur, dest }
-  ] }
-  let ac = new AudioContext()
-  let player = Player(ac)
-  // let startTime = ac.currentTime
-  player.play(score)
-
-  setTimeout(finish, 2010)
-
-  function finish() {
-    player.stop()
-    let log = dest.log
-    assert.equal(log.length, 10)
-    let durs = _.chunk(2, log).map(([a, b]) => b.time - a.time)
-    assert.ok(durs.slice(0, -1).every((d) => approxEqual(d, 0.5)))
-    // assert.ok(approxEqual(_.last(durs), 0.01))
-    assert.end()
+  let mockSeq = {
+    play: (_events) => events = _events,
+    stop: () => 999
   }
+  let dest = (time, action) => {
+    starts.push([time, action])
+    return (time) => stops.push([time, action])
+  }
+  let score = { actions: [
+    { type: 'NOTE', payload: { time: 0,   nn: 0, dur, dest } },
+    { type: 'NOTE', payload: { time: 1/4, nn: 1, dur, dest } },
+    { type: 'NOTE', payload: { time: 1/2, nn: 2, dur, dest } },
+    { type: 'NOTE', payload: { time: 3/4, nn: 3, dur, dest } }
+  ] }
+  let player = Player(mockSeq)
+  player.play(score)
+  const times = events.map((ev) => ev[0])
+  const expTimes = [0, 0, 0.25, 0, 0.25, 0, 0.25, 0, 0.25]
+  assert.deepEqual(times, expTimes, 'sequencer should be passed expected list of times')
+  // Simulate sequencer calling first 6 callbacks
+  events.slice(0, 6).forEach((ev) => ev[1](0))
+  player.stop()
+  const notes = starts.map((start) => start[1].payload.nn)
+  const expNotes = [0, 1, 2]
+  assert.deepEqual(notes, expNotes, 'callbacks should play expected notes')
+  const stoppedNotes = stops.map((stop) => stop[1].payload.nn)
+  assert.deepEqual(stoppedNotes, expNotes, 'callbacks should stop all notes including hanging ones')
+  assert.end()
 })

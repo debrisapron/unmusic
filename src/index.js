@@ -5,9 +5,10 @@ let mix = require('./composers/mix')
 let part = require('./composers/part')
 let seq = require('./composers/seq')
 
+let Sequencer = require('./Sequencer')
 let Player = require('./Player')
-let NativeNodes = require('./nodes/NativeNodes')
-let Patch = require('./nodes/Patch')
+// let NativeNodes = require('./nodes/NativeNodes')
+// let Patch = require('./nodes/Patch')
 // let Synth = require('./src/nodes/Synth')
 
 // // Synths
@@ -19,8 +20,9 @@ let getDefaultAudioContext = () => {
 }
 
 let Unmusic = (audioContext = getDefaultAudioContext()) => {
-  let player = Player(audioContext)
-  let nativeNodes = NativeNodes(audioContext)
+  let sequencer = Sequencer(audioContext)
+  let player = Player(sequencer)
+  // let nativeNodes = NativeNodes(audioContext)
 
   let um = {
     audioContext,
@@ -31,13 +33,13 @@ let Unmusic = (audioContext = getDefaultAudioContext()) => {
     play: player.play,
     stop: player.stop,
 
-    patch: Patch(audioContext),
+    // patch: Patch(audioContext),
     // adsr: nodes.adsr(audioContext),
-    Biquad: nativeNodes.Biquad,
-    BuffSrc: nativeNodes.BuffSrc,
-    Delay: nativeNodes.Delay,
-    Gain: nativeNodes.Gain,
-    Osc: nativeNodes.Osc,
+    // Biquad: nativeNodes.Biquad,
+    // BuffSrc: nativeNodes.BuffSrc,
+    // Delay: nativeNodes.Delay,
+    // Gain: nativeNodes.Gain,
+    // Osc: nativeNodes.Osc,
     // signal: nodes.signal(audioContext),
     // synth: synthNode(um)
   }

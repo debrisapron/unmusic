@@ -8,7 +8,7 @@ module.exports = (config) => {
       debug: true,
       transform: [
         'strictify',
-        ['envify', { TEST: true }]
+        ['envify', { TEST: true, SLOW_TEST: true }]
       ]
     },
     reporters: ['spec']
