@@ -1,9 +1,9 @@
 let _ = require('lodash/fp')
 let h = require('./support/helpers')
 
-let mix = (...args) => {
-  let [loops, nonLoops] = _.partition((arg) => arg.loop, args)
-    .map((args) => args.map(h.getActions))
+let mixScores = (scores) => {
+  let [loops, nonLoops] = _.partition((score) => score.loop, scores)
+    .map((scores) => scores.map(h.getActions))
 
   if (loops.length) {
     // If there are any non-loops, adjust the length of any loops to the length
@@ -23,6 +23,8 @@ let mix = (...args) => {
   if (!nonLoops.length) score.loop = true
   return score
 }
+
+let mix = h.scoreTransformer({ mergeScores: mixScores })
 
 // Repeat or trim a list of actions to the given length.
 let extend = _.curry((length, actions) => {

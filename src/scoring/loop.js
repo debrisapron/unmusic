@@ -1,7 +1,9 @@
 let _ = require('lodash/fp')
-let seq = require('./seq')
+let h = require('./support/helpers')
 
-let loop = (...args) => _.set('loop', true, seq(...args))
+let loopScore = (score) => _.set('loop', true, score)
+
+let loop = h.scoreTransformer({ transformScore: loopScore })
 
 module.exports = loop
 

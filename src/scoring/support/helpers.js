@@ -5,6 +5,27 @@ let parse = require('./parse')
 //   return _.set('actions', score.actions.map(cb), score)
 // })
 
+let scoreTransformer = ({ transformScore = id, mergeScores = concatScores } = {}) => {
+  let inner = (...args) => {
+    let scores = args.filter((x) => x && (_.isString(x) || x.actions))
+    if (!scores.length) {
+      return (...innerArgs) => inner(...(args.concat(innerArgs)))
+    }
+    let score = mergeScores(scores)
+    let opts = _.mergeAll(args.filter(_.isPlainObject))
+    let postProcess = _.pipe(args.filter(_.isFunction))
+    return postProcess(transformScore(score, opts))
+  }
+  return inner
+}
+
+let id = (x) => x
+
+let concatScores = (scores) => {
+  let actionLists = scores.map(getActions)
+  return wrapActions(cleanActions(concatActions(actionLists)))
+}
+
 let concatActions = (actionLists) => {
   return actionLists.reduce((acc, curr) => {
     return acc.concat(nudge(lengthOf(acc), curr))
@@ -41,4 +62,4 @@ let wrapActions = (actions) => {
   return { actions }
 }
 
-module.exports = { lengthOf, concatActions, cleanActions, getActions, wrapActions }
+module.exports = { lengthOf, scoreTransformer, concatScores, concatActions, cleanActions, getActions, wrapActions }

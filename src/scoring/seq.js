@@ -1,9 +1,6 @@
 let h = require('./support/helpers')
 
-let seq = (...args) => {
-  let actionLists = args.map(h.getActions)
-  return h.wrapActions(h.cleanActions(h.concatActions(actionLists)))
-}
+let seq = h.scoreTransformer()
 
 module.exports = seq
 
