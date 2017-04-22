@@ -1,76 +1,86 @@
 let _ = require('lodash/fp')
 let h = require('./src/scoring/support/helpers')
-
-let oneOsc = h.scoreTransformer({ transformScore: (score, params) => {
-  score = _.cloneDeep(score)
-  score.actions.forEach(({ payload }) => {
-    payload.dest = (t, a) => handleAction(t, a)
-    let graph = payload.graph = payload.graph || { nodes: {}, conns: [] }
-    let lastNodeId = _.last(Object.keys(graph.nodes))
-    let nodeId = _.uniqueId('node_')
-    graph.nodes[nodeId] = { type: 'oneOsc', params }
-    if (lastNodeId) graph.conns.push = [lastNodeId, nodeId]
-  })
-  return score
-} })
+let Renderer = require('./src/nodes/Renderer')
+let wrappers = require('./src/nodes/wrappers')
+let Envelope = require('envelope-generator')
 
 let twelveTet = (nn) => {
   return nn && Math.pow(2, ((nn - 69) / 12)) * 440
 }
 
-let OneOsc = () => {
-  let trigger = (time, params) => {
-    let osc = audioContext.createOscillator()
-    osc.frequency.value = twelveTet(params.nn)
-    if (params.osc && params.osc.type) osc.type = params.osc.type
-    if (params.osc && params.osc.detune) osc.detune.value = params.osc.detune
-
-    let filter = audioContext.createBiquadFilter()
-    if (params.filter) {
-      if (params.filter.type) filter.type = params.filter.type
-      if (params.filter.frequency) filter.frequency.value = params.filter.frequency
-      if (params.filter.Q) filter.Q.value = params.filter.Q
+let inventory = {
+  osc: {
+    inputs: ['frequency', 'detune'],
+    outputs: ['main'],
+    factory: (ac) => ac.createOscillator()
+  ),
+  biquad: {
+    inputs: ['main', 'frequency', 'detune', 'Q', 'gain'],
+    outputs: ['main'] },
+    factory: (ac) => ac.createBiquadFilter()
+  },
+  adsr: {
+    outputs: ['main'],
+    factory: (ac) => new Envelope(ac),
+    finish: (node, time) => {
+      node.release(time)
+      let fTime = node.getReleaseCompleteTime()
+      node.stop(fTime)
+      return fTime
     }
-    let attack = (params.filter && params.filter.attack) || 0
-    let release = (params.filter && params.filter.release) || 0
-    filter.detune.setValueAtTime(0, time)
-    filter.detune.linearRampToValueAtTime(4800, time + attack)
-
-    osc.connect(filter)
-    filter.connect(master)
-    osc.start(time)
-    return (time) => {
-      filter.detune.linearRampToValueAtTime(0, time + release)
-      osc.stop(time + release)
+  },
+  oneOsc: {
+    outputs: { main: graph.filter.outputs.main },
+    factory: (ac) => {
+      return Renderer(inventory, ac)({
+        osc: { type: 'osc' }, // freqIn: 'freq' // implicit for osc nodes (but not lfo nodes)
+        filter: { type: 'biquad', params: { type: 'lowpass' } }, // conns: { main: 'out' } // implicit for last node with a main out
+        env: { type: 'adsr', conns: { main: 'filter.frequency' } }
+      })
+    },
+    set: (node, params) => {
+      if (params.nn) node.osc.set({ freq: twelveTet(params.nn) })
+      node.osc.set(params.osc)
+      node.filter.set(params.filter)
+      node.env.set(params.env)
+    },
+    start: (node, time) => {
+      node.osc.start(t)
+      node.env.start(t)
+    },
+    stop: (node, time) => {
+      node.osc.stop(t)
+      node.env.stop(t)
+    },
+    finish: (node, time) => {
+      node.osc.stop(node.env.finish(t))
     }
   }
-
-  return { trigger }
 }
+
+let render = Renderer(inventory, ac)
+
+let oneOsc = h.scoreTransformer({ transformScore: (score, params) => {
+  score = _.cloneDeep(score)
+  score.actions.forEach(({ payload }) => {
+    payload.dest = (t, a) => handleAction(t, a)
+    let vgraph = payload.vgraph = payload.vgraph || {}
+    let nodeId = _.uniqueId('node_')
+    vgraph[nodeId] = { type: 'oneOsc', params }
+  })
+  return score
+} })
 
 let handleAction = (time, action) => {
-  let graph = _.get('payload.graph', action) || { nodes: {}, conns: [] }
-  let realNodes = _.mapValues(instantiateNode, graph.nodes)
-  graph.conns.forEach(([from, to]) => realNodes[from].connect(realNodes[to]))
-  let stopFns = []
-  _.forEachRight((vnode, id) => {
-    let params = _.merge(vnode.params, { nn: action.payload.nn })
-    let stopFn = realNodes[id].trigger(time, params)
-    if (stopFn) stopFns.push(stopFn)
-  })
-  return (t) => stopFns.forEach((stopFn) => stopFn(t))
-}
-
-let instantiateNode = (vnode) => {
-  switch(vnode.type) {
-    case 'oneOsc': return OneOsc()
-    case 'delay': return Delay()
-    default: throw new Error('Unrecognized node type')
-  }
+  let vgraph = _.get('payload.vgraph', action)
+  if (!vgraph) { return }
+  let graph = render(vgraph, time)
+  return (t) => _.forEach((node) => node.finish && node.finish(), graph)
 }
 
 let saw = oneOsc({
   osc: { detune: 600, type: 'sawtooth' },
-  filter: { frequency: 220, attack: 0.1, release: 0.1, Q: 5 }
+  filter: { frequency: 220, Q: 5 },
+  env: { attack: 0.1, release: 0.1 }
 })
 play(saw('/16 C E G A'))

@@ -81,3 +81,7 @@ route(
   $merge$,
   $distort$({ gain: 2 })
 )
+
+renderGraph({
+  osc: { type: 'osc', params: {}, conns: { main: '' }, triggers: { start: 0 } }
+})
