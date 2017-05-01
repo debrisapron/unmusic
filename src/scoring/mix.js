@@ -24,8 +24,6 @@ let mixScores = (scores) => {
   return score
 }
 
-let mix = h.scoreTransformer({ mergeScores: mixScores })
-
 // Repeat or trim a list of actions to the given length.
 let extend = _.curry((length, actions) => {
   let loopLength = h.lengthOf(actions)
@@ -77,6 +75,10 @@ let pairLcm = (a, b) => {
 }
 
 let lcm = (values) => values.reduce(pairLcm)
+
+// Exports
+
+let mix = (...args) => mixScores(args)
 
 module.exports = mix
 

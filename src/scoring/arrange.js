@@ -1,15 +1,8 @@
 let _ = require('lodash/fp')
-let seq = require('./seq')
 
-let part = (dest, ...args) => {
-  let score = seq(...args)
-  let actions = score.actions.map((a) => {
-    return a.type === 'NOOP' ? a : _.set('payload.dest', dest, a)
-  })
-  return _.set('actions', actions, score)
-}
+let arrange = (dest, score) => _.pipe(_.castArray(dest))(score)
 
-module.exports = part
+module.exports = arrange
 
 ////////////////////////////////////////////////////////////////////////////////
 

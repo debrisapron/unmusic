@@ -1,6 +1,6 @@
 let h = require('./support/helpers')
 
-let seq = h.scoreTransformer()
+let seq = (...args) => h.concatScores(args)
 
 module.exports = seq
 

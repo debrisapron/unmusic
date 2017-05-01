@@ -82,6 +82,23 @@ route(
   $distort$({ gain: 2 })
 )
 
+let tr808 = preset(drumBox, { kit: '808' })
+let distorted808 = part([tr808(), distort({ gain: 2 })])
+
+part(
+  '808 groove',
+  mix(
+    'k k k k k k k k',
+    seq('_ s _ s _ s _', route('s', $delay$({ time: 0.1 }))
+  ),
+  distorted808()
+)
+
+arrange(
+  [tr808(), distort({ gain: 2 })],
+  'k k k k k k k k'
+)
+
 renderGraph({
   osc: { type: 'osc', params: {}, conns: { main: '' }, triggers: { start: 0 } }
 })

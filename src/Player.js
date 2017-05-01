@@ -1,7 +1,7 @@
 let _ = require('lodash/fp')
 let shortid = require('shortid')
 
-let Player = (sequencer) => {
+let Player = (sequencer, handle) => {
   let stopCbs = {}
 
   let play = (score) => {
@@ -41,10 +41,7 @@ let Player = (sequencer) => {
 
   let startAction = (time, id, action) => {
     let { payload } = action
-    if (!payload.dest) return
-    let fn = payload.dest.trigger || payload.dest
-    if (!_.isFunction(fn)) return
-    let stopCb = fn(time, action)
+    let stopCb = handle(time, action)
     if (!_.isFunction(stopCb)) return
     stopCbs[id] = stopCb
   }
@@ -74,17 +71,17 @@ test('player can play a simple score', (assert) => {
     play: (_events) => events = _events,
     stop: () => 999
   }
-  let dest = (time, action) => {
+  let handle = (time, action) => {
     starts.push([time, action])
     return (time) => stops.push([time, action])
   }
   let score = { actions: [
-    { type: 'NOTE', payload: { time: 0,   nn: 0, dur, dest } },
-    { type: 'NOTE', payload: { time: 1/4, nn: 1, dur, dest } },
-    { type: 'NOTE', payload: { time: 1/2, nn: 2, dur, dest } },
-    { type: 'NOTE', payload: { time: 3/4, nn: 3, dur, dest } }
+    { type: 'NOTE', payload: { time: 0,   nn: 0, dur } },
+    { type: 'NOTE', payload: { time: 1/4, nn: 1, dur } },
+    { type: 'NOTE', payload: { time: 1/2, nn: 2, dur } },
+    { type: 'NOTE', payload: { time: 3/4, nn: 3, dur } }
   ] }
-  let player = Player(mockSeq)
+  let player = Player(mockSeq, handle)
   player.play(score)
   const times = events.map((ev) => ev[0])
   const expTimes = [0, 0, 0.25, 0, 0.25, 0, 0.25, 0, 0.25]

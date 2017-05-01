@@ -58,8 +58,12 @@ let getActions = (thing) => {
   return (Array.isArray(thing) && thing) || thing.actions || parse(thing)
 }
 
+let getScore = (thing) => {
+  return thing.actions ? thing : wrapActions(getActions(thing))
+}
+
 let wrapActions = (actions) => {
   return { actions }
 }
 
-module.exports = { lengthOf, scoreTransformer, concatScores, concatActions, cleanActions, getActions, wrapActions }
+module.exports = { lengthOf, scoreTransformer, concatScores, concatActions, cleanActions, getActions, getScore, wrapActions }
