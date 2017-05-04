@@ -56,6 +56,7 @@ let Unmusic = (audioContext = getDefaultAudioContext()) => {
   useComposer('loop', loop)
   useComposer('arrange', arrange)
 
+  useNode('adsr', coreNodes.adsr)
   useNode('biquad', coreNodes.biquad)
   useNode('osc', coreNodes.osc)
 

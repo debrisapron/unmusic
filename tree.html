@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>JS Bin</title>
+  <style>
+    *, *:before, *:after {
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+    }
+    
+    .container {
+      position: relative;
+      width: 500px;
+    }
+
+    .row {
+      position: relative;
+      width: 100%;
+      padding-bottom: 3px;
+      min-height: 33px;
+    }
+
+    .block {
+      padding-top: 4px;
+      padding-bottom: 1px;
+      position: absolute;
+      min-height: 30px;
+      box-shadow: inset 0px 0px 0px 1px #000;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <div class="block">
+      <div class="row">
+        <div class="block" style="left: 100px; width: 100px;"></div>
+      </div>
+      <div class="row">
+        <div class="block" style="left: 150px; width: 100px;"></div>
+        <div class="block" style="left: 220px; width: 100px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
