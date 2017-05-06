@@ -24,19 +24,21 @@ let RenderContext = (nodeDefs, ac) => {
   }
 
   let connectNodes = (vgraph) => {
-    let nextId
+    let nextIn
     forEachRightWithId((vnode, id) => {
+      let nodeDef = nodeDefs[vnode.type]
+      let defaultDestId = nextIn
+      nextIn = nodeDef.in && id
+      if (!nodeDef.out) return
+      let conns = vnode.connect || defaultDestId
+      if (!conns) return
       let node = nodes[id]
-      let conns = vnode.conns || (nextId && { main: nextId })
-      mapValuesWithId((destNames, outPath) => {
-        _.castArray(destNames).forEach((destName) => {
-          let [destId, ...inParts] = destName.split('.')
-          let destNode = nodes[destId]
-          let destPath = inParts.length ? inParts.join('.') : 'main'
-          nh.connect(node, outPath, destNode, destPath)
-        })
-      }, conns)
-      nextId = id
+      _.castArray(conns).forEach((destName) => {
+        let [destId, ...inParts] = destName.split('.')
+        let destNode = nodes[destId]
+        let destPath = inParts.length ? inParts.join('.') : 'main'
+        nh.connect(node, destNode, destPath)
+      })
     }, vgraph)
   }
 
@@ -66,28 +68,42 @@ module.exports = RenderContext
 ////////////////////////////////////////////////////////////////////////////////
 
 if (!process.env.TEST) return
+let h = require('../testHelpers')
 
 test('can render an example vgraph', (assert) => {
-  let fooConns = []
   let nodeDefs = {
     foo: {
-      outputs: ['main'],
-      factory: () => ({ isFoo: true, connect: (dest) => fooConns.push(dest) })
+      out: true,
+      audioParams: ['bbb'],
+      factory: () => {
+        let _conns = []
+        return { _conns, isFoo: true, bbb: { isBbb: true }, connect: (dest) => _conns.push(dest) }
+      }
     },
     bar: {
-      inputs: ['main'],
+      in: true,
+      out: true,
       factory: () => ({ isBar: true })
     }
   }
+
   let vgraph = {
-    foo: { type: 'foo' },
-    bar: { type: 'bar' }
+    foo: { type: 'foo', params: { aaa: 42, bbb: 69 } },
+    bar: { type: 'bar' },
+    foo2: { type: 'foo', connect: 'foo.bbb' }
   }
+
   let renderContext = RenderContext(nodeDefs)
   let graph = renderContext.render(vgraph, null, false)
-  assert.ok(graph.foo.isFoo)
-  assert.ok(graph.bar.isBar)
-  assert.equal(fooConns.length, 1)
-  assert.ok(fooConns[0].isBar)
+
+  let expectedBar = { isBar: true }
+  let expectedFooBbb = { value: 69, isBbb: true }
+  let expectedGraph = {
+    foo: { isFoo: true, aaa: 42, bbb: expectedFooBbb, _conns: [expectedBar] },
+    bar: expectedBar,
+    foo2: { isFoo: true, _conns: [expectedFooBbb] }
+  }
+
+  assert.ok(h.deepMatches(graph, expectedGraph))
   assert.end()
 })

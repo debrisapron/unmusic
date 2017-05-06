@@ -1,6 +1,6 @@
 module.exports = (config) => {
   config.set({
-    browsers: ['Chrome'],
+    browsers: ['ChromeHeadless'],
     frameworks: ['browserify', 'tape'],
     files: ['index.js'],
     preprocessors: { 'index.js': ['browserify'] },

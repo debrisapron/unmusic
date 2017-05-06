@@ -1,4 +1,5 @@
 let _ = require('lodash/fp')
+let _$ = require('lodash')
 let { set: mutate } = require('lodash')
 
 let PARAM_ALIASES = {
@@ -6,24 +7,22 @@ let PARAM_ALIASES = {
   rate: 'playbackRate'
 }
 
-let NodeHelper = (inventory) => {
+let mapValuesWithId = (iteratee, obj) => _$.mapValues(obj, iteratee)
 
-  let getNodeOutput = (node, outputPath) => {
-    let outputPaths = normalizePathCollection(inventory[node.__umType].outputs)
-    let internalPath = outputPaths[outputPath]
-    return internalPath == 'main' ? node : _.get(internalPath, node)
-  }
+let NodeHelper = (nodeDefs) => {
+
+  let nodeDef = (node) => nodeDefs[node.__umType]
 
   let getNodeInput = (node, inputPath) => {
-    let inputPaths = normalizePathCollection(inventory[node.__umType].inputs)
-    let internalPath = inputPaths[inputPath]
-    return internalPath == 'main' ? node : _.get(internalPath, node)
+    // let inputPaths = normalizePathCollection(nodeDef(node).inputs || {})
+    // let internalPath = inputPaths[inputPath] || 'main'
+    return inputPath == 'main' ? node : _.get(inputPath, node)
   }
 
-  let normalizePathCollection = (coll) => {
-    if (_.isPlainObject(coll)) return coll
-    return _.zipObject(coll, coll)
-  }
+  // let normalizePathCollection = (coll) => {
+  //   if (_.isPlainObject(coll)) return coll
+  //   return _.zipObject(coll, coll)
+  // }
 
   let normalizeParamName = (name) => {
     return PARAM_ALIASES[name] || name
@@ -35,25 +34,24 @@ let NodeHelper = (inventory) => {
 
   // Exports
 
-  let connect = (fromNode, fromOutputPath, toNode, toInputPath) => {
-    let fromOutput = getNodeOutput(fromNode, fromOutputPath)
+  let connect = (fromNode, toNode, toInputPath) => {
     let toInput = getNodeInput(toNode, toInputPath)
-    fromOutput.connect(toInput)
+    fromNode.connect(toInput)
   }
 
   let set = (node, params) => {
-    let opts = inventory[node.__umType]
-    if (opts.set) return opts.set(node, params)
+    let nd = nodeDef(node)
+    if (nd.set) return nd.set(node, params)
     // let inputPaths = normalizePathCollection(opts.inputs)
-    _.forEach((val, key) => {
+    mapValuesWithId((val, key) => {
       key = normalizeParamName(key)
       if (key === 'nn') {
         _.forEach((freqInput) => {
           set(node, { [freqInput]: twelveTet(val) })
-        }, opts.freqInputs || [])
+        }, nd.freqInputs || [])
         return
       }
-      if (opts.audioParams.includes(key)) {
+      if (nd.audioParams && nd.audioParams.includes(key)) {
         _.get(key, node).value = val
         return
       }
@@ -62,23 +60,23 @@ let NodeHelper = (inventory) => {
   }
 
   let start = (node, time) => {
-    let opts = inventory[node.__umType]
-    if (opts.start) return opts.start(node, time)
-    if (opts.vgraph) return _.forEach((n) => start(n, time), node)
+    let nd = nodeDef(node)
+    if (nd.start) return nd.start(node, time)
+    if (nd.vgraph) return _.forEach((n) => start(n, time), node)
     if (node.start) return node.start(time)
   }
 
   let stop = (node, time) => {
-    let opts = inventory[node.__umType]
-    if (opts.stop) return opts.stop(node, time)
-    if (opts.vgraph) return _.forEach((n) => stop(n, time), node)
+    let nd = nodeDef(node)
+    if (nd.stop) return nd.stop(node, time)
+    if (nd.vgraph) return _.forEach((n) => stop(n, time), node)
     if (node.stop) return node.stop(time)
   }
 
   let finish = (node, time, andStop = true) => {
-    let opts = inventory[node.__umType]
-    if (opts.finish) return opts.finish(node, time, andStop)
-    if (opts.vgraph) {
+    let nd = nodeDef(node)
+    if (nd.finish) return nd.finish(node, time, andStop)
+    if (nd.vgraph) {
       let finishTimes = _.map((n) => finish(n, time, false), node)
       let stopTime = _.max(finishTimes)
       _.forEach((n) => stop(n, stopTime), node)

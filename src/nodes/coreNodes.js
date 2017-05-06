@@ -1,7 +1,7 @@
 let Envelope = require('envelope-generator')
 
 let adsr = {
-  outputs: ['main'],
+  out: true,
   factory: (ac) => new Envelope(ac),
   finish: (node, time, andStop = true) => {
     node.release(time)
@@ -12,14 +12,14 @@ let adsr = {
 }
 
 let biquad = {
-  inputs: ['main'],
-  outputs: ['main'],
+  in: true,
+  out: true,
   audioParams: ['frequency', 'detune', 'Q', 'gain'],
   factory: (ac) => ac.createBiquadFilter()
 }
 
 let osc = {
-  outputs: ['main'],
+  out: true,
   audioParams: ['frequency', 'detune'],
   factory: (ac) => ac.createOscillator()
 }
