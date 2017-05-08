@@ -1,12 +1,15 @@
 NOW
 
+- rest of WAA nodes
+- buffer helper
+- sample node
 - tempo, duh
-- octave numbers
+- octave > <
 - snap to nearest quarter note when swapping in song with different length
 
 NEXT
 
-- Move from ramda to lodash/fp
+- busses
 - tempo change
 - repeats e.g. '\*16'
 - denominator-only intervals e.g. '3/'
