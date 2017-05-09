@@ -18,11 +18,11 @@ let NodeHelper = (nodeDefs) => {
     // let internalPath = inputPaths[inputPath] || 'main'
     return inputPath == 'main' ? node : _.get(inputPath, node)
   }
-
-  // let normalizePathCollection = (coll) => {
-  //   if (_.isPlainObject(coll)) return coll
-  //   return _.zipObject(coll, coll)
-  // }
+  
+  let getNodeOutput = (node) => {
+    let outputPath = nodeDef(node).out
+    return outputPath === true ? node : _.get(outputPath, node)
+  }
 
   let normalizeParamName = (name) => {
     return PARAM_ALIASES[name] || name
@@ -35,6 +35,7 @@ let NodeHelper = (nodeDefs) => {
   // Exports
 
   let connect = (fromNode, toNode, toInputPath) => {
+    let fromOutput = getNodeOutput(fromNode)
     let toInput = getNodeInput(toNode, toInputPath)
     fromNode.connect(toInput)
   }
@@ -49,6 +50,10 @@ let NodeHelper = (nodeDefs) => {
         _.forEach((freqInput) => {
           set(node, { [freqInput]: twelveTet(val) })
         }, nd.freqInputs || [])
+        return
+      }
+      if (_.isPlainObject(val)) {
+        set(node[key], val)
         return
       }
       if (nd.audioParams && nd.audioParams.includes(key)) {
