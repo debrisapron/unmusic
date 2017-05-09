@@ -1,4 +1,4 @@
-require('./um.config.js') // TODO um-atom should require this automagically
+require('./um.config.js')(um) // TODO um-atom should require this automagically
 
 let saw = um.oneOsc({
   osc: { detune: 600, type: 'sawtooth' },

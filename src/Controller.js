@@ -10,7 +10,7 @@ let Controller = (nodeDefs, ac) => {
   let handle = (time, action) => {
     let vgraph = _.get('payload.vgraph', action)
     if (!vgraph) { return }
-    let graph = renderContext.render(vgraph, time)
+    let graph = renderContext.render(vgraph, time, true, ac.destination)
     return (t) => nh.finish(graph, t)
   }
 

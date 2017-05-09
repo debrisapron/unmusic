@@ -1,5 +1,8 @@
 NOW
 
+- just one use command
+- um.patch
+- um.times
 - tempo, duh
 - octave numbers
 - snap to nearest quarter note when swapping in song with different length
@@ -8,7 +11,7 @@ NEXT
 
 - Move from ramda to lodash/fp
 - tempo change
-- repeats e.g. '\*16'
+- inline repeats e.g. '\*16'
 - denominator-only intervals e.g. '3/'
 - chords "C#maj" "(C# E G)"
 - DOCS
