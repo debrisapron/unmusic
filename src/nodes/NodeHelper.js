@@ -13,15 +13,14 @@ let NodeHelper = (nodeDefs) => {
 
   let nodeDef = (node) => nodeDefs[node.__umType]
 
-  let getNodeInput = (node, inputPath) => {
-    // let inputPaths = normalizePathCollection(nodeDef(node).inputs || {})
-    // let internalPath = inputPaths[inputPath] || 'main'
-    return inputPath == 'main' ? node : _.get(inputPath, node)
-  }
-  
   let getNodeOutput = (node) => {
     let outputPath = nodeDef(node).out
     return outputPath === true ? node : _.get(outputPath, node)
+  }
+
+  let getNodeInput = (node, inputPath) => {
+    if (inputPath === 'main') inputPath = nodeDef(node).in
+    return inputPath === true ? node : _.get(inputPath, node)
   }
 
   let normalizeParamName = (name) => {
@@ -37,7 +36,7 @@ let NodeHelper = (nodeDefs) => {
   let connect = (fromNode, toNode, toInputPath) => {
     let fromOutput = getNodeOutput(fromNode)
     let toInput = getNodeInput(toNode, toInputPath)
-    fromNode.connect(toInput)
+    fromOutput.connect(toInput)
   }
 
   let set = (node, params) => {
@@ -46,18 +45,18 @@ let NodeHelper = (nodeDefs) => {
     // let inputPaths = normalizePathCollection(opts.inputs)
     mapValuesWithId((val, key) => {
       key = normalizeParamName(key)
-      if (key === 'nn') {
+      if (key === 'nn' && nd.freqIn) {
         _.forEach((freqInput) => {
           set(node, { [freqInput]: twelveTet(val) })
-        }, nd.freqInputs || [])
+        }, _.castArray(nd.freqIn))
+        return
+      }
+      if (nd.audioParams && nd.audioParams.includes(key)) {
+        node[key].value = val
         return
       }
       if (_.isPlainObject(val)) {
         set(node[key], val)
-        return
-      }
-      if (nd.audioParams && nd.audioParams.includes(key)) {
-        _.get(key, node).value = val
         return
       }
       mutate(node, key, val)
@@ -67,14 +66,14 @@ let NodeHelper = (nodeDefs) => {
   let start = (node, time) => {
     let nd = nodeDef(node)
     if (nd.start) return nd.start(node, time)
-    if (nd.vgraph) return _.forEach((n) => start(n, time), node)
+    if (nd.vgraph) return _.forEach((n) => start(n, time), graphNodes(node))
     if (node.start) return node.start(time)
   }
 
   let stop = (node, time) => {
     let nd = nodeDef(node)
     if (nd.stop) return nd.stop(node, time)
-    if (nd.vgraph) return _.forEach((n) => stop(n, time), node)
+    if (nd.vgraph) return _.forEach((n) => stop(n, time), graphNodes(node))
     if (node.stop) return node.stop(time)
   }
 
@@ -82,11 +81,16 @@ let NodeHelper = (nodeDefs) => {
     let nd = nodeDef(node)
     if (nd.finish) return nd.finish(node, time, andStop)
     if (nd.vgraph) {
-      let finishTimes = _.map((n) => finish(n, time, false), node)
+      let nodes = graphNodes(node)
+      let finishTimes = _.map((n) => finish(n, time, false), nodes)
       let stopTime = _.max(finishTimes)
-      _.forEach((n) => stop(n, stopTime), node)
+      _.forEach((n) => stop(n, stopTime), nodes)
       return stopTime
     }
+  }
+
+  let graphNodes = (node) => {
+    return _.omit('__umType', node)
   }
 
   return { connect, set, start, stop, finish }

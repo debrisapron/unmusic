@@ -23,22 +23,26 @@ let RenderContext = (nodeDefs, ac) => {
     return node
   }
 
-  let connectNodes = (vgraph) => {
-    let nextIn
+  let connectNodes = (vgraph, dest) => {
+    let nextDest = dest
     forEachRightWithId((vnode, id) => {
       let nodeDef = nodeDefs[vnode.type]
-      let defaultDest = nextIn
-      nextIn = nodeDef.in && (id + '.' + (nodeDef.in === true ? 'main' : nodeDef.in))
-      if (!nodeDef.out) return
-      let conns = vnode.connect || defaultDest
-      if (!conns) return
       let sourceNode = nodes[id]
-      _.castArray(conns).forEach((destName) => {
-        let [destId, ...inParts] = destName.split('.')
-        let destNode = nodes[destId]
-        let destPath = inParts.length ? inParts.join('.') : 'main'
-        nh.connect(sourceNode, destNode, destPath)
-      })
+      let defaultDest = nextDest
+      nextDest = nodeDef.in && (nodeDef.in === true ? sourceNode : _.get(nodeDef.in, sourceNode))
+      if (!nodeDef.out) return
+      if (vnode.connect) {
+        _.castArray(vnode.connect).forEach((destName) => {
+          let [destId, ...inParts] = destName.split('.')
+          let destNode = nodes[destId]
+          let destPath = inParts.length ? inParts.join('.') : 'main'
+          nh.connect(sourceNode, destNode, destPath)
+        })
+        return
+      }
+      if (defaultDest) {
+        nh.connect(sourceNode, defaultDest, 'main')
+      }
     }, vgraph)
   }
 
@@ -52,10 +56,10 @@ let RenderContext = (nodeDefs, ac) => {
 
   // Exports
 
-  let render = (vgraph, time, andStart = true) => {
+  let render = (vgraph, time, andStart, dest) => {
     let graph = createNodes(vgraph)
     connectNodes(vgraph)
-    configureNodes(vgraph)
+    configureNodes(vgraph, dest)
     if (andStart) startNodes(graph, time)
     return graph
   }
@@ -71,15 +75,21 @@ if (!process.env.TEST) return
 let h = require('../testHelpers')
 
 test('can render an example vgraph', (assert) => {
-  
+
   // The test node definitions
   let nodeDefs = {
     foo: {
       out: true,
-      audioParams: ['bbb'],
+      audioParams: ['ap', 'frq'],
+      freqIn: 'frq',
       factory: () => {
         let _conns = []
-        return { _conns, isFoo: true, bbb: { isBbb: true }, connect: (dest) => _conns.push(dest) }
+        let _started = []
+        return {
+          _conns, _started, isFoo: true, ap: { isAp: true }, frq: {},
+          start: (t) => _started.push(t),
+          connect: (dest) => _conns.push(dest)
+        }
       }
     },
     bar: {
@@ -95,34 +105,43 @@ test('can render an example vgraph', (assert) => {
       out: true,
       factory: () => {
         let _conns = []
-        return { _conns, isBaz: true, connect: (dest) => _conns.push(dest) }
+        let _started = []
+        return {
+          _conns, _started, isBaz: true,
+          start: (t) => _started.push(t),
+          connect: (dest) => _conns.push(dest)
+        }
       }
     }
   }
 
   // The vgraph to render
   let vgraph = {
-    foo: { type: 'foo', params: { aaa: 42, bbb: 69 } },
+    foo: { type: 'foo', params: { blah: 42, ap: 69 } },
     bar: { type: 'bar', params: { baz1: { question: '6 by 9' } } },
-    foo2: { type: 'foo', connect: 'foo.bbb' }
+    foo2: { type: 'foo', params: { nn: 69 }, connect: 'foo.bbb' },
+    foo3: { type: 'foo' }
   }
 
   // The graph we expect to see rendered
   let expGraph = {
-    foo: { isFoo: true, aaa: 42, bbb: { value: 69, isBbb: true } },
+    foo: { isFoo: true, blah: 42, ap: { value: 69, isAp: true }, _started: [1] },
     bar: {
-      baz1: { isBaz: true, answer: 42, question: '6 by 9' },
-      baz2: { isBaz: true }
+      baz1: { isBaz: true, answer: 42, question: '6 by 9', _started: [1] },
+      baz2: { isBaz: true, _started: [1] }
     },
-    foo2: { isFoo: true }
+    foo2: { isFoo: true, frq: { value: 440 }, _started: [1] },
+    foo3: { isFoo: true, _started: [1] }
   }
   expGraph.foo._conns = [expGraph.bar.baz1]
   expGraph.bar.baz2._conns = []
   expGraph.foo2._conns = [expGraph.foo.bbb]
-  
+  expGraph.foo3._conns = ['finalDest']
+
   // Run the test
   let renderContext = RenderContext(nodeDefs)
-  let graph = renderContext.render(vgraph, null, false)
+  let graph = renderContext.render(vgraph, 1, true, 'finalDest')
+  h.log(graph)
   assert.ok(h.deepMatches(graph, expGraph))
   assert.end()
 })
