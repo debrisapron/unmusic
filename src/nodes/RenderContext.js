@@ -17,7 +17,7 @@ let RenderContext = (nodeDefs, ac) => {
     let nodeDef = nodeDefs[vnode.type]
     if (!nodeDef) throw new Error('Unrecognized node type')
     let node = nodeDef.factory
-      ? nodeDef.factory(ac)
+      ? nodeDef.factory(ac, vnode.params)
       : RenderContext(nodeDefs, ac).render(nodeDef.vgraph, null, false)
     node.__umType = vnode.type
     return node
@@ -58,13 +58,17 @@ let RenderContext = (nodeDefs, ac) => {
 
   let render = (vgraph, time, andStart, dest) => {
     let graph = createNodes(vgraph)
-    connectNodes(vgraph)
-    configureNodes(vgraph, dest)
+    connectNodes(vgraph, dest)
+    configureNodes(vgraph)
     if (andStart) startNodes(graph, time)
     return graph
   }
 
-  return { render }
+  let finish = (vgraph, time) => {
+    _.forEach((key) => nh.finish(nodes[key], time), Object.keys(vgraph))
+  }
+
+  return { render, finish }
 }
 
 module.exports = RenderContext
@@ -119,7 +123,7 @@ test('can render an example vgraph', (assert) => {
   let vgraph = {
     foo: { type: 'foo', params: { blah: 42, ap: 69 } },
     bar: { type: 'bar', params: { baz1: { question: '6 by 9' } } },
-    foo2: { type: 'foo', params: { nn: 69 }, connect: 'foo.bbb' },
+    foo2: { type: 'foo', params: { nn: 69 }, connect: 'foo.ap' },
     foo3: { type: 'foo' }
   }
 
@@ -135,13 +139,12 @@ test('can render an example vgraph', (assert) => {
   }
   expGraph.foo._conns = [expGraph.bar.baz1]
   expGraph.bar.baz2._conns = []
-  expGraph.foo2._conns = [expGraph.foo.bbb]
+  expGraph.foo2._conns = [expGraph.foo.ap]
   expGraph.foo3._conns = ['finalDest']
 
   // Run the test
   let renderContext = RenderContext(nodeDefs)
   let graph = renderContext.render(vgraph, 1, true, 'finalDest')
-  h.log(graph)
   assert.ok(h.deepMatches(graph, expGraph))
   assert.end()
 })

@@ -1,5 +1,6 @@
 NOW
 
+- panic
 - just one use command
 - um.patch
 - um.times

@@ -1,9 +1,12 @@
-require('./um.config.js')(um) // TODO um-atom should require this automagically
+require('./um.conf.js')(um) // TODO um-atom should require this automagically
 
 let saw = um.oneOsc({
   osc: { detune: 600, type: 'sawtooth' },
-  filter: { frequency: 1000, Q: 5 },
-  env: { attackTime: 0.1, releaseTime: 0.1 }
+  filter: { frequency: 500, Q: 5 },
+  filterEnv: { attackTime: 0.2, releaseTime: 0.2 },
+  ampEnv: { attackTime: 0.1, decayTime: 0.5, releaseTime: 1 }
 })
 
-return saw('1/1 C')
+console.log(saw('/16 C D E F'))
+
+// return saw('/16 C D E F')

@@ -25,17 +25,18 @@ let Player = (sequencer, handle) => {
       .map((action) => {
         let { payload } = action
         let id = shortid.generate()
-        let startEvent = [payload.time, (time) => startAction(time, id, action)]
+        let startEvent = { time: payload.time, fn: (time) => startAction(time, id, action), ord: 1 }
         if (!payload.dur) return [startEvent]
         let endTime = (payload.time + payload.dur) % length
-        let stopEvent = [endTime, (time) => endAction(time, id)]
+        let stopEvent = { time: endTime, fn: (time) => endAction(time, id), ord: 0 }
         return [startEvent, stopEvent]
       })
-    let events = _.sortBy(0, _.flatten(nestedDisorderedEvents))
-    if (_.last(events)[0] < length) events.push([length])
+    let events = _.sortBy(['time', 'ord'], _.flatten(nestedDisorderedEvents))
+    if (_.last(events).time < length) events.push({ time: length })
     return events.map((ev, i) => {
-      if (i == 0) return ev
-      return _.set(0, ev[0] - events[i - 1][0], ev)
+      if (i == 0) return [ev.time, ev.fn]
+      let delta = ev.time - events[i - 1].time
+      return [delta, ev.fn]
     })
   }
 

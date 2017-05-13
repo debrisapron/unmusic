@@ -19,7 +19,8 @@ let NodeHelper = (nodeDefs) => {
   }
 
   let getNodeInput = (node, inputPath) => {
-    if (inputPath === 'main') inputPath = nodeDef(node).in
+    let nd = nodeDef(node)
+    if (inputPath === 'main') inputPath = nd ? nd.in : true
     return inputPath === true ? node : _.get(inputPath, node)
   }
 
@@ -66,14 +67,14 @@ let NodeHelper = (nodeDefs) => {
   let start = (node, time) => {
     let nd = nodeDef(node)
     if (nd.start) return nd.start(node, time)
-    if (nd.vgraph) return _.forEach((n) => start(n, time), graphNodes(node))
+    if (nd.vgraph) return _.forEach((key) => start(node[key], time), Object.keys(nd.vgraph))
     if (node.start) return node.start(time)
   }
 
   let stop = (node, time) => {
     let nd = nodeDef(node)
     if (nd.stop) return nd.stop(node, time)
-    if (nd.vgraph) return _.forEach((n) => stop(n, time), graphNodes(node))
+    if (nd.vgraph) return _.forEach((key) => stop(node[key], time), Object.keys(nd.vgraph))
     if (node.stop) return node.stop(time)
   }
 
@@ -81,16 +82,12 @@ let NodeHelper = (nodeDefs) => {
     let nd = nodeDef(node)
     if (nd.finish) return nd.finish(node, time, andStop)
     if (nd.vgraph) {
-      let nodes = graphNodes(node)
+      let nodes = Object.keys(nd.vgraph).map((key) => node[key])
       let finishTimes = _.map((n) => finish(n, time, false), nodes)
       let stopTime = _.max(finishTimes)
       _.forEach((n) => stop(n, stopTime), nodes)
       return stopTime
     }
-  }
-
-  let graphNodes = (node) => {
-    return _.omit('__umType', node)
   }
 
   return { connect, set, start, stop, finish }

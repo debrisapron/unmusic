@@ -60,6 +60,7 @@ let Unmusic = (audioContext = getDefaultAudioContext()) => {
   use('useNode', useNode)
   useNode('adsr', coreNodes.adsr)
   useNode('biquad', coreNodes.biquad)
+  useNode('gain', coreNodes.gain)
   useNode('osc', coreNodes.osc)
 
   return um
