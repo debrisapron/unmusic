@@ -1,5 +1,6 @@
 NOW
 
+- replace parser with earley parser
 - panic
 - just one use command
 - um.patch

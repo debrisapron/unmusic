@@ -6,14 +6,20 @@ const INITIAL_LATENCY = 0.01
 
 let Sequencer = (audioContext) => {
   let clock = new WAAClock(audioContext, { toleranceEarly: 0.01 })
-  let playingEvents
+  let events = []
 
-  let play = (events) => {
-    if (playingEvents || !events.length) return
-    playingEvents = events
-    let firstDeltaTime = secsFrom(deltaOf(playingEvents[0]))
+  let setEvents = (eventsByTime) => {
+    events = _.sortBy('[0]', eventsByTime).map(([time, cb], i, arr) => {
+      let delta = i === 0 ? time : (time - arr[i - 1][0])
+      return { time, delta, cb }
+    })
+  }
+
+  let play = () => {
+    if (!events.length) return
+    let firstTime = secsFrom(events[0].time)
     let now = audioContext.currentTime
-    let firstDispatchTime = now + firstDeltaTime + INITIAL_LATENCY
+    let firstDispatchTime = now + firstTime + INITIAL_LATENCY
     clock.start()
     clock.callbackAtTime(
       () => dispatch(0, firstDispatchTime),
@@ -24,24 +30,21 @@ let Sequencer = (audioContext) => {
 
   let stop = () => {
     clock.stop()
-    playingEvents = null
     return audioContext.currentTime
   }
 
   let dispatch = (index, deadline) => {
-    let cb = callbackOf(playingEvents[index])
+    let cb = events[index].cb
     if (cb) cb(deadline)
     let nextIndex = index + 1
-    if(nextIndex === playingEvents.length) nextIndex = 0
-    let nextDeadline = deadline + secsFrom(deltaOf(playingEvents[nextIndex]))
+    if(nextIndex === events.length) nextIndex = 0
+    let nextDeadline = deadline + secsFrom(events[nextIndex].delta)
     clock.callbackAtTime(() => dispatch(nextIndex, nextDeadline), nextDeadline)
   }
 
   let secsFrom = (notes) => notes * (240 / TEMPO)
-  let deltaOf = _.get(0)
-  let callbackOf = _.get(1)
 
-  return { play, stop }
+  return { setEvents, play, stop }
 }
 
 module.exports = Sequencer
@@ -59,17 +62,18 @@ test('sequencer can play simple sequence', (assert) => {
   let startTime
   let times = []
   let cb = (time) => times.push(time - startTime)
-  let events = [
+  let sequence = [
     [0,   cb],
+    [3/4, cb],
     [1/4, cb],
-    [1/4, cb],
-    [1/4, cb],
-    [1/4]
+    [1/2, cb],
+    [1]
   ]
   let ac = new AudioContext()
   let sequencer = Sequencer(ac)
   startTime = ac.currentTime
-  sequencer.play(events)
+  sequencer.setEvents(sequence)
+  sequencer.play()
   setTimeout(finish, 2100)
 
   function finish() {

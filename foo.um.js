@@ -4,9 +4,7 @@ let saw = um.oneOsc({
   osc: { detune: 600, type: 'sawtooth' },
   filter: { frequency: 500, Q: 5 },
   filterEnv: { attackTime: 0.2, releaseTime: 0.2 },
-  ampEnv: { attackTime: 0.1, decayTime: 0.5, releaseTime: 1 }
+  ampEnv: { attackTime: 0.1, decayTime: 0.5, releaseTime: 0.5 }
 })
 
-console.log(saw('/16 C D E F'))
-
-// return saw('/16 C D E F')
+return saw('/16 C E G')

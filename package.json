@@ -3,10 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "docker:build": "docker build -t unmusic-test .",
-    "docker:test": "docker run -i -t -v $(PWD):/tmp unmusic-test /bin/bash -c \"npm test\"",
-    "docker:test:watch": "docker run -i -t -v $(PWD):/tmp unmusic-test /bin/bash -c \"npm run test:watch\"",
-    "test": "karma start --single-run",
+    "test": "SLOW_TEST=1 karma start --single-run",
     "test:watch": "karma start"
   },
   "author": "",
