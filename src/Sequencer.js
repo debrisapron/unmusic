@@ -52,40 +52,72 @@ module.exports = Sequencer
 
 ////////////////////////////////////////////////////////////////////////////////
 
-if (!process.env.SLOW_TEST) return
-
-// lodash fp round doesn't support precision :/
-let round = require('lodash').round
-
-let approxEqual = (a, b) => round(a, 5) === round(b, 5)
-
-test('sequencer can play simple sequence', (assert) => {
-  let startTime
-  let times = []
-  let cb = (time) => times.push(time - startTime)
-  let sequence = [
-    [0,   cb],
-    [3/4, cb],
-    [1/4, cb],
-    [1/2, cb],
-    [1]
-  ]
-  let ac = new AudioContext()
-  let sequencer = Sequencer(ac)
-  startTime = ac.currentTime
-  sequencer.setEvents(sequence)
-  sequencer.play()
-  setTimeout(finish, 2100)
-
-  function finish() {
-    sequencer.stop()
-    assert.equal(times.length, 5, 'callback should have been called five times')
-    let intervalsOK = true
-    times.reduce((prev, next) => {
-      intervalsOK = intervalsOK && approxEqual(next - prev, 0.5)
-      return next
-    })
-    assert.ok(intervalsOK, 'interval between each callback should be close to 0.5')
-    assert.end()
-  }
-})
+if (process.env.TEST === 'SLOW') {
+  let ac = window.__umAudioContext || new window.AudioContext()
+  
+  // lodash fp round doesn't support precision :/
+  let round = require('lodash').round
+  let approxEqual = (a, b) => round(a, 5) === round(b, 5)
+  let arrApproxEqual = (a, b) => _.zip(a, b).every(([a, b]) => approxEqual(a, b))
+  
+  test('sequencer can play simple sequence', (assert) => {
+    let startTime
+    let times = []
+    let cb = (time) => times.push(time - startTime)
+    let sequence = [
+      [0,   cb],
+      [3/4, cb],
+      [1/4, cb],
+      [1/2, cb],
+      [1]
+    ]
+    let sequencer = Sequencer(ac)
+    sequencer.setEvents(sequence)
+    startTime = ac.currentTime + 0.01
+    sequencer.play()
+    setTimeout(finish, 2100)
+  
+    function finish() {
+      sequencer.stop()
+      assert.equal(times.length, 5, 'callback should have been called five times')
+      let timesOk = arrApproxEqual(times, [0, 0.5, 1, 1.5, 2])
+      assert.ok(timesOk, 'callback should have been callled at the expected times')
+      assert.end()
+    }
+  })
+  
+  // test('sequencer can switch seamlessly between sequences of the same length', (assert) => {
+  //   let startTime
+  //   let times = []
+  //   let cb = (time) => times.push(time - startTime)
+  //   let sequence1 = [
+  //     [0,   cb],
+  //     [3/4, cb],
+  //     [1/4, cb],
+  //     [1/2, cb],
+  //     [1]
+  //   ]
+  //   let sequence2 = [
+  //     [1/8, cb],
+  //     [3/8, cb],
+  //     [1]
+  //   ]
+  //   let sequencer = Sequencer(ac)
+  //   sequencer.setEvents(sequence1)
+  //   startTime = sequencer.play()
+  //   setTimeout(switchSeqs, 550)
+  //   setTimeout(finish, 2100)
+    
+  //   function switchSeqs() {
+  //     sequencer.setEvents(sequence2)
+  //   }
+  
+  //   function finish() {
+  //     sequencer.stop()
+  //     assert.equal(times.length, 4, 'callback should have been called four times')
+  //     let timesOk = arrApproxEqual(times, [0, 0.5, 0.75, 2])
+  //     assert.ok(timesOk, 'callback should have been callled at the expected times')
+  //     assert.end()
+  //   }
+  // })
+}

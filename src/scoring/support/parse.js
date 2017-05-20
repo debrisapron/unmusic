@@ -91,34 +91,35 @@ module.exports = parse
 
 ////////////////////////////////////////////////////////////////////////////////
 
-if (!process.env.TEST) return
+if (process.env.TEST) {
 
-test('Can parse a string with just a command', (assert) => {
-  let s = '69'
-  let expected = [
-    { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
-  ]
-  assert.deepEqual(parse(s), expected)
-  assert.end()
-})
-
-test('Should use duration as period', (assert) => {
-  let s = 'd=/8 69'
-  let expected = [
-    { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/8 } }
-  ]
-  assert.deepEqual(parse(s), expected)
-  assert.end()
-})
-
-test('Can chain commands and rests', (assert) => {
-  let s = 'd=/8 C d=/16 C# d=/8 _ d=/4 D _'
-  let expected = [
-    { type: 'NOTE', payload: { time: 0,     nn: 36, dur: 1/8 } },
-    { type: 'NOTE', payload: { time: 1/8,   nn: 37, dur: 1/16 } },
-    { type: 'NOTE', payload: { time: 5/16,  nn: 38, dur: 1/4 } },
-    { type: 'NOOP', payload: { time: 13/16 } }
-  ]
-  assert.deepEqual(parse(s), expected)
-  assert.end()
-})
+  test('Can parse a string with just a command', (assert) => {
+    let s = '69'
+    let expected = [
+      { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
+    ]
+    assert.deepEqual(parse(s), expected)
+    assert.end()
+  })
+  
+  test('Should use duration as period', (assert) => {
+    let s = 'd=/8 69'
+    let expected = [
+      { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/8 } }
+    ]
+    assert.deepEqual(parse(s), expected)
+    assert.end()
+  })
+  
+  test('Can chain commands and rests', (assert) => {
+    let s = 'd=/8 C d=/16 C# d=/8 _ d=/4 D _'
+    let expected = [
+      { type: 'NOTE', payload: { time: 0,     nn: 36, dur: 1/8 } },
+      { type: 'NOTE', payload: { time: 1/8,   nn: 37, dur: 1/16 } },
+      { type: 'NOTE', payload: { time: 5/16,  nn: 38, dur: 1/4 } },
+      { type: 'NOOP', payload: { time: 13/16 } }
+    ]
+    assert.deepEqual(parse(s), expected)
+    assert.end()
+  })
+}
