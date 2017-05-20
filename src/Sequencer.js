@@ -7,6 +7,7 @@ const INITIAL_LATENCY = 0.01
 let Sequencer = (audioContext) => {
   let clock = new WAAClock(audioContext, { toleranceEarly: 0.01 })
   let events = []
+  let playing = false
 
   let setEvents = (eventsByTime) => {
     events = _.sortBy('[0]', eventsByTime).map(([time, cb], i, arr) => {
@@ -16,19 +17,19 @@ let Sequencer = (audioContext) => {
   }
 
   let play = () => {
-    if (!events.length) return
+    if (playing || !events.length) return
+    playing = true
     let firstTime = secsFrom(events[0].time)
     let now = audioContext.currentTime
     let firstDispatchTime = now + firstTime + INITIAL_LATENCY
     clock.start()
-    clock.callbackAtTime(
-      () => dispatch(0, firstDispatchTime),
-      firstDispatchTime
-    )
+    clock.callbackAtTime(() => dispatch(0, firstDispatchTime), firstDispatchTime)
     return now + INITIAL_LATENCY
   }
 
   let stop = () => {
+    if (!playing) return
+    playing = false
     clock.stop()
     return audioContext.currentTime
   }
