@@ -8,12 +8,11 @@ NOW
 - rest of WAA nodes
 - buffer helper
 - sample node
-- tempo, duh
 - octave > <
-- snap to nearest quarter note when swapping in song with different length
 
 NEXT
 
+- snap to nearest quarter note when swapping in song with different length
 - busses
 - tempo change
 - inline repeats e.g. '\*16'

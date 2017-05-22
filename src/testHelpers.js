@@ -2,7 +2,10 @@ let _ = require('lodash/fp')
 let deepDiff = require('deep-diff')
 
 let deepMatches = (actual, expected) => {
-  return deepDiff.diff(actual, expected).every((change) => change.kind === 'D')
+  let changes = deepDiff.diff(actual, expected).filter((change) => change.kind !== 'D')
+  let isMatch = !changes.length
+  if (!isMatch) log(actual)
+  return isMatch
 }
 
 let log = (data) => console.log(toLogString(data))

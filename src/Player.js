@@ -5,7 +5,9 @@ let Player = (sequencer, handle) => {
 
   let play = (score) => {
     let events = sequencerEventsFrom(score)
-    sequencer.play(events)
+    sequencer.setTempo(score.tempo || 120)
+    sequencer.setEvents(events)
+    sequencer.play()
   }
 
   let stop = () => {
@@ -60,11 +62,14 @@ if (process.env.TEST) {
 
   test('player can play a simple score', (assert) => {
     let events
+    let tempo
     let starts = []
     let stops = []
     let dur = 1/4
     let mockSeq = {
-      play: (_events) => events = _events,
+      setEvents: (_events) => events = _events,
+      setTempo: (_tempo) => tempo = _tempo,
+      play: () => 0,
       stop: () => 999
     }
     let handle = (time, action) => {
@@ -76,9 +81,10 @@ if (process.env.TEST) {
       { type: 'NOTE', payload: { time: 1/4, nn: 1, dur } },
       { type: 'NOTE', payload: { time: 1/2, nn: 2, dur } },
       { type: 'NOTE', payload: { time: 3/4, nn: 3, dur } }
-    ] }
+    ], tempo: 130 }
     let player = Player(mockSeq, handle)
     player.play(score)
+    assert.equal(tempo, 130, 'sequencer should be passed expected tempo')
     const times = events.map((ev) => ev[0])
     const expTimes = [0, 0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1]
     assert.deepEqual(times, expTimes, 'sequencer should be passed expected list of times')

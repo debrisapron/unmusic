@@ -1,29 +1,56 @@
 let _ = require('lodash/fp')
 let WaaClock = require('waaclock')
 
-const TEMPO = 120
 const INITIAL_LATENCY = 0.01
 
-let Sequencer = (audioContext) => {
-  let clock = new WAAClock(audioContext, { toleranceEarly: 0.01 })
+let Sequencer = (ac) => {
+  let clock = new WaaClock(ac, { toleranceEarly: 0.01 })
   let events = []
   let playing = false
+  let tempo = 120
+  let nextIndex
+  let nextTick
 
   let setEvents = (eventsByTime) => {
+    let oldEvents = events
+    
     events = _.sortBy('[0]', eventsByTime).map(([time, cb], i, arr) => {
       let delta = i === 0 ? time : (time - arr[i - 1][0])
       return { time, delta, cb }
     })
+    
+    if (!playing) return
+    let newLength = _.last(events).time
+    let oldLength = _.last(oldEvents).time
+    if (newLength !== oldLength) {
+      // TODO If seqs are different lengths, snap to nearest note
+      stop()
+      play()
+      return
+    }
+    
+    // This is horrible. Must be an easier way.
+    let now = ac.currentTime
+    let secsToNextDeadline = nextTick.deadline - now
+    nextTick.clear()
+    let pos = oldEvents[nextIndex].time - notesFrom(secsToNextDeadline)
+    if (pos < 0) pos = pos + newLength // Not sure this is needed
+    nextIndex = events.findIndex((ev) => ev.time > pos)
+    let nextDeadline = now + secsFrom(events[nextIndex].time - pos)
+    scheduleNext(nextDeadline)
   }
+  
+  let setTempo = (bpm) => tempo = bpm
 
   let play = () => {
     if (playing || !events.length) return
     playing = true
     let firstTime = secsFrom(events[0].time)
-    let now = audioContext.currentTime
-    let firstDispatchTime = now + firstTime + INITIAL_LATENCY
+    let now = ac.currentTime
+    let firstDeadline = now + firstTime + INITIAL_LATENCY
     clock.start()
-    clock.callbackAtTime(() => dispatch(0, firstDispatchTime), firstDispatchTime)
+    nextIndex = 0
+    scheduleNext(firstDeadline)
     return now + INITIAL_LATENCY
   }
 
@@ -31,21 +58,30 @@ let Sequencer = (audioContext) => {
     if (!playing) return
     playing = false
     clock.stop()
-    return audioContext.currentTime
+    return ac.currentTime
   }
 
   let dispatch = (index, deadline) => {
     let cb = events[index].cb
     if (cb) cb(deadline)
-    let nextIndex = index + 1
+    nextIndex = index + 1
     if(nextIndex === events.length) nextIndex = 0
     let nextDeadline = deadline + secsFrom(events[nextIndex].delta)
-    clock.callbackAtTime(() => dispatch(nextIndex, nextDeadline), nextDeadline)
+    scheduleNext(nextDeadline)
+  }
+  
+  let scheduleNext = (deadline) => {
+    nextTick = clock.callbackAtTime(
+      () => dispatch(nextIndex, deadline),
+      deadline
+    )
   }
 
-  let secsFrom = (notes) => notes * (240 / TEMPO)
+  let secsFrom = (notes) => notes * notesPerSec()
+  let notesFrom = (secs) => secs / notesPerSec()
+  let notesPerSec = () => 240 / tempo
 
-  return { setEvents, play, stop }
+  return { setEvents, setTempo, play, stop }
 }
 
 module.exports = Sequencer
@@ -72,52 +108,55 @@ if (process.env.TEST === 'SLOW') {
       [1]
     ]
     let sequencer = Sequencer(ac)
+    sequencer.setTempo(240)
     sequencer.setEvents(sequence)
     startTime = ac.currentTime + 0.01
     sequencer.play()
-    setTimeout(finish, 2100)
+    setTimeout(finish, 1020)
   
     function finish() {
       sequencer.stop()
       assert.equal(times.length, 5, 'callback should have been called five times')
-      let timesOk = arrApproxEqual(times, [0, 0.5, 1, 1.5, 2])
+      let timesOk = arrApproxEqual(times, [0, 1/4, 1/2, 3/4, 1])
       assert.ok(timesOk, 'callback should have been callled at the expected times')
       assert.end()
     }
   })
   
-  // test('sequencer can switch seamlessly between sequences of the same length', (assert) => {
-  //   let startTime
-  //   let times = []
-  //   let cb = (time) => times.push(time - startTime)
-  //   let sequence1 = [
-  //     [0,   cb],
-  //     [3/4, cb],
-  //     [1/4, cb],
-  //     [1/2, cb],
-  //     [1]
-  //   ]
-  //   let sequence2 = [
-  //     [1/8, cb],
-  //     [3/8, cb],
-  //     [1]
-  //   ]
-  //   let sequencer = Sequencer(ac)
-  //   sequencer.setEvents(sequence1)
-  //   startTime = sequencer.play()
-  //   setTimeout(switchSeqs, 550)
-  //   setTimeout(finish, 2100)
+  test('sequencer can switch seamlessly between sequences of the same length', (assert) => {
+    let startTime
+    let times = []
+    let cb = (time) => times.push(time - startTime)
+    let sequence1 = [
+      [0,   cb],
+      [3/4, cb],
+      [1/4, cb],
+      [1/2, cb],
+      [1]
+    ]
+    let sequence2 = [
+      [1/8, cb],
+      [3/8, cb],
+      [1]
+    ]
+    let sequencer = Sequencer(ac)
+    sequencer.setTempo(240)
+    sequencer.setEvents(sequence1)
+    startTime = ac.currentTime + 0.01
+    sequencer.play()
+    setTimeout(switchSeqs, 260)
+    setTimeout(finish, 1150)
     
-  //   function switchSeqs() {
-  //     sequencer.setEvents(sequence2)
-  //   }
+    function switchSeqs() {
+      sequencer.setEvents(sequence2)
+    }
   
-  //   function finish() {
-  //     sequencer.stop()
-  //     assert.equal(times.length, 4, 'callback should have been called four times')
-  //     let timesOk = arrApproxEqual(times, [0, 0.5, 0.75, 2])
-  //     assert.ok(timesOk, 'callback should have been callled at the expected times')
-  //     assert.end()
-  //   }
-  // })
+    function finish() {
+      sequencer.stop()
+      assert.equal(times.length, 4, 'callback should have been called four times')
+      let timesOk = arrApproxEqual(times, [0, 1/4, 3/8, 9/8])
+      assert.ok(timesOk, 'callback should have been callled at the expected times')
+      assert.end()
+    }
+  })
 }
