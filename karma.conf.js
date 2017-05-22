@@ -7,7 +7,7 @@ let karmaSourcemapLoader = require('karma-sourcemap-loader')
 
 module.exports = (config) => {
   config.set({
-    browsers: ['ChromeHeadless'],
+    browsers: ['ChromeCanaryHeadless'],
     frameworks: ['tape'],
     plugins: [karmaWebpack, karmaTape, karmaSpecReporter, karmaChromeLauncher, karmaSourcemapLoader],
     files: ['index.js'],

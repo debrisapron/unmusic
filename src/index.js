@@ -23,43 +23,55 @@ let Unmusic = (audioContext = getDefaultAudioContext()) => {
   let sequencer = Sequencer(audioContext)
   let player = Player(sequencer, controller.handle)
 
-  let use = (key, value) => {
-    um[key] = value
+  let use = (name, config) => {
+    let resource = getResource(name, config)
+    um[name] = resource
   }
 
-  let useComposer = (key, fn) => {
-    let wrappedFn = fn.length === 1
+  let useResource = (name, resource) => {
+    use(name, { resource })
+  }
+
+  let useComposer = (name, composerFn) => {
+    use(name, { composerFn, type: 'COMPOSER' })
+  }
+
+  let useNode = (name, nodeDef) => {
+    use(name, { nodeDef, type: 'NODE' })
+  }
+
+  let getResource = (name, config) => {
+    switch(config.type) {
+      case 'COMPOSER': return wrapComposer(config.composerFn)
+      case 'NODE':
+        nodeDefs[name] = config.nodeDef
+        return wrapComposer((params, score) => addNode({ type: name, params }, score))
+    }
+    return config.resource
+  }
+
+  let wrapComposer = (fn) => {
+    return fn.length === 1
       ? (thing) => fn(getScore(thing))
       : _.curry((options, thing) => fn(options, getScore(thing)))
-    um[key] = wrappedFn
   }
 
-  let useNode = (type, nodeDef) =>{
-    nodeDefs[type] = nodeDef
-    um.useComposer(
-      type,
-      (params, score) => addNode({ type, params }, score)
-    )
-  }
+  useResource('use', use)
 
-  use('use', use)
+  useResource('audioContext', audioContext)
+  useResource('ac', audioContext)
+  useResource('out', audioContext.destination)
 
-  use('audioContext', audioContext)
-  use('ac', audioContext)
-  use('out', audioContext.destination)
+  useResource('play', player.play)
+  useResource('stop', player.stop)
 
-  use('play', player.play)
-  use('stop', player.stop)
+  useResource('mix', mix)
+  useResource('seq', seq)
 
-  use('mix', mix)
-  use('seq', seq)
-
-  use('useComposer', useComposer)
   useComposer('loop', loop)
   useComposer('arrange', arrange)
   useComposer('tempo', tempo)
 
-  use('useNode', useNode)
   useNode('adsr', coreNodes.adsr)
   useNode('biquad', coreNodes.biquad)
   useNode('gain', coreNodes.gain)
@@ -77,16 +89,19 @@ if (process.env.TEST) {
 
   test('can generate a simple score with a custom instrument', (assert) => {
     let um = Unmusic()
-    um.useNode('oneOsc', {
-      out: 'amp',
-      freqIn: 'osc.frequency',
-      vgraph: {
-        osc: { type: 'osc' },
-        filter: { type: 'biquad', params: { type: 'lowpass' } },
-        amp: { type: 'gain', params: { gain: 0 } },
-        filterEnv: { type: 'adsr' },
-        filterEnvAmt: { type: 'gain', params: { gain: '9600' }, connect: 'filter.detune' },
-        ampEnv: { type: 'adsr', connect: 'amp.gain' }
+    um.use('oneOsc', {
+      type: 'NODE',
+      nodeDef: {
+        out: 'amp',
+        freqIn: 'osc.frequency',
+        vgraph: {
+          osc: { type: 'osc' },
+          filter: { type: 'biquad', params: { type: 'lowpass' } },
+          amp: { type: 'gain', params: { gain: 0 } },
+          filterEnv: { type: 'adsr' },
+          filterEnvAmt: { type: 'gain', params: { gain: '9600' }, connect: 'filter.detune' },
+          ampEnv: { type: 'adsr', connect: 'amp.gain' }
+        }
       }
     })
     let saw = um.oneOsc({
