@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "test": "TEST=SLOW karma start --single-run",
-    "test:watch": "karma start"
+    "test:watch": "karma start",
+    "build:grammar": "nearleyc src/umlang/grammar.ne > src/umlang/grammar.js"
   },
   "author": "",
   "dependencies": {
@@ -21,6 +22,7 @@
     "karma-spec-reporter": "0.0.26",
     "karma-tape": "0.0.1",
     "karma-webpack": "^2.0.3",
+    "nearley": "^2.9.2",
     "sinon": "^1.17.6",
     "soundfont-player": "^0.10.5",
     "tape": "^4.6.2",
