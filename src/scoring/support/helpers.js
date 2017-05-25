@@ -1,5 +1,5 @@
 let _ = require('lodash/fp')
-let parse = require('./parse')
+let evalUmlang = require('../../umlang/evalUmlang')
 
 // let mapScoreActions = _.curry((cb, score) => {
 //   return _.set('actions', score.actions.map(cb), score)
@@ -55,7 +55,7 @@ let cleanActions = (actions) => {
 }
 
 let getActions = (thing) => {
-  return (Array.isArray(thing) && thing) || thing.actions || parse(thing)
+  return (Array.isArray(thing) && thing) || thing.actions || evalUmlang(thing)
 }
 
 let getScore = (thing) => {

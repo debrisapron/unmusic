@@ -4,7 +4,7 @@
 function id(x) {return x[0]; }
 
 	function str(data) {
-		data.join('')
+		return data.join('')
 	}
 var grammar = {
     Lexer: undefined,
@@ -17,9 +17,9 @@ var grammar = {
     {"name": "TOKEN", "symbols": ["SETTING"]},
     {"name": "TOKEN", "symbols": ["CHORD_GROUP"]},
     {"name": "NOTE", "symbols": ["PITCH_CLASS"], "postprocess": (data) => ['NOTE', { type: 'PITCH_CLASS', value: data[0] }]},
-    {"name": "NOTE", "symbols": [{"literal":"M"}, "INTEGER"], "postprocess": (data) => ['NOTE', { type: 'MIDI', value: data[1] }]},
-    {"name": "NOTE", "symbols": ["INTEGER"], "postprocess": (data) => ['NOTE', { type: 'RELATIVE', value: data[0] }]},
-    {"name": "NOTE", "symbols": ["IDENTIFIER"], "postprocess": (data) => ['NOTE', { type: 'CUSTOM', value: data[0] }]},
+    {"name": "NOTE", "symbols": [{"literal":"M"}, "INTEGER"], "postprocess": (data) => ['NOTE', { type: 'MIDI',        value: data[1] }]},
+    {"name": "NOTE", "symbols": ["INTEGER"], "postprocess": (data) => ['NOTE', { type: 'RELATIVE',    value: data[0] }]},
+    {"name": "NOTE", "symbols": ["IDENTIFIER"], "postprocess": (data) => ['NOTE', { type: 'CUSTOM',      value: data[0] }]},
     {"name": "PITCH_CLASS$ebnf$1", "symbols": [/[b♭#♯]/], "postprocess": id},
     {"name": "PITCH_CLASS$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "PITCH_CLASS", "symbols": [/[A-G]/, "PITCH_CLASS$ebnf$1"], "postprocess": (data) => str(data)},
@@ -35,10 +35,10 @@ var grammar = {
     {"name": "OCTAVE_CHANGE$ebnf$2", "symbols": [{"literal":">"}]},
     {"name": "OCTAVE_CHANGE$ebnf$2", "symbols": ["OCTAVE_CHANGE$ebnf$2", {"literal":">"}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "OCTAVE_CHANGE", "symbols": ["OCTAVE_CHANGE$ebnf$2"], "postprocess": (data) => ['OCTAVE_CHANGE', parseInt(data[0].length)]},
-    {"name": "SETTING", "symbols": ["IDENTIFIER", {"literal":"="}, "VALUE"], "postprocess": (data) => ['SETTING', { param: data[0], value: data[2] }]},
+    {"name": "SETTING", "symbols": ["IDENTIFIER", {"literal":"="}, "VALUE"], "postprocess": (data) => ['SETTING', { param: data[0],    value: data[2] }]},
     {"name": "SETTING", "symbols": ["NOTE_VALUE"], "postprocess": (data) => ['SETTING', { param: 'duration', value: data[0] }]},
-    {"name": "VALUE", "symbols": ["STRING"], "postprocess": id},
-    {"name": "VALUE", "symbols": ["NOTE_VALUE"]},
+    {"name": "VALUE", "symbols": ["NOTE_VALUE"], "postprocess": id},
+    {"name": "VALUE", "symbols": ["STRING"], "postprocess": (data) => !isNaN(data[0]) ? parseFloat(data[0]) : data[0]},
     {"name": "NOTE_VALUE", "symbols": ["INTEGER", {"literal":"/"}, "INTEGER"], "postprocess": (data) => data[0] / data[2]},
     {"name": "NOTE_VALUE", "symbols": [{"literal":"/"}, "INTEGER"], "postprocess": (data) => 1 / data[1]},
     {"name": "NOTE_VALUE", "symbols": ["INTEGER", {"literal":"/"}], "postprocess": id},
@@ -53,9 +53,14 @@ var grammar = {
     {"name": "CHORD_TOKEN", "symbols": ["SETTING"]},
     {"name": "CHORD_TOKEN", "symbols": ["OCTAVE_CHANGE"]},
     {"name": "LCASE_LETTER", "symbols": [/[a-z]/]},
-    {"name": "STRING$ebnf$1", "symbols": [/[a-zA-Z$_0-9]/]},
-    {"name": "STRING$ebnf$1", "symbols": ["STRING$ebnf$1", /[a-zA-Z$_0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "STRING$ebnf$1", "symbols": [/[a-zA-Z$_0-9.]/]},
+    {"name": "STRING$ebnf$1", "symbols": ["STRING$ebnf$1", /[a-zA-Z$_0-9.]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "STRING", "symbols": ["STRING$ebnf$1"], "postprocess": (data) => str(data[0])},
+    {"name": "NUMBER", "symbols": ["FLOAT"]},
+    {"name": "NUMBER", "symbols": ["INTEGER"]},
+    {"name": "FLOAT$ebnf$1", "symbols": [/[0-9]/]},
+    {"name": "FLOAT$ebnf$1", "symbols": ["FLOAT$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "FLOAT", "symbols": ["INTEGER", {"literal":"."}, "FLOAT$ebnf$1"], "postprocess": (data) => parseFloat(str(data))},
     {"name": "INTEGER$ebnf$1", "symbols": [/[-+]/], "postprocess": id},
     {"name": "INTEGER$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "INTEGER$ebnf$2", "symbols": [/[0-9]/]},

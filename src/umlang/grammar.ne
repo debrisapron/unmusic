@@ -1,6 +1,6 @@
 @{%
 	function str(data) {
-		data.join('')
+		return data.join('')
 	}
 %}
 
@@ -16,7 +16,7 @@ TOKEN          -> NOTE
 NOTE           -> PITCH_CLASS					{% (data) => ['NOTE', { type: 'PITCH_CLASS', value: data[0] }] %}
 				| "M" INTEGER					{% (data) => ['NOTE', { type: 'MIDI',        value: data[1] }] %}
 				| INTEGER						{% (data) => ['NOTE', { type: 'RELATIVE',    value: data[0] }] %}
-				#| IDENTIFIER					{% (data) => ['NOTE', { type: 'CUSTOM',      value: data[0] }] %}
+				| IDENTIFIER					{% (data) => ['NOTE', { type: 'CUSTOM',      value: data[0] }] %}
 PITCH_CLASS    -> [A-G] [b♭#♯]:?				{% (data) => str(data) %}
 
 IDENTIFIER     -> LCASE_LETTER STRING:?			{% (data) => str(data[0].concat(data[1])) %}
@@ -28,8 +28,8 @@ OCTAVE_CHANGE  -> "<":+							{% (data) => ['OCTAVE_CHANGE', parseInt('-' + data
 
 SETTING        -> IDENTIFIER "=" VALUE			{% (data) => ['SETTING', { param: data[0],    value: data[2] }] %}
 				| NOTE_VALUE					{% (data) => ['SETTING', { param: 'duration', value: data[0] }] %}
-VALUE          -> STRING						{% id %}
-				| NOTE_VALUE
+VALUE          -> NOTE_VALUE					{% id %}
+				| STRING						{% (data) => !isNaN(data[0]) ? parseFloat(data[0]) : data[0] %}
 NOTE_VALUE     -> INTEGER "/" INTEGER			{% (data) => data[0] / data[2] %}
 				| "/" INTEGER					{% (data) => 1 / data[1] %}
 				| INTEGER "/"					{% id %}
@@ -42,6 +42,9 @@ CHORD_TOKEN    -> NOTE
 				| OCTAVE_CHANGE
 
 LCASE_LETTER   -> [a-z]
-STRING         -> [a-zA-Z$_0-9]:+				{% (data) => str(data[0]) %}
+STRING         -> [a-zA-Z$_0-9.]:+				{% (data) => str(data[0]) %}
+NUMBER         -> FLOAT
+				| INTEGER
+FLOAT          -> INTEGER "." [0-9]:+			{% (data) => parseFloat(str(data)) %}
 INTEGER        -> [-+]:? [0-9]:+				{% (data) => parseInt((data[0] === '-' ? '-' : '') + str(data[1])) %}
 _              -> " ":+							{% () => null %}
