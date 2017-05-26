@@ -85,48 +85,52 @@ module.exports = Unmusic
 ////////////////////////////////////////////////////////////////////////////////
 
 if (process.env.TEST) {
-  let h = require('./testHelpers')
+  const chaiSubset = require('chai-subset')
 
-  test('can generate a simple score with a custom instrument', (assert) => {
-    let um = Unmusic()
-    um.use('oneOsc', {
-      type: 'NODE',
-      nodeDef: {
-        out: 'amp',
-        freqIn: 'osc.frequency',
-        vgraph: {
-          osc: { type: 'osc' },
-          filter: { type: 'biquad', params: { type: 'lowpass' } },
-          amp: { type: 'gain', params: { gain: 0 } },
-          filterEnv: { type: 'adsr' },
-          filterEnvAmt: { type: 'gain', params: { gain: '9600' }, connect: 'filter.detune' },
-          ampEnv: { type: 'adsr', connect: 'amp.gain' }
+  chai.use(chaiSubset)
+
+  describe('unmusic', () => {
+
+    it('can generate a simple score with a custom instrument', () => {
+      let um = Unmusic()
+      um.use('oneOsc', {
+        type: 'NODE',
+        nodeDef: {
+          out: 'amp',
+          freqIn: 'osc.frequency',
+          vgraph: {
+            osc: { type: 'osc' },
+            filter: { type: 'biquad', params: { type: 'lowpass' } },
+            amp: { type: 'gain', params: { gain: 0 } },
+            filterEnv: { type: 'adsr' },
+            filterEnvAmt: { type: 'gain', params: { gain: '9600' }, connect: 'filter.detune' },
+            ampEnv: { type: 'adsr', connect: 'amp.gain' }
+          }
         }
+      })
+      let saw = um.oneOsc({
+        osc: { detune: 600, type: 'sawtooth' },
+        filter: { frequency: 500, Q: 5 },
+        filterEnv: { attackTime: 0.2, releaseTime: 0.2 },
+        ampEnv: { attackTime: 0.1, decayTime: 0.5, releaseTime: 0.5 }
+      })
+      let score =
+        um.tempo(150,
+          saw(
+            um.mix(
+              um.seq('A B', '/8 C D'),
+              'E')))
+      let expScore = {
+        actions: [
+          { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+          { type: 'NOTE', payload: { time: 0,   nn: 64, dur: 1/4 } },
+          { type: 'NOTE', payload: { time: 1/4, nn: 71, dur: 1/4 } },
+          { type: 'NOTE', payload: { time: 1/2, nn: 60, dur: 1/8 } },
+          { type: 'NOTE', payload: { time: 5/8, nn: 62, dur: 1/8 } }
+        ],
+        tempo: 150
       }
+      expect(score).to.containSubset(expScore)
     })
-    let saw = um.oneOsc({
-      osc: { detune: 600, type: 'sawtooth' },
-      filter: { frequency: 500, Q: 5 },
-      filterEnv: { attackTime: 0.2, releaseTime: 0.2 },
-      ampEnv: { attackTime: 0.1, decayTime: 0.5, releaseTime: 0.5 }
-    })
-    let score =
-      um.tempo(150,
-        saw(
-          um.mix(
-            um.seq('A B', '/8 C D'),
-            'E')))
-    let expScore = {
-      actions: [
-        { type: 'NOTE', payload: { time: 0,   nn: 45, dur: 1/4 } },
-        { type: 'NOTE', payload: { time: 0,   nn: 40, dur: 1/4 } },
-        { type: 'NOTE', payload: { time: 1/4, nn: 47, dur: 1/4 } },
-        { type: 'NOTE', payload: { time: 1/2, nn: 36, dur: 1/8 } },
-        { type: 'NOTE', payload: { time: 5/8, nn: 38, dur: 1/8 } }
-      ],
-      tempo: 150
-    }
-    assert.ok(h.deepMatches(score, expScore))
-    assert.end()
   })
 }

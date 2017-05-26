@@ -159,9 +159,6 @@ module.exports = RenderContext
 ////////////////////////////////////////////////////////////////////////////////
 
 if (process.env.TEST) {
-  const chaiSubset = require('chai-subset')
-
-  chai.use(chaiSubset)
 
   describe('render context', () => {
 

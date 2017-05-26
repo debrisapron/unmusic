@@ -20,7 +20,7 @@ if (process.env.TEST) {
 
   describe('umlang parser', () => {
 
-    it('Can parse an umlang string', () => {
+    it('can parse an umlang string', () => {
       let s = 'C /16 x=1 >'
       let expected = [
         ['NOTE', { type: 'PITCH_CLASS', value: 'C' }],

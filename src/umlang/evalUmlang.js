@@ -13,7 +13,7 @@ if (process.env.TEST) {
 
   describe('umlang evaluator', () => {
 
-    it('Can eval a string with a single note', () => {
+    it('can eval a string with a single note', () => {
       let s = 'A'
       let expected = [
         { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
@@ -21,7 +21,7 @@ if (process.env.TEST) {
       expect(evalUmlang(s)).to.deep.equal(expected)
     })
 
-    it('Can set duration', () => {
+    it('can set duration', () => {
       let s = 'd=/8 A'
       let expected = [
         { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/8 } }
@@ -29,7 +29,7 @@ if (process.env.TEST) {
       expect(evalUmlang(s)).to.deep.equal(expected)
     })
 
-    it('Can set octave', () => {
+    it('can set octave', () => {
       let s = '> A'
       let expected = [
         { type: 'NOTE', payload: { time: 0, nn: 81, dur: 1/4 } }
@@ -37,7 +37,7 @@ if (process.env.TEST) {
       expect(evalUmlang(s)).to.deep.equal(expected)
     })
 
-    it('Can chain different settings, notes and rests', () => {
+    it('can chain different settings, notes and rests', () => {
       let s = '< d=/8 C dur=/16 -10 /8 _ /4 M55 _'
       let expected = [
         { type: 'NOTE', payload: { time: 0,     nn: 48, dur: 1/8 } },

@@ -85,76 +85,76 @@ module.exports = mix
 ////////////////////////////////////////////////////////////////////////////////
 
 if (process.env.TEST) {
-  
+
   let sort = (score) => {
     let sortedActions = _.sortBy(['payload.time', 'payload.nn'], score.actions)
     return _.set('actions', sortedActions, score)
   }
-  
-  test('Can mix two scores', (assert) => {
-    let s1 = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
-    ] }
-    let s2 = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
-      { type: 'NOOP', payload: { time: 3/8 } }
-    ] }
-    let expected = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
-    ] }
-    assert.deepEqual(mix(s1, s2), expected)
-    assert.end()
-  })
-  
-  test('Can mix two scores, one looped, one not', (assert) => {
-    let s1 = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
-    ], loop: true }
-    let s2 = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 3/4, nn: 70, dur: 1/4 } }
-    ] }
-    let expected = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 5/8, nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 3/4, nn: 70, dur: 1/4 } }
-    ] }
-    assert.deepEqual(sort(mix(s1, s2)), expected)
-    assert.end()
-  })
-  
-  test('Can mix two looped scores', (assert) => {
-    let s1 = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/4, nn: 69, dur: 1/4 } }
-    ], loop: true }
-    let s2 = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/2, nn: 70, dur: 1/4 } }
-    ], loop: true }
-    let expected = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/4, nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/2, nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1/2, nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 3/4, nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 3/4, nn: 70, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 1,   nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 5/4, nn: 69, dur: 1/4 } },
-      { type: 'NOTE', payload: { time: 5/4, nn: 70, dur: 1/4 } }
-    ], loop: true }
-    assert.deepEqual(sort(mix(s1, s2)), expected)
-    assert.end()
+
+  describe('mix', () => {
+
+    it('can mix two scores', () => {
+      let s1 = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
+      ] }
+      let s2 = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
+        { type: 'NOOP', payload: { time: 3/8 } }
+      ] }
+      let expected = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
+      ] }
+      expect(mix(s1, s2)).to.deep.equal(expected)
+    })
+
+    it('can mix two scores, one looped, one not', () => {
+      let s1 = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
+      ], loop: true }
+      let s2 = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 3/4, nn: 70, dur: 1/4 } }
+      ] }
+      let expected = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 5/8, nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 3/4, nn: 70, dur: 1/4 } }
+      ] }
+      expect(sort(mix(s1, s2))).to.deep.equal(expected)
+    })
+
+    it('can mix two looped scores', () => {
+      let s1 = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 69, dur: 1/4 } }
+      ], loop: true }
+      let s2 = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/2, nn: 70, dur: 1/4 } }
+      ], loop: true }
+      let expected = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/2, nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/2, nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 3/4, nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 3/4, nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1,   nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 5/4, nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 5/4, nn: 70, dur: 1/4 } }
+      ], loop: true }
+      expect(sort(mix(s1, s2))).to.deep.equal(expected)
+    })
   })
 }

@@ -4,8 +4,8 @@ module.exports = (config) => {
   config.set({
     browsers: ['ChromeCanaryHeadless'],
     frameworks: ['mocha', 'chai'],
-    files: ['src/umlang/*.js'],
-    preprocessors: { 'src/umlang/*.js': ['webpack', 'sourcemap'] },
+    files: ['index.js'],
+    preprocessors: { 'index.js': ['webpack', 'sourcemap'] },
     webpack: {
       // TODO strictify
       devtool: 'inline-source-map',
