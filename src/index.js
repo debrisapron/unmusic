@@ -9,7 +9,10 @@ let addNode = require('./scoring/addNode')
 let Controller = require('./Controller')
 let Sequencer = require('./Sequencer')
 let Player = require('./Player')
-let coreNodes = require('./nodes/coreNodes')
+let adsr = require('./nodes/adsr')
+let biquad = require('./nodes/biquad')
+let gain = require('./nodes/gain')
+let osc = require('./nodes/osc')
 
 let getDefaultAudioContext = () => {
   return window.__umAudioContext ||
@@ -72,10 +75,10 @@ let Unmusic = (audioContext = getDefaultAudioContext()) => {
   useComposer('arrange', arrange)
   useComposer('tempo', tempo)
 
-  useNode('adsr', coreNodes.adsr)
-  useNode('biquad', coreNodes.biquad)
-  useNode('gain', coreNodes.gain)
-  useNode('osc', coreNodes.osc)
+  useNode('adsr', adsr)
+  useNode('biquad', biquad)
+  useNode('gain', gain)
+  useNode('osc', osc)
 
   return um
 }

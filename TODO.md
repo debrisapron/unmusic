@@ -1,9 +1,8 @@
 NOW
 
-- replace parser with earley parser
 - panic
 - um.patch
-- um.times
+- um.rep
 - rest of WAA nodes
 - buffer helper
 - sample node

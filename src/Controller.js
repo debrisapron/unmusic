@@ -1,5 +1,5 @@
 let _ = require('lodash/fp')
-let RenderContext = require('./nodes/RenderContext')
+let RenderContext = require('./RenderContext')
 
 let Controller = (nodeDefs, ac) => {
 
