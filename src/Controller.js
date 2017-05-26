@@ -13,6 +13,19 @@ let Controller = (nodeDefs, ac) => {
     }
   }
 
+  let prepare = (score) => {
+    let promises = []
+    score.forEach((action) => {
+      let vgraph = _.get('payload.vgraph', action)
+      _.forIn(({ type, params }) => {
+        let prepareFn = nodeDefs[type].prepare
+        if (!prepareFn) return
+        promises.push(prepareFn(ac, params))
+      }, vgraph)
+    })
+    return Promise.all(promises)
+  }
+
   return { handle }
 }
 

@@ -13,7 +13,7 @@ let configureWaaNode = (audioParams, params, node) => {
 
 let WaaNode = (nodeDef) => {
   let newFactory = (ac, params) => {
-    let node = nodeDef.factory(ac)
+    let node = nodeDef.factory(ac, params)
     configureWaaNode(nodeDef.audioParams, params, node)
     return node
   }

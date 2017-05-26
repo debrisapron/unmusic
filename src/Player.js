@@ -1,13 +1,18 @@
 let _ = require('lodash/fp')
 
-let Player = (sequencer, handle) => {
+let Player = (sequencer, controller) => {
   let stopCbs = {}
 
   let play = (score) => {
+    let onceReady = controller.prepare(score)
     let events = sequencerEventsFrom(score)
-    sequencer.setTempo(score.tempo || 120)
-    sequencer.setEvents(events)
-    sequencer.play()
+    onceReady.then(() => {
+      sequencer.setTempo(score.tempo || 120)
+      sequencer.setEvents(events)
+      sequencer.play()
+    }).catch((err) => {
+      throw err
+    })
   }
 
   let stop = () => {
@@ -39,7 +44,7 @@ let Player = (sequencer, handle) => {
 
   let startAction = (time, id, action) => {
     let { payload } = action
-    let stopCb = handle(time, action)
+    let stopCb = controller.handle(time, action)
     if (!_.isFunction(stopCb)) return
     stopCbs[id] = stopCb
   }
@@ -74,9 +79,11 @@ if (process.env.TEST) {
         play: () => 0,
         stop: () => 999
       }
-      let handle = (time, action) => {
-        starts.push([time, action])
-        return (time) => stops.push([time, action])
+      let controller = {
+        handle: (time, action) => {
+          starts.push([time, action])
+          return (time) => stops.push([time, action])
+        }
       }
       let score = { actions: [
         { type: 'NOTE', payload: { time: 0,   nn: 0, dur } },
@@ -84,7 +91,7 @@ if (process.env.TEST) {
         { type: 'NOTE', payload: { time: 1/2, nn: 2, dur } },
         { type: 'NOTE', payload: { time: 3/4, nn: 3, dur } }
       ], tempo: 130 }
-      let player = Player(mockSeq, handle)
+      let player = Player(mockSeq, controller)
       player.play(score)
       expect(tempo).to.equal(130)
       const times = events.map((ev) => ev[0])

@@ -11,6 +11,7 @@ let Sequencer = require('./Sequencer')
 let Player = require('./Player')
 let adsr = require('./nodes/adsr')
 let biquad = require('./nodes/biquad')
+let delay = require('./nodes/delay')
 let gain = require('./nodes/gain')
 let osc = require('./nodes/osc')
 
@@ -24,7 +25,7 @@ let Unmusic = (audioContext = getDefaultAudioContext()) => {
   let nodeDefs = {}
   let controller = Controller(nodeDefs, audioContext)
   let sequencer = Sequencer(audioContext)
-  let player = Player(sequencer, controller.handle)
+  let player = Player(sequencer, controller)
 
   let use = (name, config) => {
     let resource = getResource(name, config)
