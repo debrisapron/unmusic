@@ -14,6 +14,7 @@ let biquad = require('./nodes/biquad')
 let delay = require('./nodes/delay')
 let gain = require('./nodes/gain')
 let osc = require('./nodes/osc')
+let sample = require('./nodes/sample')
 
 let getDefaultAudioContext = () => {
   return window.__umAudioContext ||
@@ -78,8 +79,10 @@ let Unmusic = (audioContext = getDefaultAudioContext()) => {
 
   useNode('adsr', adsr)
   useNode('biquad', biquad)
+  useNode('delay', delay)
   useNode('gain', gain)
   useNode('osc', osc)
+  useNode('sample', osc)
 
   return um
 }

@@ -6,10 +6,10 @@ let Player = (sequencer, controller) => {
   let play = (score) => {
     let onceReady = controller.prepare(score)
     let events = sequencerEventsFrom(score)
-    onceReady.then(() => {
+    return onceReady.then(() => {
       sequencer.setTempo(score.tempo || 120)
       sequencer.setEvents(events)
-      sequencer.play()
+      return sequencer.play()
     }).catch((err) => {
       throw err
     })
@@ -80,6 +80,7 @@ if (process.env.TEST) {
         stop: () => 999
       }
       let controller = {
+        prepare: () => Promise.resolve(),
         handle: (time, action) => {
           starts.push([time, action])
           return (time) => stops.push([time, action])
@@ -92,19 +93,21 @@ if (process.env.TEST) {
         { type: 'NOTE', payload: { time: 3/4, nn: 3, dur } }
       ], tempo: 130 }
       let player = Player(mockSeq, controller)
-      player.play(score)
-      expect(tempo).to.equal(130)
-      const times = events.map((ev) => ev[0])
-      const expTimes = [0, 0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1]
-      expect(times).to.deep.equal(expTimes)
-      // Simulate sequencer calling first 6 callbacks
-      events.slice(0, 6).forEach((ev) => ev[1](0))
-      player.stop()
-      const notes = starts.map((start) => start[1].payload.nn)
-      const expNotes = [0, 1, 2]
-      expect(notes).to.deep.equal(expNotes)
-      const stoppedNotes = stops.map((stop) => stop[1].payload.nn)
-      expect(stoppedNotes).to.deep.equal(expNotes)
+
+      return player.play(score).then(() => {
+        expect(tempo).to.equal(130)
+        const times = events.map((ev) => ev[0])
+        const expTimes = [0, 0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1]
+        expect(times).to.deep.equal(expTimes)
+        // Simulate sequencer calling first 6 callbacks
+        events.slice(0, 6).forEach((ev) => ev[1](0))
+        player.stop()
+        const notes = starts.map((start) => start[1].payload.nn)
+        const expNotes = [0, 1, 2]
+        expect(notes).to.deep.equal(expNotes)
+        const stoppedNotes = stops.map((stop) => stop[1].payload.nn)
+        expect(stoppedNotes).to.deep.equal(expNotes)
+      })
     })
   })
 }

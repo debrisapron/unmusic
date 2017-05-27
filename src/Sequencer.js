@@ -89,7 +89,7 @@ module.exports = Sequencer
 ////////////////////////////////////////////////////////////////////////////////
 
 if (process.env.TEST === 'SLOW') {
-  let ac = window.__umAudioContext || new window.AudioContext()
+  let ac = window.__umAudioContext || (window.__umAudioContext = new window.AudioContext())
 
   // lodash fp round doesn't support precision :/
   let round = require('lodash').round

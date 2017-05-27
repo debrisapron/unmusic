@@ -9,11 +9,14 @@ module.exports = (config) => {
     webpack: {
       // TODO strictify
       devtool: 'inline-source-map',
-      plugins: [new webpack.EnvironmentPlugin({ TEST: true })]
+      plugins: [new webpack.EnvironmentPlugin({ TEST: true })],
+      node: {
+        fs: 'empty'
+      }
     },
     reporters: ['mocha'],
     mochaReporter: {
       showDiff: true
-    },
+    }
   })
 }

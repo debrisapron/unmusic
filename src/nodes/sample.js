@@ -27,7 +27,7 @@ let audioBufferFromFile = (ac, file) => {
 
 let sample = WaaNode({
   out: true,
-  audioParams: ['playbackRate', 'detune']
+  audioParams: ['playbackRate', 'detune'],
   factory: (ac, params) => {
     let audioBuffer = fileCache[params.file]
     let node = ac.createBufferSource()
@@ -39,4 +39,26 @@ let sample = WaaNode({
   }
 })
 
-module.exports = adsr
+module.exports = sample
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Fiddly to test right now
+// if (process.env.TEST === 'SLOW') {
+//   let ac = window.__umAudioContext || (window.__umAudioContext = new window.AudioContext())
+//
+//   describe('sample node', () => {
+//
+//     it('can get an audio buffer from a local file', async () => {
+//       let expAudioBuffer = {
+//         length: 14400,
+//         duration: 0.32653061224489793,
+//         sampleRate: 44100,
+//         numberOfChannels: 1
+//       }
+//       let clap808 = path.resolve(__dirname, '..', '..', 'testSupport', 'clap808.wav')
+//       let audioBuffer = await audioBufferFromFile(ac, clap808)
+//       expect(audioBuffer).to.containSubset(expAudioBuffer)
+//     })
+//   })
+// }

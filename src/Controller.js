@@ -3,16 +3,6 @@ let RenderContext = require('./RenderContext')
 
 let Controller = (nodeDefs, ac) => {
 
-  let handle = (time, action) => {
-    let renderContext = RenderContext(nodeDefs, ac)
-    let vgraph = _.get('payload.vgraph', action)
-    if (!vgraph) { return }
-    let graph = renderContext.render(vgraph, time, true, ac.destination)
-    return (time) => {
-      renderContext.finish(vgraph, time)
-    }
-  }
-
   let prepare = (score) => {
     let promises = []
     score.forEach((action) => {
@@ -26,7 +16,17 @@ let Controller = (nodeDefs, ac) => {
     return Promise.all(promises)
   }
 
-  return { handle }
+  let handle = (time, action) => {
+    let renderContext = RenderContext(nodeDefs, ac)
+    let vgraph = _.get('payload.vgraph', action)
+    if (!vgraph) { return }
+    let graph = renderContext.render(vgraph, time, true, ac.destination)
+    return (time) => {
+      renderContext.finish(vgraph, time)
+    }
+  }
+
+  return { prepare, handle }
 }
 
 module.exports = Controller
