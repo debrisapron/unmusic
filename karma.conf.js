@@ -11,7 +11,8 @@ module.exports = (config) => {
       devtool: 'inline-source-map',
       plugins: [new webpack.EnvironmentPlugin({ TEST: true })],
       node: {
-        fs: 'empty'
+        fs: 'empty',
+        path: 'empty'
       }
     },
     reporters: ['mocha'],

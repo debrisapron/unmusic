@@ -21,12 +21,13 @@ let getDefaultAudioContext = () => {
     (window.__umAudioContext = new AudioContext())
 }
 
-let Unmusic = (audioContext = getDefaultAudioContext()) => {
+let Unmusic = ({ cwd = '/', audioContext = getDefaultAudioContext() } = {}) => {
   let um = {}
   let nodeDefs = {}
   let controller = Controller(nodeDefs, audioContext)
   let sequencer = Sequencer(audioContext)
   let player = Player(sequencer, controller)
+  sample = _.merge({ cwd }, sample)
 
   let use = (name, config) => {
     let resource = getResource(name, config)
@@ -82,7 +83,7 @@ let Unmusic = (audioContext = getDefaultAudioContext()) => {
   useNode('delay', delay)
   useNode('gain', gain)
   useNode('osc', osc)
-  useNode('sample', osc)
+  useNode('sample', sample)
 
   return um
 }

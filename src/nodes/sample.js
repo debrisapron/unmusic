@@ -1,4 +1,5 @@
 let fs = require('fs')
+let path = require('path')
 let WaaNode = require('./support/WaaNode')
 
 let fileCache = {}
@@ -35,7 +36,9 @@ let sample = WaaNode({
     return node
   },
   prepare: (ac, params) => {
-    return audioBufferFromFile(ac, params.file)
+    let file = params.file
+    if (file && sample.cwd) file = path.resolve(sample.cwd, file)
+    return audioBufferFromFile(ac, file)
   }
 })
 
