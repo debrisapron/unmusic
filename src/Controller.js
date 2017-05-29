@@ -10,7 +10,8 @@ let Controller = (nodeDefs, um) => {
       _.forIn(({ type, params }) => {
         let prepareFn = nodeDefs[type].prepare
         if (!prepareFn) return
-        promises.push(prepareFn(um, params))
+        let promise = prepareFn(um, params)
+        if (promise) promises.push(promise)
       }, vgraph)
     })
     return Promise.all(promises)

@@ -1,5 +1,4 @@
 let _ = require('lodash/fp')
-let h = require('./support/helpers')
 
 let addNode = ({ type, params }, score) => {
   score = _.cloneDeep(score)
@@ -7,6 +6,7 @@ let addNode = ({ type, params }, score) => {
     if (actionType === 'NOOP') { return }
     let vgraph = payload.vgraph = payload.vgraph || {}
     let nodeId = `node_${Object.keys(vgraph).length}`
+    // TODO merge in relevant params from payload e.g. vel. (Also at, cc, pb)?
     let metaParams = {}
     if (actionType === 'NOTE') metaParams.nn = payload.nn
     if (actionType === 'TRIG') metaParams.name = payload.name

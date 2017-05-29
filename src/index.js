@@ -6,6 +6,7 @@ let loop = require('./scoring/loop')
 let tempo = require('./scoring/tempo')
 let arrange = require('./scoring/arrange')
 let addNode = require('./scoring/addNode')
+let multi = require('./scoring/multi')
 let Controller = require('./Controller')
 let Sequencer = require('./Sequencer')
 let Player = require('./Player')
@@ -77,6 +78,7 @@ let Unmusic = ({ audioContext = getDefaultAudioContext(), cwd = '/' } = {}) => {
 
   useComposer('loop', loop)
   useComposer('arrange', arrange)
+  useComposer('multi', multi)
   useComposer('tempo', tempo)
 
   useNode('adsr', adsr)

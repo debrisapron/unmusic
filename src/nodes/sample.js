@@ -1,27 +1,17 @@
-let path = require('path')
 let h = require('./support/helpers')
 let WaaNode = require('./support/WaaNode')
-
-// TODO Move to um.cache
-let fileCache = {}
 
 let sample = WaaNode({
   out: true,
   audioParams: ['playbackRate', 'detune'],
   factory: (um, params) => {
     let node = um.ac.createBufferSource()
-    fileCache[params.file].then((audioBuffer) => node.buffer = audioBuffer)
+    node.buffer = h.getLoadedFile(params.file)
     return node
   },
   prepare: (um, params) => {
-    let file = params.file
-    if (!file) return Promise.resolve()
-    if (fileCache[file]) return fileCache[file]
-    let filePath = file
-    if (um.config.cwd) filePath = path.resolve(um.config.cwd, file)
-    let promiseOfAudioBuffer = h.audioBufferFromFile(um.ac, filePath)
-    fileCache[file] = promiseOfAudioBuffer
-    return promiseOfAudioBuffer
+    if (params.file) return h.loadFile(um, params.file)
+    throw new Error('sample node must have file param specified.')
   }
 })
 
