@@ -28,6 +28,12 @@ let nnFrom = (instruction) => {
   throw new Error('This note type is unknown to the score generator')
 }
 
+let trigActionFrom = (instruction) => {
+  let payload = _.omit(['oct'], instruction.context)
+  payload = _.set('name', instruction.data, payload)
+  return { payload, type: 'TRIG' }
+}
+
 let restActionFrom = (instruction) => {
   return { type: 'NOOP', payload: { time: instruction.context.time } }
 }
@@ -38,6 +44,7 @@ let generateScore = (instructions) => {
   return instructions.map((instruction) => {
     switch(instruction.type) {
       case 'NOTE': return noteActionFrom(instruction)
+      case 'TRIG': return trigActionFrom(instruction)
       case 'REST': return restActionFrom(instruction)
     }
     throw new Error('This instruction type is unknown to the score generator')

@@ -99,6 +99,19 @@ if (process.env.TEST) {
 
   describe('unmusic', () => {
 
+    it('can generate a super-simple score with one trigger of one sample', () => {
+      let um = Unmusic()
+      let score = um.sample({ file: 'foo.wav' }, 'foo')
+      let expScore = {
+        actions: [
+          { type: 'TRIG', payload: { time: 0, name: 'foo', dur: 1/4, vgraph: {
+            node_0: { type: 'sample', params: { file: 'foo.wav', name: 'foo' } }
+          } } },
+        ]
+      }
+      expect(score).to.containSubset(expScore)
+    })
+
     it('can generate a simple score with a custom instrument', () => {
       let um = Unmusic()
       um.use('oneOsc', {

@@ -8,6 +8,7 @@ SEQUENCE       -> TOKEN							{% id %}
 				| SEQUENCE _ TOKEN				{% (data) => data[0].concat(data[2]) %}
 
 TOKEN          -> NOTE
+				| TRIG
 				| REST
 				| OCTAVE_CHANGE
 				| SETTING
@@ -16,10 +17,9 @@ TOKEN          -> NOTE
 NOTE           -> PITCH_CLASS					{% (data) => ['NOTE', { type: 'PITCH_CLASS', value: data[0] }] %}
 				| "M" INTEGER					{% (data) => ['NOTE', { type: 'MIDI',        value: data[1] }] %}
 				| INTEGER						{% (data) => ['NOTE', { type: 'RELATIVE',    value: data[0] }] %}
-				| IDENTIFIER					{% (data) => ['NOTE', { type: 'CUSTOM',      value: data[0] }] %}
 PITCH_CLASS    -> [A-G] [b♭#♯]:?				{% (data) => str(data) %}
 
-IDENTIFIER     -> LCASE_LETTER STRING:?			{% (data) => str(data[0].concat(data[1])) %}
+TRIG           -> IDENTIFIER					{% (data) => ['TRIG', data[0]] %}
 
 REST           -> "_":+							{% (data) => ['REST', data[0].length] %}
 
@@ -41,6 +41,7 @@ CHORD_TOKEN    -> NOTE
 				| SETTING
 				| OCTAVE_CHANGE
 
+IDENTIFIER     -> LCASE_LETTER STRING:?			{% (data) => str(data[0].concat(data[1])) %}
 LCASE_LETTER   -> [a-z]
 STRING         -> [a-zA-Z$_0-9.]:+				{% (data) => str(data[0]) %}
 NUMBER         -> FLOAT

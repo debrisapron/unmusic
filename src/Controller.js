@@ -5,7 +5,7 @@ let Controller = (nodeDefs, ac) => {
 
   let prepare = (score) => {
     let promises = []
-    score.forEach((action) => {
+    score.actions.forEach((action) => {
       let vgraph = _.get('payload.vgraph', action)
       _.forIn(({ type, params }) => {
         let prepareFn = nodeDefs[type].prepare

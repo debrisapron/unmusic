@@ -13,10 +13,18 @@ if (process.env.TEST) {
 
   describe('umlang evaluator', () => {
 
-    it('can eval a string with a single note', () => {
+    it('can eval a single note', () => {
       let s = 'A'
       let expected = [
         { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
+      ]
+      expect(evalUmlang(s)).to.deep.equal(expected)
+    })
+
+    it('can eval a trigger', () => {
+      let s = 'foo'
+      let expected = [
+        { type: 'TRIG', payload: { time: 0, name: 'foo', dur: 1/4 } }
       ]
       expect(evalUmlang(s)).to.deep.equal(expected)
     })

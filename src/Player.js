@@ -70,8 +70,8 @@ if (process.env.TEST) {
     it('can play a simple score', () => {
       let events
       let tempo
-      let starts = []
-      let stops = []
+      let startedActions = []
+      let stoppedActions = []
       let dur = 1/4
       let mockSeq = {
         setEvents: (_events) => events = _events,
@@ -82,12 +82,12 @@ if (process.env.TEST) {
       let controller = {
         prepare: () => Promise.resolve(),
         handle: (time, action) => {
-          starts.push([time, action])
-          return (time) => stops.push([time, action])
+          startedActions.push(action)
+          return (t) => stoppedActions.push(action)
         }
       }
       let score = { actions: [
-        { type: 'NOTE', payload: { time: 0,   nn: 0, dur } },
+        { type: 'TRIG', payload: { time: 0,   name: 'foo', dur } },
         { type: 'NOTE', payload: { time: 1/4, nn: 1, dur } },
         { type: 'NOTE', payload: { time: 1/2, nn: 2, dur } },
         { type: 'NOTE', payload: { time: 3/4, nn: 3, dur } }
@@ -102,10 +102,11 @@ if (process.env.TEST) {
         // Simulate sequencer calling first 6 callbacks
         events.slice(0, 6).forEach((ev) => ev[1](0))
         player.stop()
-        const notes = starts.map((start) => start[1].payload.nn)
-        const expNotes = [0, 1, 2]
+        const notes = startedActions.map((a) => a.payload.nn)
+        const expNotes = [undefined, 1, 2]
         expect(notes).to.deep.equal(expNotes)
-        const stoppedNotes = stops.map((stop) => stop[1].payload.nn)
+        expect(startedActions[0].payload.name).to.equal('foo')
+        const stoppedNotes = stoppedActions.map((a) => a.payload.nn)
         expect(stoppedNotes).to.deep.equal(expNotes)
       })
     })
