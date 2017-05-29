@@ -4,7 +4,7 @@ let biquad = WaaNode({
   in: true,
   out: true,
   audioParams: ['frequency', 'detune', 'Q', 'gain'],
-  factory: (ac) => ac.createBiquadFilter()
+  factory: (um) => um.ac.createBiquadFilter()
 })
 
 module.exports = biquad

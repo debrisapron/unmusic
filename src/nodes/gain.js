@@ -4,7 +4,7 @@ let gain = WaaNode({
   in: true,
   out: true,
   audioParams: ['gain'],
-  factory: (ac) => ac.createGain()
+  factory: (um) => um.ac.createGain()
 })
 
 module.exports = gain

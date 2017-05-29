@@ -1,44 +1,27 @@
-let fs = require('fs')
 let path = require('path')
+let h = require('./support/helpers')
 let WaaNode = require('./support/WaaNode')
 
+// TODO Move to um.cache
 let fileCache = {}
-
-let audioBufferFromFile = (ac, file) => {
-  if (fileCache[file]) return fileCache[file]
-
-  let resolve
-  let reject
-  const promise = new Promise((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
-  fileCache[file] = promise
-
-  fs.readFile(file, (err, buffer) => {
-    if (err) reject(err)
-    let arrayBuffer = buffer.buffer
-    ac.decodeAudioData(arrayBuffer)
-      .then((audioBuffer) => resolve(audioBuffer))
-      .catch((err) => reject(err))
-  })
-
-  return promise
-}
 
 let sample = WaaNode({
   out: true,
   audioParams: ['playbackRate', 'detune'],
-  factory: (ac, params) => {
-    let audioBuffer = fileCache[params.file]
-    let node = ac.createBufferSource()
-    node.buffer = audioBuffer
+  factory: (um, params) => {
+    let node = um.ac.createBufferSource()
+    fileCache[params.file].then((audioBuffer) => node.buffer = audioBuffer)
     return node
   },
-  prepare: (ac, params) => {
+  prepare: (um, params) => {
     let file = params.file
-    if (file && sample.cwd) file = path.resolve(sample.cwd, file)
-    return audioBufferFromFile(ac, file)
+    if (!file) return Promise.resolve()
+    if (fileCache[file]) return fileCache[file]
+    let filePath = file
+    if (um.config.cwd) filePath = path.resolve(um.config.cwd, file)
+    let promiseOfAudioBuffer = h.audioBufferFromFile(um.ac, filePath)
+    fileCache[file] = promiseOfAudioBuffer
+    return promiseOfAudioBuffer
   }
 })
 

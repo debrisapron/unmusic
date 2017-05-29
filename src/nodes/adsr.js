@@ -2,7 +2,7 @@ let Envelope = require('envelope-generator')
 
 let adsr = {
   out: true,
-  factory: (ac, params) => new Envelope(ac, params),
+  factory: (um, params) => new Envelope(um.ac, params),
   finish: (node, time, andStop = true) => {
     node.release(time)
     let fTime = node.getReleaseCompleteTime()

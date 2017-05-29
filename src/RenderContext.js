@@ -5,7 +5,7 @@ let mapValuesWithId = (iteratee, obj) => _$.mapValues(obj, iteratee)
 let forEachRightWithId = (iteratee, coll) => _$.forEachRight(coll, iteratee)
 
 // TODO Clean this mess up.
-let RenderContext = (nodeDefs, ac) => {
+let RenderContext = (nodeDefs, um) => {
   let nodes = {}
 
   let createNodes = (vgraph) => {
@@ -17,7 +17,7 @@ let RenderContext = (nodeDefs, ac) => {
     if (!nodeDef) throw new Error('Unrecognized node type')
     let params = paramsFrom(vnode)
     let node = nodeDef.factory
-      ? nodeDef.factory(ac, params)
+      ? nodeDef.factory(um, params)
       : renderNodeGraph(nodeDef.vgraph, params)
     node.__umType = vnode.type
     return node
@@ -38,7 +38,7 @@ let RenderContext = (nodeDefs, ac) => {
 
   let renderNodeGraph = (vgraph, params) => {
     vgraph = mapValuesWithId((vnode, id) => _.merge(vnode, { params: params[id] }), vgraph)
-    return RenderContext(nodeDefs, ac).render(vgraph, null, false)
+    return RenderContext(nodeDefs, um).render(vgraph, null, false)
   }
 
   let connectNodes = (vgraph, dest) => {
@@ -169,7 +169,7 @@ if (process.env.TEST) {
         foo: {
           out: true,
           freqIn: 'frq',
-          factory: (ac, params) => {
+          factory: (um, params) => {
             let _conns = []
             let _started = []
             return {
@@ -190,7 +190,7 @@ if (process.env.TEST) {
         baz: {
           in: true,
           out: true,
-          factory: (ac, params) => {
+          factory: (um, params) => {
             let _conns = []
             let _started = []
             return {
