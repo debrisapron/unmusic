@@ -9,13 +9,14 @@ let Player = (sequencer, controller) => {
     return onceReady.then(() => {
       sequencer.setTempo(score.tempo || 120)
       sequencer.setEvents(events)
-      return sequencer.play()
+      if (!sequencer.isPlaying()) sequencer.play()
     }).catch((err) => {
       throw err
     })
   }
 
   let stop = () => {
+    if (!sequencer.isPlaying()) return
     let stopTime = sequencer.stop()
     _.forEach((stopCb) => {
       if (stopCb) stopCb(stopTime)

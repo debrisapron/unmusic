@@ -11,6 +11,28 @@ let Sequencer = (ac) => {
   let nextIndex
   let nextTick
 
+  let dispatch = (index, deadline) => {
+    let cb = events[index].cb
+    if (cb) cb(deadline)
+    nextIndex = index + 1
+    if(nextIndex === events.length) nextIndex = 0
+    let nextDeadline = deadline + secsFrom(events[nextIndex].delta)
+    scheduleNext(nextDeadline)
+  }
+
+  let scheduleNext = (deadline) => {
+    nextTick = clock.callbackAtTime(
+      () => dispatch(nextIndex, deadline),
+      deadline
+    )
+  }
+
+  let secsFrom = (notes) => notes * notesPerSec()
+  let notesFrom = (secs) => secs / notesPerSec()
+  let notesPerSec = () => 240 / tempo
+
+  // Exports
+
   let setEvents = (eventsByTime) => {
     let oldEvents = events
 
@@ -61,27 +83,9 @@ let Sequencer = (ac) => {
     return ac.currentTime
   }
 
-  let dispatch = (index, deadline) => {
-    let cb = events[index].cb
-    if (cb) cb(deadline)
-    nextIndex = index + 1
-    if(nextIndex === events.length) nextIndex = 0
-    let nextDeadline = deadline + secsFrom(events[nextIndex].delta)
-    scheduleNext(nextDeadline)
-  }
+  let isPlaying = () => playing
 
-  let scheduleNext = (deadline) => {
-    nextTick = clock.callbackAtTime(
-      () => dispatch(nextIndex, deadline),
-      deadline
-    )
-  }
-
-  let secsFrom = (notes) => notes * notesPerSec()
-  let notesFrom = (secs) => secs / notesPerSec()
-  let notesPerSec = () => 240 / tempo
-
-  return { setEvents, setTempo, play, stop }
+  return { setEvents, setTempo, play, stop, isPlaying }
 }
 
 module.exports = Sequencer
