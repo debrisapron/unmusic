@@ -7,6 +7,7 @@ let tempo = require('./scoring/tempo')
 let arrange = require('./scoring/arrange')
 let addNode = require('./scoring/addNode')
 let multi = require('./scoring/multi')
+let offset = require('./scoring/offset')
 let Controller = require('./Controller')
 let Sequencer = require('./Sequencer')
 let Player = require('./Player')
@@ -21,6 +22,8 @@ let getDefaultAudioContext = () => {
   return window.__umAudioContext ||
     (window.__umAudioContext = new AudioContext())
 }
+
+// Exports
 
 let Unmusic = ({ audioContext = getDefaultAudioContext(), cwd = '/' } = {}) => {
   let um = {}
