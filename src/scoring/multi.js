@@ -1,5 +1,4 @@
 let _ = require('lodash/fp')
-let h = require('./support/helpers')
 
 let getNoteParams = (zones, nn) => {
   let notes = Object.keys(zones).filter((z) => !isNaN(z)).map((n) => parseInt(n))
@@ -8,7 +7,9 @@ let getNoteParams = (zones, nn) => {
 }
 
 let getTrigParams = (zones, name) => {
-  return zones[name]
+  if (zones[name]) return zones[name]
+  let fullName = Object.keys(zones).find((zone) => zone.startsWith(name))
+  return zones[fullName]
 }
 
 // Exports
@@ -42,15 +43,15 @@ if (process.env.TEST) {
     it('can add a multi-zone node to the vgraph of every note in a score', () => {
       let score = { actions: [
         { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
-        { type: 'TRIG', payload: { time: 1/4, name: 'foo', dur: 1/4 } },
+        { type: 'TRIG', payload: { time: 1/4, name: 'f', dur: 1/4 } },
         { type: 'NOOP', payload: { time: 3/4 } }
       ] }
       let expScore = { actions: [
         { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4, vgraph: {
           node_0: { type: 'bar', params: { foo: 1, nn: 69 } }
         } } },
-        { type: 'TRIG', payload: { time: 1/4, name: 'foo', dur: 1/4, vgraph: {
-          node_0: { type: 'bar', params: { baz: 2, name: 'foo' } }
+        { type: 'TRIG', payload: { time: 1/4, name: 'f', dur: 1/4, vgraph: {
+          node_0: { type: 'bar', params: { baz: 2, name: 'f' } }
         } } },
         { type: 'NOOP', payload: { time: 3/4 } }
       ] }

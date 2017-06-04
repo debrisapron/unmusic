@@ -3,7 +3,7 @@ let _ = require('lodash/fp')
 let offset = (amount, score) => {
   score = _.cloneDeep(score)
   score.actions.forEach(({ payload, type }) => {
-    if (actionType === 'NOOP') { return }
+    if (type === 'NOOP') { return }
     payload.offset = amount
   })
   return score

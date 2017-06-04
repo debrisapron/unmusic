@@ -18,7 +18,7 @@ let mixScores = (scores) => {
 
   let actionLists = loops.concat(nonLoops)
   let mixed = _.flatten(actionLists)
-  let sorted = _.sortBy('payload.time', mixed)
+  let sorted = _.sortBy(['payload.time', 'payload.dur'], mixed)
   let score = h.wrapActions(h.cleanActions(sorted))
   if (!nonLoops.length) score.loop = true
   return score
@@ -96,16 +96,18 @@ if (process.env.TEST) {
     it('can mix two scores', () => {
       let s1 = { actions: [
         { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
         { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
       ] }
       let s2 = { actions: [
         { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
-        { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/8 } },
         { type: 'NOOP', payload: { time: 3/8 } }
       ] }
       let expected = { actions: [
         { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
         { type: 'NOTE', payload: { time: 0,   nn: 70, dur: 1/4 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/8 } },
         { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
         { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
       ] }

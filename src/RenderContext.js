@@ -26,14 +26,19 @@ let RenderContext = (nodeDefs, um) => {
   let paramsFrom = (vnode) => {
     let params = vnode.params || {}
     let nodeDef = nodeDefs[vnode.type]
-    if (params.nn && nodeDef.freqIn) {
-      params = _.set(nodeDef.freqIn, twelveTet(params.nn), params)
+    if (params.nn) {
+      if (nodeDef.freqIn) {
+        params = _.set(nodeDef.freqIn, twelveTet(params.nn), params)
+      }
+      if (nodeDef.rateIn) {
+        params = _.set(nodeDef.rateIn, twelveTet(params.nn, 1), params)
+      }
     }
     return params
   }
 
-  let twelveTet = (nn) => {
-    return nn && Math.pow(2, ((nn - 69) / 12)) * 440
+  let twelveTet = (nn, ref = 440) => {
+    return nn && Math.pow(2, ((nn - 69) / 12)) * ref
   }
 
   let renderNodeGraph = (vgraph, params) => {
@@ -190,6 +195,7 @@ if (process.env.TEST) {
         baz: {
           in: true,
           out: true,
+          rateIn: 'rate',
           factory: (um, params) => {
             let _conns = []
             let _started = []
@@ -205,7 +211,7 @@ if (process.env.TEST) {
       // The vgraph to render
       let vgraph = {
         foo: { type: 'foo', params: { blah: 42 } },
-        bar: { type: 'bar', params: { baz1: { question: '6 by 9' } } },
+        bar: { type: 'bar', params: { baz1: { question: '6 by 9' }, baz2: { nn: 81 } } },
         foo2: { type: 'foo', params: { nn: 69 }, connect: 'foo.ap' },
         foo3: { type: 'foo' }
       }
@@ -215,7 +221,7 @@ if (process.env.TEST) {
         foo: { isFoo: true, params: { blah: 42 }, ap: {}, _started: [1] },
         bar: {
           baz1: { isBaz: true, params: { answer: 42, question: '6 by 9' }, _started: [1] },
-          baz2: { isBaz: true, _started: [1] }
+          baz2: { isBaz: true, params: { rate: 2 }, _started: [1] }
         },
         foo2: { isFoo: true, params: { frq: 440 }, _started: [1] },
         foo3: { isFoo: true, _started: [1] }

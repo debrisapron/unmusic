@@ -9,14 +9,13 @@ let Player = (sequencer, controller) => {
     return onceReady.then(() => {
       sequencer.setTempo(score.tempo || 120)
       sequencer.setEvents(events)
-      if (!sequencer.isPlaying()) sequencer.play()
+      sequencer.play()
     }).catch((err) => {
       throw err
     })
   }
 
   let stop = () => {
-    if (!sequencer.isPlaying()) return
     let stopTime = sequencer.stop()
     _.forEach((stopCb) => {
       if (stopCb) stopCb(stopTime)
@@ -32,15 +31,24 @@ let Player = (sequencer, controller) => {
       .map((action) => {
         let { payload } = action
         let id = _.uniqueId()
-        let startEvent = { time: payload.time, fn: (time) => startAction(time, id, action), ord: 1 }
+        let startTime = payload.time + (payload.offset || 0)
+        startTime = wrap(startTime, length)
+        let startEvent = { time: startTime, fn: (t) => startAction(t, id, action), ord: 1 }
         if (!payload.dur) return [startEvent]
-        let endTime = (payload.time + payload.dur) % length
-        let stopEvent = { time: endTime, fn: (time) => endAction(time, id), ord: 0 }
+        let endTime = startTime + payload.dur
+        endTime = wrap(endTime, length)
+        let stopEvent = { time: endTime, fn: (t) => endAction(t, id), ord: 0 }
         return [startEvent, stopEvent]
       })
     let events = _.sortBy(['time', 'ord'], _.flatten(nestedDisorderedEvents))
     if (_.last(events).time < length) events.push({ time: length })
     return events.map((ev) => [ev.time, ev.fn])
+  }
+
+  let wrap = (time, length) => {
+    time = time % length
+    if(time >= 0) return time
+    return time + length
   }
 
   let startAction = (time, id, action) => {
@@ -110,6 +118,30 @@ if (process.env.TEST) {
         const stoppedNotes = stoppedActions.map((a) => a.payload.nn)
         expect(stoppedNotes).to.deep.equal(expNotes)
       })
+    })
+  })
+
+  it('can play a score with offsets', () => {
+    let events
+    let mockSeq = {
+      setEvents: (_events) => events = _events,
+      setTempo: (_tempo) => tempo = _tempo,
+      play: () => 0
+    }
+    let controller = {
+      prepare: () => Promise.resolve()
+    }
+    let score = { actions: [
+      { type: 'NOTE', payload: { time: 0,   nn: 1, dur: 1/4, offset: -1/32 } },
+      { type: 'NOTE', payload: { time: 1/2, nn: 1, dur: 1/4, offset:  1/32 } },
+      { type: 'NOOP', payload: { time: 1 } },
+    ] }
+    let player = Player(mockSeq, controller)
+
+    return player.play(score).then(() => {
+      const times = events.map((ev) => ev[0])
+      const expTimes = [7/32, 17/32, 25/32, 31/32, 1]
+      expect(times).to.deep.equal(expTimes)
     })
   })
 }

@@ -1,9 +1,10 @@
 let fs = require('fs')
 let path = require('path')
+let loadAudio = require('audio-loader')
 
 // TODO Move to um.cache
-// TODO urls
 let fileCache = {}
+let urlCache = {}
 
 let audioBufferFromFile = (ac, file) => {
   return new Promise((resolve, reject) => {
@@ -15,6 +16,10 @@ let audioBufferFromFile = (ac, file) => {
         .catch((err) => reject(err))
     })
   })
+}
+
+let audioBufferFromUrl = (ac, url) => {
+  return loadAudio(url, { context: ac })
 }
 
 // Exports
@@ -40,4 +45,23 @@ let getLoadedFile = (filename) => {
   return audioBuffer
 }
 
-module.exports = { loadFile, getLoadedFile }
+let loadUrl = (um, url) => {
+  if (urlCache[url]) return Promise.resolve(urlCache[url])
+  let promiseOfAudioBuffer = audioBufferFromUrl(um.ac, url)
+  promiseOfAudioBuffer.then((audioBuffer) => urlCache[url] = audioBuffer)
+  urlCache[url] = promiseOfAudioBuffer
+  return promiseOfAudioBuffer
+}
+
+let getLoadedUrl = (url) => {
+  let audioBuffer = urlCache[url]
+  if (!audioBuffer || audioBuffer.then) {
+    throw new Error(
+      'URL has not been loaded or has not finished loading. Please check the prepare function ' +
+      'of the node you are trying to create as it may contain an error.'
+    )
+  }
+  return audioBuffer
+}
+
+module.exports = { loadFile, getLoadedFile, loadUrl, getLoadedUrl }

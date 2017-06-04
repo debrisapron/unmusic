@@ -42,24 +42,29 @@ let Sequencer = (ac) => {
     })
 
     if (!playing) return
-    let newLength = _.last(events).time
-    let oldLength = _.last(oldEvents).time
-    if (newLength !== oldLength) {
-      // TODO If seqs are different lengths, snap to nearest note
-      stop()
-      play()
-      return
-    }
+    stop()
+    play()
+    return
 
-    // This is horrible. Must be an easier way.
-    let now = ac.currentTime
-    let secsToNextDeadline = nextTick.deadline - now
-    nextTick.clear()
-    let pos = oldEvents[nextIndex].time - notesFrom(secsToNextDeadline)
-    if (pos < 0) pos = pos + newLength // Not sure this is needed
-    nextIndex = events.findIndex((ev) => ev.time > pos)
-    let nextDeadline = now + secsFrom(events[nextIndex].time - pos)
-    scheduleNext(nextDeadline)
+    // TODO Seamless seq switching
+    // let newLength = _.last(events).time
+    // let oldLength = _.last(oldEvents).time
+    // if (newLength !== oldLength) {
+    //   // TODO If seqs are different lengths, snap to nearest note
+    //   stop()
+    //   play()
+    //   return
+    // }
+    //
+    // // This is horrible. Must be an easier way.
+    // let now = ac.currentTime
+    // let secsToNextDeadline = nextTick.deadline - now
+    // nextTick.clear()
+    // let pos = oldEvents[nextIndex].time - notesFrom(secsToNextDeadline)
+    // if (pos < 0) pos = pos + newLength // Not sure this is needed
+    // nextIndex = events.findIndex((ev) => ev.time > pos)
+    // let nextDeadline = now + secsFrom(events[nextIndex].time - pos)
+    // scheduleNext(nextDeadline)
   }
 
   let setTempo = (bpm) => tempo = bpm
@@ -128,40 +133,41 @@ if (process.env.TEST === 'SLOW') {
       }
     })
 
-    it('can switch seamlessly between sequences of the same length', (done) => {
-      let startTime
-      let times = []
-      let cb = (time) => times.push(time - startTime)
-      let sequence1 = [
-        [0,   cb],
-        [3/4, cb],
-        [1/4, cb],
-        [1/2, cb],
-        [1]
-      ]
-      let sequence2 = [
-        [1/8, cb],
-        [3/8, cb],
-        [1]
-      ]
-      let sequencer = Sequencer(ac)
-      sequencer.setTempo(240)
-      sequencer.setEvents(sequence1)
-      startTime = ac.currentTime + 0.01
-      sequencer.play()
-      setTimeout(switchSeqs, 260)
-      setTimeout(finish, 1150)
-
-      function switchSeqs() {
-        sequencer.setEvents(sequence2)
-      }
-
-      function finish() {
-        sequencer.stop()
-        expect(times.length).to.equal(4)
-        expect(arrApproxEqual(times, [0, 1/4, 3/8, 9/8])).to.be.true
-        done()
-      }
-    })
+    // TODO
+    // it('can switch seamlessly between sequences of the same length', (done) => {
+    //   let startTime
+    //   let times = []
+    //   let cb = (time) => times.push(time - startTime)
+    //   let sequence1 = [
+    //     [0,   cb],
+    //     [3/4, cb],
+    //     [1/4, cb],
+    //     [1/2, cb],
+    //     [1]
+    //   ]
+    //   let sequence2 = [
+    //     [1/8, cb],
+    //     [3/8, cb],
+    //     [1]
+    //   ]
+    //   let sequencer = Sequencer(ac)
+    //   sequencer.setTempo(240)
+    //   sequencer.setEvents(sequence1)
+    //   startTime = ac.currentTime + 0.01
+    //   sequencer.play()
+    //   setTimeout(switchSeqs, 260)
+    //   setTimeout(finish, 1150)
+    //
+    //   function switchSeqs() {
+    //     sequencer.setEvents(sequence2)
+    //   }
+    //
+    //   function finish() {
+    //     sequencer.stop()
+    //     expect(times.length).to.equal(4)
+    //     expect(arrApproxEqual(times, [0, 1/4, 3/8, 9/8])).to.be.true
+    //     done()
+    //   }
+    // })
   })
 }

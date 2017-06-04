@@ -1,14 +1,12 @@
-NOW
-
-- um.offset
-- samples from url
+- tuna nodes
+- rest of WAA nodes
+- default params e.g. gain for gain node
+- automap sample names to notes
+- soundfonts
 - panic
 - um.patch
 - um.rep
-- rest of WAA nodes
-
-NEXT
-
+- restore live sequence switching
 - snap to nearest quarter note when swapping in song with different length
 - busses
 - tempo change
@@ -16,17 +14,13 @@ NEXT
 - chords "C#maj" "(C# E G)"
 - DOCS
 - NPM
-
-FUTURE
-
 - durations in patterns
-- transformers
-  - map
-  - chord
-  - arpeg
-  - zip (melody-chord convolution)
-  - humanize
-  - swing
+- map
+- chord
+- arpeg
+- zip (melody-chord convolution)
+- humanize
+- swing
 - macros e.g. 'klonggg' expands out to '4/ v=127 (C C# D# F F5)'
 - midi out
 - osc out

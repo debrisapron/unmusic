@@ -4,14 +4,17 @@ let WaaNode = require('./support/WaaNode')
 let sample = WaaNode({
   out: true,
   audioParams: ['playbackRate', 'detune'],
+  rateIn: 'playbackRate',
   factory: (um, params) => {
     let node = um.ac.createBufferSource()
-    node.buffer = h.getLoadedFile(params.file)
+    if (params.file) node.buffer = h.getLoadedFile(params.file)
+    if (params.url) node.buffer = h.getLoadedUrl(params.url)
     return node
   },
   prepare: (um, params) => {
     if (params.file) return h.loadFile(um, params.file)
-    throw new Error('sample node must have file param specified.')
+    if (params.url) return h.loadUrl(um, params.url)
+    throw new Error('sample node must have file or url param specified.')
   }
 })
 

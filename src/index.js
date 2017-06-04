@@ -1,26 +1,39 @@
 let _ = require('lodash')
 let { getScore } = require('./scoring/support/helpers')
-let mix = require('./scoring/mix')
-let seq = require('./scoring/seq')
-let loop = require('./scoring/loop')
-let tempo = require('./scoring/tempo')
-let arrange = require('./scoring/arrange')
 let addNode = require('./scoring/addNode')
-let multi = require('./scoring/multi')
-let offset = require('./scoring/offset')
 let Controller = require('./Controller')
 let Sequencer = require('./Sequencer')
 let Player = require('./Player')
-let adsr = require('./nodes/adsr')
-let biquad = require('./nodes/biquad')
-let delay = require('./nodes/delay')
-let gain = require('./nodes/gain')
-let osc = require('./nodes/osc')
-let sample = require('./nodes/sample')
+
+let SCORING = [
+  { name: 'mix', resource: require('./scoring/mix') },
+  { name: 'seq', resource: require('./scoring/seq') },
+  { name: 'loop', composerFn: require('./scoring/loop') },
+  { name: 'arrange', composerFn: require('./scoring/arrange') },
+  { name: 'multi', composerFn: require('./scoring/multi') },
+  { name: 'multiSample', composerFn: require('./scoring/multiSample') },
+  { name: 'offset', composerFn: require('./scoring/offset') },
+  { name: 'tempo', composerFn: require('./scoring/tempo') }
+]
+
+let NODES = [
+  { name: 'adsr', nodeDef: require('./nodes/adsr') },
+  { name: 'biquad', nodeDef: require('./nodes/biquad') },
+  { name: 'delay', nodeDef: require('./nodes/delay') },
+  { name: 'gain', nodeDef: require('./nodes/gain') },
+  { name: 'osc', nodeDef: require('./nodes/osc') },
+  { name: 'sample', nodeDef: require('./nodes/sample') },
+]
 
 let getDefaultAudioContext = () => {
   return window.__umAudioContext ||
     (window.__umAudioContext = new AudioContext())
+}
+
+let wrapComposerFn = (fn) => {
+  return fn.length === 1
+    ? (thing) => fn(getScore(thing))
+    : _.curry((options, thing) => fn(options, getScore(thing)))
 }
 
 // Exports
@@ -33,63 +46,41 @@ let Unmusic = ({ audioContext = getDefaultAudioContext(), cwd = '/' } = {}) => {
   let sequencer = Sequencer(audioContext)
   let player = Player(sequencer, controller)
 
-  let use = (name, config) => {
-    let resource = getResource(name, config)
-    um[name] = resource
+  let use = (plugins) => {
+    plugins = _.castArray(plugins)
+    plugins.forEach((plugin) => {
+      if (plugin.resource) {
+        um[plugin.name] = plugin.resource
+        return
+      }
+      if (plugin.composerFn) {
+        um[plugin.name] = wrapComposerFn(plugin.composerFn)
+        return
+      }
+      if (plugin.nodeDef) {
+        nodeDefs[plugin.name] = plugin.nodeDef
+        um[plugin.name] = wrapComposerFn(
+          (params, score) => addNode({ type: plugin.name, params }, score)
+        )
+        return
+      }
+      throw new Error('Unrecognized plugin type.')
+    })
   }
 
-  let useResource = (name, resource) => {
-    use(name, { resource })
-  }
+  use([
+    { name: 'use', resource: use },
+    { name: 'config', resource: config },
+    { name: 'audioContext', resource: audioContext },
+    { name: 'ac', resource: audioContext },
+    { name: 'out', resource: audioContext.destination },
+    { name: 'play', resource: player.play },
+    { name: 'stop', resource: player.stop },
+  ])
 
-  let useComposer = (name, composerFn) => {
-    use(name, { composerFn, type: 'COMPOSER' })
-  }
+  use(SCORING)
 
-  let useNode = (name, nodeDef) => {
-    use(name, { nodeDef, type: 'NODE' })
-  }
-
-  let getResource = (name, config) => {
-    switch(config.type) {
-      case 'COMPOSER': return wrapComposer(config.composerFn)
-      case 'NODE':
-        nodeDefs[name] = config.nodeDef
-        return wrapComposer((params, score) => addNode({ type: name, params }, score))
-    }
-    return config.resource
-  }
-
-  let wrapComposer = (fn) => {
-    return fn.length === 1
-      ? (thing) => fn(getScore(thing))
-      : _.curry((options, thing) => fn(options, getScore(thing)))
-  }
-
-  useResource('config', config)
-  useResource('use', use)
-
-  useResource('audioContext', audioContext)
-  useResource('ac', audioContext)
-  useResource('out', audioContext.destination)
-
-  useResource('play', player.play)
-  useResource('stop', player.stop)
-
-  useResource('mix', mix)
-  useResource('seq', seq)
-
-  useComposer('loop', loop)
-  useComposer('arrange', arrange)
-  useComposer('multi', multi)
-  useComposer('tempo', tempo)
-
-  useNode('adsr', adsr)
-  useNode('biquad', biquad)
-  useNode('delay', delay)
-  useNode('gain', gain)
-  useNode('osc', osc)
-  useNode('sample', sample)
+  use(NODES)
 
   return um
 }
@@ -120,8 +111,8 @@ if (process.env.TEST) {
 
     it('can generate a simple score with a custom instrument', () => {
       let um = Unmusic()
-      um.use('oneOsc', {
-        type: 'NODE',
+      um.use({
+        name: 'oneOsc',
         nodeDef: {
           out: 'amp',
           freqIn: 'osc.frequency',
