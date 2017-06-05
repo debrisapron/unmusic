@@ -19,7 +19,9 @@ let sampleParamsFrom = _.curry((sampleType, thing) => {
 
 // Exports
 
-let multiSample = ({ files, urls }, score) => {
+let multiSample = (opts, score) => {
+  let files = Array.isArray(opts) ? opts : opts.files
+  let urls = opts.urls
   let zones = {}
   if (files) {
     let fileZones

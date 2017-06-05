@@ -1,9 +1,9 @@
 let _ = require('lodash')
 let { getScore } = require('./scoring/support/helpers')
 let addNode = require('./scoring/addNode')
-let Controller = require('./Controller')
-let Sequencer = require('./Sequencer')
-let Player = require('./Player')
+let Controller = require('./playback/Controller')
+let Sequencer = require('./playback/Sequencer')
+let Player = require('./playback/Player')
 
 let SCORING = [
   { name: 'mix', resource: require('./scoring/mix') },
@@ -13,7 +13,8 @@ let SCORING = [
   { name: 'multi', composerFn: require('./scoring/multi') },
   { name: 'multiSample', composerFn: require('./scoring/multiSample') },
   { name: 'offset', composerFn: require('./scoring/offset') },
-  { name: 'tempo', composerFn: require('./scoring/tempo') }
+  { name: 'tempo', composerFn: require('./scoring/tempo') },
+  { name: 'config', composerFn: require('./scoring/config') }
 ]
 
 let NODES = [
@@ -38,10 +39,14 @@ let wrapComposerFn = (fn) => {
 
 // Exports
 
-let Unmusic = ({ audioContext = getDefaultAudioContext(), cwd = '/' } = {}) => {
+let Unmusic = (config = {}) => {
+  let audioContext = config.audioContext || getDefaultAudioContext()
+  config = _.merge(_.omit('audioContext', config), {
+    cwd: '/',
+    audio: {}
+  })
   let um = {}
   let nodeDefs = {}
-  let config = { cwd }
   let controller = Controller(nodeDefs, um)
   let sequencer = Sequencer(audioContext)
   let player = Player(sequencer, controller)
@@ -59,9 +64,12 @@ let Unmusic = ({ audioContext = getDefaultAudioContext(), cwd = '/' } = {}) => {
       }
       if (plugin.nodeDef) {
         nodeDefs[plugin.name] = plugin.nodeDef
-        um[plugin.name] = wrapComposerFn(
-          (params, score) => addNode({ type: plugin.name, params }, score)
-        )
+        um[plugin.name] = wrapComposerFn((params, score) => {
+          if (_.isString(params) || _.isNumber(params)) {
+            params = { [plugin.nodeDef.defaultParam]: params }
+          }
+          return addNode({ type: plugin.name, params }, score)
+        })
         return
       }
       throw new Error('Unrecognized plugin type.')

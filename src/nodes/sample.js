@@ -5,6 +5,7 @@ let sample = WaaNode({
   out: true,
   audioParams: ['playbackRate', 'detune'],
   rateIn: 'playbackRate',
+  defaultParam: 'file',
   factory: (um, params) => {
     let node = um.ac.createBufferSource()
     if (params.file) node.buffer = h.getLoadedFile(params.file)
