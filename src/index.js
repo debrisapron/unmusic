@@ -1,4 +1,4 @@
-let _ = require('lodash')
+let _ = require('lodash/fp')
 let { getScore } = require('./scoring/support/helpers')
 let addNode = require('./scoring/addNode')
 let Controller = require('./playback/Controller')
@@ -14,12 +14,13 @@ let SCORING = [
   { name: 'multiSample', composerFn: require('./scoring/multiSample') },
   { name: 'offset', composerFn: require('./scoring/offset') },
   { name: 'tempo', composerFn: require('./scoring/tempo') },
-  { name: 'config', composerFn: require('./scoring/config') }
+  { name: 'configure', composerFn: require('./scoring/configure') }
 ]
 
 let NODES = [
   { name: 'adsr', nodeDef: require('./nodes/adsr') },
   { name: 'biquad', nodeDef: require('./nodes/biquad') },
+  { name: 'constant', nodeDef: require('./nodes/constant') },
   { name: 'delay', nodeDef: require('./nodes/delay') },
   { name: 'gain', nodeDef: require('./nodes/gain') },
   { name: 'osc', nodeDef: require('./nodes/osc') },
@@ -46,6 +47,7 @@ let Unmusic = (config = {}) => {
     audio: {}
   })
   let um = {}
+  let tempo = 120
   let nodeDefs = {}
   let controller = Controller(nodeDefs, um)
   let sequencer = Sequencer(audioContext)
@@ -76,14 +78,23 @@ let Unmusic = (config = {}) => {
     })
   }
 
+  let play = (score) => {
+    // TODO move this into player & make it into a constant node
+    // TODO Just generally fix this fucking mess
+    if (score.tempo) tempo = score.tempo
+    if (score.config) um.config = _.merge(um.config, score.config)
+    return player.play(score)
+  }
+
   use([
     { name: 'use', resource: use },
     { name: 'config', resource: config },
     { name: 'audioContext', resource: audioContext },
     { name: 'ac', resource: audioContext },
     { name: 'out', resource: audioContext.destination },
-    { name: 'play', resource: player.play },
+    { name: 'play', resource: play },
     { name: 'stop', resource: player.stop },
+    { name: 'tempo', resource: () => tempo }
   ])
 
   use(SCORING)

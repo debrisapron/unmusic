@@ -26,8 +26,7 @@ let audioBufferFromUrl = (ac, url) => {
 
 let loadFile = (um, filename) => {
   if (fileCache[filename]) return Promise.resolve(fileCache[filename])
-  let filePath = filename
-  if (um.config.cwd) filePath = path.resolve(um.config.cwd, um.config.audio.pathPrefix, filename)
+  filePath = path.join(um.config.cwd || '', um.config.audio.pathPrefix || '', filename)
   let promiseOfAudioBuffer = audioBufferFromFile(um.ac, filePath)
   promiseOfAudioBuffer.then((audioBuffer) => fileCache[filename] = audioBuffer)
   fileCache[filename] = promiseOfAudioBuffer

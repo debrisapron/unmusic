@@ -1,5 +1,6 @@
 let h = require('./support/helpers')
 let WaaNode = require('./support/WaaNode')
+let constant = require('./constant')
 
 let sample = WaaNode({
   out: true,
@@ -10,6 +11,12 @@ let sample = WaaNode({
     let node = um.ac.createBufferSource()
     if (params.file) node.buffer = h.getLoadedFile(params.file)
     if (params.url) node.buffer = h.getLoadedUrl(params.url)
+    if (node.buffer && params.stretch) {
+      // TODO Stretch in mode: 'rate' and mode: 'granular' should have followTempo option
+      let playbackRate = buffer.duration / (params.stretch.to * (um.tempo() / 60))
+      let constNode = constant.factory(um, { offset: playbackRate })
+      constNode.connect(node.playbackRate)
+    }
     return node
   },
   prepare: (um, params) => {
