@@ -64,3 +64,31 @@ let getLoadedUrl = (url) => {
 }
 
 module.exports = { loadFile, getLoadedFile, loadUrl, getLoadedUrl }
+
+////////////////////////////////////////////////////////////////////////////////
+
+if (process.env.TEST) {
+  let ac = window.__umAudioContext || (window.__umAudioContext = new window.AudioContext())
+
+  describe('node helpers', () => {
+
+    it('can get an audio buffer from a local file', () => {
+      let mockUm = {
+        ac,
+        config: {
+          cwd: path.resolve(__dirname, '..', '..', '..'),
+          audio: { pathPrefix: 'testSupport/' }
+        }
+      }
+      let expAudioBuffer = {
+        length: 14400,
+        duration: 0.32653061224489793,
+        sampleRate: 44100,
+        numberOfChannels: 1
+      }
+      return loadFile(mockUm, 'clap808.wav').then(() => {
+        expect(getLoadedFile('clap808.wav')).to.containSubset(expAudioBuffer)
+      })
+    })
+  })
+}
