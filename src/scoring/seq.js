@@ -1,6 +1,10 @@
+let _ = require('lodash/fp')
 let h = require('./support/helpers')
 
-let seq = (...args) => h.concatScores(args)
+let seq = (...args) => {
+  let [fns, scores] = _.partition(_.isFunction, args)
+  return _.pipe(fns)(h.concatScores(scores))
+}
 
 module.exports = seq
 
@@ -49,6 +53,22 @@ if (process.env.TEST) {
         { type: 'NOTE', payload: { time: 1/2, nn: 70, dur: 1/4 } }
       ] }
       expect(seq(s1, s2)).to.deep.equal(expected)
+    })
+
+    it('can pipe a score through any number of functions', () => {
+      let fn1 = (score) => {
+        score.actions.forEach(({ payload }) => payload.foo = 1)
+        return score
+      }
+      let fn2 = (score) => {
+        score.actions.forEach(({ payload }) => payload.bar = payload.foo + 1)
+        return score
+      }
+      let expected = { actions: [
+        { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4, foo: 1, bar: 2 } },
+        { type: 'NOTE', payload: { time: 1/4, nn: 71, dur: 1/4, foo: 1, bar: 2 } }
+      ] }
+      expect(seq('A', 'B', fn1, fn2)).to.deep.equal(expected)
     })
   })
 }

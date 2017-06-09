@@ -1,6 +1,6 @@
 let um = window.__um || (window.__um = require('..')())
 
-um.config.cwd = __dirname
+um.__config.cwd = __dirname
 
 um.play(um.multi(
   { type: 'sample', zones: {

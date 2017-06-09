@@ -3,7 +3,10 @@ let generateIntermediate = require('./generateIntermediate')
 let optimizeIntermediate = require('./optimizeIntermediate')
 let generateScore = require('./generateScore')
 
-let evalUmlang = (s) => generateScore(optimizeIntermediate(generateIntermediate(parse(s))))
+let evalUmlang = (s) => {
+  s = (s || '').trim()
+  return generateScore(optimizeIntermediate(generateIntermediate(parse(s))))
+}
 
 module.exports = evalUmlang
 
@@ -46,7 +49,7 @@ if (process.env.TEST) {
     })
 
     it('can chain different settings, notes and rests', () => {
-      let s = '< d=/8 C dur=/16 -10 /8 _ /4 M55 _'
+      let s = '  < d=/8 C dur=/16 -10 /8 _ /4 M55 _  '
       let expected = [
         { type: 'NOTE', payload: { time: 0,     nn: 48, dur: 1/8 } },
         { type: 'NOTE', payload: { time: 1/8,   nn: 47, dur: 1/16 } },

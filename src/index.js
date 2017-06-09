@@ -9,12 +9,11 @@ let SCORING = [
   { name: 'mix', resource: require('./scoring/mix') },
   { name: 'seq', resource: require('./scoring/seq') },
   { name: 'loop', composerFn: require('./scoring/loop') },
-  { name: 'arrange', composerFn: require('./scoring/arrange') },
   { name: 'multi', composerFn: require('./scoring/multi') },
   { name: 'multiSample', composerFn: require('./scoring/multiSample') },
   { name: 'offset', composerFn: require('./scoring/offset') },
   { name: 'tempo', composerFn: require('./scoring/tempo') },
-  { name: 'configure', composerFn: require('./scoring/configure') }
+  { name: 'config', composerFn: require('./scoring/config') }
 ]
 
 let NODES = [
@@ -47,7 +46,7 @@ let Unmusic = (config = {}) => {
     audio: {}
   })
   let um = {}
-  let tempo = 120
+  let state = {}
   let nodeDefs = {}
   let controller = Controller(nodeDefs, um)
   let sequencer = Sequencer(audioContext)
@@ -81,20 +80,21 @@ let Unmusic = (config = {}) => {
   let play = (score) => {
     // TODO move this into player & make it into a constant node
     // TODO Just generally fix this fucking mess
-    if (score.tempo) tempo = score.tempo
-    if (score.config) um.config = _.merge(um.config, score.config)
+    if (score.tempo) state.tempo = score.tempo
+    if (score.config) um.__config = _.merge(um.__config, score.config)
     return player.play(score)
   }
 
   use([
     { name: 'use', resource: use },
-    { name: 'config', resource: config },
+    { name: '__config', resource: config },
     { name: 'audioContext', resource: audioContext },
     { name: 'ac', resource: audioContext },
     { name: 'out', resource: audioContext.destination },
     { name: 'play', resource: play },
     { name: 'stop', resource: player.stop },
-    { name: 'tempo', resource: () => tempo }
+    { name: '__state', resource: state },
+    { name: 'pipe', resource: _.pipe }
   ])
 
   use(SCORING)
