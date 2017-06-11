@@ -50,7 +50,7 @@ let Unmusic = (config = {}) => {
   let um = {}
   let state = {}
   let nodeDefs = {}
-  let controller = Controller(nodeDefs, um)
+  let controller = Controller(um)
   let sequencer = Sequencer(audioContext)
   let player = Player(sequencer, controller)
 
@@ -98,6 +98,7 @@ let Unmusic = (config = {}) => {
     { name: 'play', resource: play },
     { name: 'stop', resource: player.stop },
     { name: '__state', resource: state },
+    { name: '__nodeDefs', resource: nodeDefs },
     { name: 'pipe', resource: _.pipe }
   ])
 

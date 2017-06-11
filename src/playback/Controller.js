@@ -1,17 +1,24 @@
 let _ = require('lodash/fp')
-let Renderer = require('./Renderer')
+let renderGraph = require('./renderGraph')
+let finishGraph = require('./finishGraph')
 
-let Controller = (nodeDefs, um) => {
+module.exports = Controller
 
-  let renderer
+function Controller(um) {
 
-  let prepare = (score) => {
-    renderer = Renderer(nodeDefs, um)
+  // Our top-level render context. This is what we use to persist nodes between renders.
+  // It's wiped every time a new score is prepared.
+  let cache
+
+  return { prepare, handle }
+
+  function prepare(score) {
+    cache = {}
     let promises = []
     score.actions.forEach((action) => {
       let vgraph = _.get('payload.vgraph', action)
       _.forIn(({ type, params }) => {
-        let prepareFn = _.get(type, nodeDefs).prepare
+        let prepareFn = _.get(type, um.__nodeDefs).prepare
         if (!prepareFn) return
         let promise = prepareFn(um, params)
         if (promise) promises.push(promise)
@@ -20,16 +27,14 @@ let Controller = (nodeDefs, um) => {
     return Promise.all(promises)
   }
 
-  let handle = (time, action) => {
+  function handle(time, action) {
     let vgraph = _.get('payload.vgraph', action)
-    if (!vgraph) { return }
-    let graph = renderer.render(vgraph, time, true, um.ac.destination)
-    return (time) => {
-      renderer.finish(vgraph, time)
-    }
+    if (!vgraph) return
+    let graph = render({
+      um, vgraph, time, cache,
+      andStart: true,
+      dest: um.ac.destination
+    })
+    return (time) => finish(graph, time)
   }
-
-  return { prepare, handle }
 }
-
-module.exports = Controller
