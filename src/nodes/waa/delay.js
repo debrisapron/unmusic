@@ -1,4 +1,4 @@
-let WaaNode = require('./support/WaaNode')
+let WaaNode = require('../support/WaaNode')
 
 let delay = WaaNode({
   in: true,

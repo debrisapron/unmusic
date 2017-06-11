@@ -1,12 +1,14 @@
 - tuna nodes
-- rest of WAA nodes
-- default params e.g. gain for gain node
+- tone nodes
+- automation
+- joins
+- midi in
+
 - automap sample names to notes
 - soundfonts
 - panic
 - um.patch
 - um.rep
-- restore live sequence switching
 - snap to nearest quarter note when swapping in song with different length
 - busses
 - tempo change
@@ -14,7 +16,7 @@
 - chords "C#maj" "(C# E G)"
 - DOCS
 - NPM
-- durations in patterns
+- grids
 - map
 - chord
 - arpeg
@@ -24,7 +26,5 @@
 - macros e.g. 'klonggg' expands out to '4/ v=127 (C C# D# F F5)'
 - midi out
 - osc out
-- automation
-- midi in
 - osc in
 - record midi/osc

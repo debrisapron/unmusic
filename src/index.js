@@ -1,4 +1,5 @@
 let _ = require('lodash/fp')
+let _$ = require('lodash')
 let { getScore } = require('./scoring/support/helpers')
 let addNode = require('./scoring/addNode')
 let Controller = require('./playback/Controller')
@@ -17,13 +18,14 @@ let SCORING = [
 ]
 
 let NODES = [
+  { name: 'waa.biquad', nodeDef: require('./nodes/waa/biquad') },
+  { name: 'waa.constant', nodeDef: require('./nodes/waa/constant') },
+  { name: 'waa.delay', nodeDef: require('./nodes/waa/delay') },
+  { name: 'waa.gain', nodeDef: require('./nodes/waa/gain') },
+  { name: 'waa.osc', nodeDef: require('./nodes/waa/osc') },
   { name: 'adsr', nodeDef: require('./nodes/adsr') },
-  { name: 'biquad', nodeDef: require('./nodes/biquad') },
-  { name: 'constant', nodeDef: require('./nodes/constant') },
-  { name: 'delay', nodeDef: require('./nodes/delay') },
-  { name: 'gain', nodeDef: require('./nodes/gain') },
-  { name: 'osc', nodeDef: require('./nodes/osc') },
   { name: 'sample', nodeDef: require('./nodes/sample') },
+  { name: 'vol', nodeDef: require('./nodes/vol') },
 ]
 
 let getDefaultAudioContext = () => {
@@ -54,23 +56,25 @@ let Unmusic = (config = {}) => {
 
   let use = (plugins) => {
     plugins = _.castArray(plugins)
-    plugins.forEach((plugin) => {
-      if (plugin.resource) {
-        um[plugin.name] = plugin.resource
+    plugins.forEach(({ name, resource, composerFn, nodeDef }) => {
+      if (resource) {
+        _$.set(um, name, resource)
         return
       }
-      if (plugin.composerFn) {
-        um[plugin.name] = wrapComposerFn(plugin.composerFn)
+      if (composerFn) {
+        resource = wrapComposerFn(composerFn)
+        use({ name, resource })
         return
       }
-      if (plugin.nodeDef) {
-        nodeDefs[plugin.name] = plugin.nodeDef
-        um[plugin.name] = wrapComposerFn((params, score) => {
+      if (nodeDef) {
+        _$.set(nodeDefs, name, nodeDef)
+        composerFn = (params, score) => {
           if (_.isString(params) || _.isNumber(params)) {
-            params = { [plugin.nodeDef.defaultParam]: params }
+            params = { [nodeDef.defaultParam]: params }
           }
-          return addNode({ type: plugin.name, params }, score)
-        })
+          return addNode({ type: name, params }, score)
+        }
+        use({ name, composerFn })
         return
       }
       throw new Error('Unrecognized plugin type.')
@@ -117,15 +121,18 @@ if (process.env.TEST) {
 
     it('can generate a super-simple score with one trigger of one sample', () => {
       let um = Unmusic()
-      let score = um.sample({ file: 'foo.wav' }, 'foo')
       let expScore = {
         actions: [
           { type: 'TRIG', payload: { time: 0, name: 'foo', dur: 1/4, vgraph: {
-            node_0: { type: 'sample', params: { file: 'foo.wav', name: 'foo' } }
+            node_1: { type: 'sample', params: { file: 'foo.wav', name: 'foo' } }
           } } },
         ]
       }
+      let uid = _.uniqueId
+      _.uniqueId = () => 1
+      let score = um.sample({ file: 'foo.wav' }, 'foo')
       expect(score).to.containSubset(expScore)
+      _.uniqueId = uid
     })
 
     it('can generate a simple score with a custom instrument', () => {
@@ -136,11 +143,11 @@ if (process.env.TEST) {
           out: 'amp',
           freqIn: 'osc.frequency',
           vgraph: {
-            osc: { type: 'osc' },
-            filter: { type: 'biquad', params: { type: 'lowpass' } },
-            amp: { type: 'gain', params: { gain: 0 } },
+            osc: { type: 'waa.osc' },
+            filter: { type: 'waa.biquad', params: { type: 'lowpass' } },
+            amp: { type: 'waa.gain', params: { gain: 0 } },
             filterEnv: { type: 'adsr' },
-            filterEnvAmt: { type: 'gain', params: { gain: '9600' }, connect: 'filter.detune' },
+            filterEnvAmt: { type: 'waa.gain', params: { gain: '9600' }, connect: 'filter.detune' },
             ampEnv: { type: 'adsr', connect: 'amp.gain' }
           }
         }

@@ -1,12 +1,22 @@
 let _ = require('lodash/fp')
 
+// let nextNodeId = (score) => {
+//   return _.max(
+//     score.actions
+//       .filter(({ payload }) => payload && payload.vgraph)
+//       .map(({ payload: { vgraph } }) => _.max(Object.keys(vgraph).map((k) => parseInt(k))))
+//   ) + 1
+// }
+
 let addNode = ({ type, params }, score) => {
   score = _.cloneDeep(score)
+  // TODO Make nodeIds deterministic
+  let nodeId = `node_${_.uniqueId()}`
   score.actions.forEach(({ payload, type: actionType }) => {
     if (actionType === 'NOOP') { return }
     let vgraph = payload.vgraph = payload.vgraph || {}
-    let nodeId = `node_${Object.keys(vgraph).length}`
-    // TODO merge in relevant params from payload e.g. vel. (Also at, cc, pb)?
+    // TODO Merge in relevant params from payload e.g. vel. (Also at, cc, pb)?
+    // TODO Set frequency & rate here instead of in renderer.
     let metaParams = {}
     if (actionType === 'NOTE') metaParams.nn = payload.nn
     if (actionType === 'TRIG') metaParams.name = payload.name
@@ -32,14 +42,17 @@ if (process.env.TEST) {
       ] }
       let expScore = { actions: [
         { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4, vgraph: {
-          node_0: { type: 'bar', params: { foo: 1, nn: 69 } }
+          node_1: { type: 'bar', params: { foo: 1, nn: 69 } }
         } } },
         { type: 'TRIG', payload: { time: 1/4, name: 'foo', dur: 1/4, vgraph: {
-          node_0: { type: 'bar', params: { foo: 1, name: 'foo' } }
+          node_1: { type: 'bar', params: { foo: 1, name: 'foo' } }
         } } },
         { type: 'NOOP', payload: { time: 3/4 } }
       ] }
+      let uid = _.uniqueId
+      _.uniqueId = () => 1
       expect(addNode({ type: 'bar', params: { foo: 1 } }, score)).to.deep.equal(expScore)
+      _.uniqueId = uid
     })
   })
 }

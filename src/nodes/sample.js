@@ -1,6 +1,5 @@
 let h = require('./support/helpers')
 let WaaNode = require('./support/WaaNode')
-let constant = require('./constant')
 
 function stretch(um, node, stretchParams) {
   // TODO Stretch in mode: 'rate' and mode: 'granular' should have followTempo option

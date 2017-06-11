@@ -1,96 +1,75 @@
 let _ = require('lodash/fp')
-let WaaClock = require('waaclock')
-
-const INITIAL_LATENCY = 0.01
+let Tone = require('tone')
 
 let Sequencer = (ac) => {
-  let clock = new WaaClock(ac, { toleranceEarly: 0.01 })
-  let events = []
-  let playing = false
-  let tempo = 120
-  let nextIndex
-  let nextTick
+  let part
+  let partLength
 
-  let dispatch = (index, deadline) => {
-    let cb = events[index].cb
-    if (cb) cb(deadline)
-    nextIndex = index + 1
-    if(nextIndex === events.length) nextIndex = 0
-    let nextDeadline = deadline + secsFrom(events[nextIndex].delta)
-    scheduleNext(nextDeadline)
-  }
+  if (ac) Tone.context = ac
 
-  let scheduleNext = (deadline) => {
-    nextTick = clock.callbackAtTime(
-      () => dispatch(nextIndex, deadline),
-      deadline
+  let toneEventsFrom = (sequence) => {
+    return _.sortBy(
+      'time',
+      sequence.events.map((ev) => ({ time: wholeNotesToSecs(ev[0]), fn: ev[1] }))
     )
   }
 
-  let secsFrom = (notes) => notes * notesPerSec()
-  let notesFrom = (secs) => secs / notesPerSec()
-  let notesPerSec = () => 240 / tempo
+  let triggerEvent = (time, { fn }) => fn(time)
+
+  let isStarted = () => Tone.Transport.state === 'started'
+
+  let wholeNotesToSecs = (wholeNotes) => {
+    // We avoid using 1n because Tone translates 1n to 1m
+    return Tone.Transport.toSeconds('2n') * 2 * wholeNotes
+  }
+
+  let mutatePart = (evs) => {
+    part.removeAll()
+    evs.forEach((ev) => part.add(ev))
+  }
+
+  let replacePart = (evs, length) => {
+    let newPart = new Tone.Part(triggerEvent, evs)
+    newPart.loop = true
+    newPart.loopEnd = wholeNotesToSecs(length)
+    // TODO snap to nearest quarter note
+    if (isStarted()) {
+      part.stop()
+      part.dispose()
+    }
+    newPart.start()
+    part = newPart
+    partLength = length
+  }
 
   // Exports
 
-  let setEvents = (eventsByTime) => {
-    let oldEvents = events
-
-    events = _.sortBy('[0]', eventsByTime).map(([time, cb], i, arr) => {
-      let delta = i === 0 ? time : (time - arr[i - 1][0])
-      return { time, delta, cb }
-    })
-
-    if (!playing) return
-    stop()
-    play()
-    return
-
-    // TODO Seamless seq switching
-    // let newLength = _.last(events).time
-    // let oldLength = _.last(oldEvents).time
-    // if (newLength !== oldLength) {
-    //   // TODO If seqs are different lengths, snap to nearest note
-    //   stop()
-    //   play()
-    //   return
-    // }
-    //
-    // // This is horrible. Must be an easier way.
-    // let now = ac.currentTime
-    // let secsToNextDeadline = nextTick.deadline - now
-    // nextTick.clear()
-    // let pos = oldEvents[nextIndex].time - notesFrom(secsToNextDeadline)
-    // if (pos < 0) pos = pos + newLength // Not sure this is needed
-    // nextIndex = events.findIndex((ev) => ev.time > pos)
-    // let nextDeadline = now + secsFrom(events[nextIndex].time - pos)
-    // scheduleNext(nextDeadline)
+  let setSequence = (sequence) => {
+    let tevs = toneEventsFrom(sequence)
+    if (partLength === sequence.length) {
+      mutatePart(tevs)
+    } else {
+      replacePart(tevs, sequence.length)
+    }
   }
 
-  let setTempo = (bpm) => tempo = bpm
+  let setTempo = (tempo) => {
+    Tone.Transport.bpm.value = tempo
+  }
 
-  let play = () => {
-    if (playing || !events.length) return
-    playing = true
-    let firstTime = secsFrom(events[0].time)
-    let now = ac.currentTime
-    let firstDeadline = now + firstTime + INITIAL_LATENCY
-    clock.start()
-    nextIndex = 0
-    scheduleNext(firstDeadline)
-    return now + INITIAL_LATENCY
+  let start = () => {
+    if (!isStarted()) { Tone.Transport.start() }
   }
 
   let stop = () => {
-    if (!playing) return
-    playing = false
-    clock.stop()
+    if (isStarted()) {
+      Tone.Transport.stop()
+      part.stop()
+    }
     return ac.currentTime
   }
 
-  let isPlaying = () => playing
-
-  return { setEvents, setTempo, play, stop, isPlaying }
+  return { setSequence, setTempo, start, stop }
 }
 
 module.exports = Sequencer
@@ -111,18 +90,17 @@ if (process.env.TEST === 'SLOW') {
       let startTime
       let times = []
       let cb = (time) => times.push(time - startTime)
-      let sequence = [
+      let sequence = { events: [
         [0,   cb],
         [3/4, cb],
         [1/4, cb],
-        [1/2, cb],
-        [1]
-      ]
+        [1/2, cb]
+      ], length: 1 }
       let sequencer = Sequencer(ac)
       sequencer.setTempo(240)
-      sequencer.setEvents(sequence)
-      startTime = ac.currentTime + 0.01
-      sequencer.play()
+      sequencer.setSequence(sequence)
+      startTime = ac.currentTime
+      sequencer.start()
       setTimeout(finish, 1020)
 
       function finish() {
@@ -133,33 +111,30 @@ if (process.env.TEST === 'SLOW') {
       }
     })
 
-    // TODO
     // it('can switch seamlessly between sequences of the same length', (done) => {
     //   let startTime
     //   let times = []
     //   let cb = (time) => times.push(time - startTime)
-    //   let sequence1 = [
+    //   let sequence1 = { events: [
     //     [0,   cb],
     //     [3/4, cb],
     //     [1/4, cb],
-    //     [1/2, cb],
-    //     [1]
-    //   ]
-    //   let sequence2 = [
+    //     [1/2, cb]
+    //   ], length: 1 }
+    //   let sequence2 = { events: [
     //     [1/8, cb],
-    //     [3/8, cb],
-    //     [1]
-    //   ]
+    //     [3/8, cb]
+    //   ], length: 1 }
     //   let sequencer = Sequencer(ac)
     //   sequencer.setTempo(240)
-    //   sequencer.setEvents(sequence1)
-    //   startTime = ac.currentTime + 0.01
-    //   sequencer.play()
+    //   sequencer.setSequence(sequence1)
+    //   startTime = ac.currentTime
+    //   sequencer.start()
     //   setTimeout(switchSeqs, 260)
-    //   setTimeout(finish, 1150)
+    //   setTimeout(finish, 1300)
     //
     //   function switchSeqs() {
-    //     sequencer.setEvents(sequence2)
+    //     sequencer.setSequence(sequence2)
     //   }
     //
     //   function finish() {

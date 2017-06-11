@@ -1,14 +1,17 @@
 let _ = require('lodash/fp')
-let RenderContext = require('./RenderContext')
+let Renderer = require('./Renderer')
 
 let Controller = (nodeDefs, um) => {
 
+  let renderer
+
   let prepare = (score) => {
+    renderer = Renderer(nodeDefs, um)
     let promises = []
     score.actions.forEach((action) => {
       let vgraph = _.get('payload.vgraph', action)
       _.forIn(({ type, params }) => {
-        let prepareFn = nodeDefs[type].prepare
+        let prepareFn = _.get(type, nodeDefs).prepare
         if (!prepareFn) return
         let promise = prepareFn(um, params)
         if (promise) promises.push(promise)
@@ -18,12 +21,11 @@ let Controller = (nodeDefs, um) => {
   }
 
   let handle = (time, action) => {
-    let renderContext = RenderContext(nodeDefs, um)
     let vgraph = _.get('payload.vgraph', action)
     if (!vgraph) { return }
-    let graph = renderContext.render(vgraph, time, true, um.ac.destination)
+    let graph = renderer.render(vgraph, time, true, um.ac.destination)
     return (time) => {
-      renderContext.finish(vgraph, time)
+      renderer.finish(vgraph, time)
     }
   }
 

@@ -5,34 +5,37 @@ let mapValuesWithId = (iteratee, obj) => _$.mapValues(obj, iteratee)
 let forEachRightWithId = (iteratee, coll) => _$.forEachRight(coll, iteratee)
 
 // TODO Clean this mess up.
-let RenderContext = (nodeDefs, um) => {
-  let nodes = {}
+let Renderer = (nodeDefs, um) => {
+  let cache = {}
 
   let createNodes = (vgraph) => {
-    return mapValuesWithId((vnode, id) => nodes[id] || (nodes[id] = renderNode(vnode)), vgraph)
+    return mapValuesWithId((vnode, id) => {
+      if (cache[id]) return cache[id]
+      vnode = _.merge(vnode, { id, nodeDef: _.get(vnode.type, nodeDefs) })
+      let node = renderNode(vnode)
+      // Persist nodes which have an input, so sources will be joined before processing
+      if (vnode.nodeDef.in) cache[id] = node
+      return node
+    }, vgraph)
   }
 
   let renderNode = (vnode) => {
-    let nodeDef = nodeDefs[vnode.type]
-    if (!nodeDef) throw new Error('Unrecognized node type')
+    let nd = vnode.nodeDef
+    if (!nd) throw new Error('Unrecognized node type')
     let params = paramsFrom(vnode)
-    let node = nodeDef.factory
-      ? nodeDef.factory(um, params)
-      : renderNodeGraph(nodeDef.vgraph, params)
-    node.__umType = vnode.type
+    let node = nd.factory
+      ? nd.factory(um, params)
+      : renderSubGraph(nd.vgraph, params)
+    node.__um = vnode
     return node
   }
 
   let paramsFrom = (vnode) => {
+    let nd = vnode.nodeDef
     let params = vnode.params || {}
-    let nodeDef = nodeDefs[vnode.type]
     if (params.nn) {
-      if (nodeDef.freqIn) {
-        params = _.set(nodeDef.freqIn, twelveTet(params.nn), params)
-      }
-      if (nodeDef.rateIn) {
-        params = _.set(nodeDef.rateIn, twelveTet(params.nn, 1), params)
-      }
+      if (nd.freqIn) params = _.set(nd.freqIn, twelveTet(params.nn), params)
+      if (nd.rateIn) params = _.set(nd.rateIn, twelveTet(params.nn, 1), params)
     }
     return params
   }
@@ -41,23 +44,24 @@ let RenderContext = (nodeDefs, um) => {
     return nn && Math.pow(2, ((nn - 69) / 12)) * ref
   }
 
-  let renderNodeGraph = (vgraph, params) => {
+  let renderSubGraph = (vgraph, params) => {
     vgraph = mapValuesWithId((vnode, id) => _.merge(vnode, { params: params[id] }), vgraph)
-    return RenderContext(nodeDefs, um).render(vgraph, null, false)
+    return Renderer(nodeDefs, um).render(vgraph, null, false)
   }
 
-  let connectNodes = (vgraph, dest) => {
+  let connectNodes = (graph, dest) => {
     let nextDest = dest
-    forEachRightWithId((vnode, id) => {
-      let nodeDef = nodeDefs[vnode.type]
-      let sourceNode = nodes[id]
+    _.forEachRight((sourceNode) => {
+      let nd = sourceNode.__um.nodeDef
       let defaultDest = nextDest
-      nextDest = nodeDef.in && (nodeDef.in === true ? sourceNode : _.get(nodeDef.in, sourceNode))
-      if (!nodeDef.out) return
-      if (vnode.connect) {
-        _.castArray(vnode.connect).forEach((destName) => {
+      nextDest = nd.in && (nd.in === true ? sourceNode : _.get(nd.in, sourceNode))
+      if (!nd.out) return
+      let connections = sourceNode.__um.connect
+      if (connections) {
+        _.castArray(connections).forEach((destName) => {
           let [destId, ...inParts] = destName.split('.')
-          let destNode = nodes[destId]
+          let destNode = graph[destId]
+
           let destPath = inParts.length ? inParts.join('.') : 'main'
           connect(sourceNode, destNode, destPath)
         })
@@ -66,18 +70,17 @@ let RenderContext = (nodeDefs, um) => {
       if (defaultDest) {
         connect(sourceNode, defaultDest, 'main')
       }
-    }, vgraph)
+    }, graph)
   }
 
-  let defFrom = (node) => nodeDefs[node.__umType]
-
   let getNodeOutput = (node) => {
-    let outputPath = defFrom(node).out
+    let outputPath = node.__um.nodeDef.out
     return outputPath === true ? node : _.get(outputPath, node)
   }
 
   let getNodeInput = (node, inputPath) => {
-    let nd = defFrom(node)
+    // Node may not have an __um prop as it may be a naked destination node
+    let nd = node.__um && node.__um.nodeDef
     if (inputPath === 'main') inputPath = nd ? nd.in : true
     return inputPath === true ? node : _.get(inputPath, node)
   }
@@ -93,21 +96,22 @@ let RenderContext = (nodeDefs, um) => {
   }
 
   let start = (node, time) => {
-    let nd = defFrom(node)
+    let nd = node.__um.nodeDef
     if (nd.start) return nd.start(node, time)
     if (nd.vgraph) return _.forEach((key) => start(node[key], time), Object.keys(nd.vgraph))
     if (node.start) return node.start(time)
   }
 
   let stop = (node, time) => {
-    let nd = defFrom(node)
+    let nd = node.__um.nodeDef
+    delete cache[node.__um.id]
     if (nd.stop) return nd.stop(node, time)
     if (nd.vgraph) return _.forEach((key) => stop(node[key], time), Object.keys(nd.vgraph))
     if (node.stop) return node.stop(time)
   }
 
   let finishNode = (node, time, andStop = true) => {
-    let nd = defFrom(node)
+    let nd = node.__um.nodeDef
     if (nd.finish) return nd.finish(node, time, andStop)
     if (nd.vgraph) {
       let nodes = Object.keys(nd.vgraph).map((key) => node[key])
@@ -122,13 +126,13 @@ let RenderContext = (nodeDefs, um) => {
 
   let render = (vgraph, time, andStart, dest) => {
     let graph = createNodes(vgraph)
-    connectNodes(vgraph, dest)
+    connectNodes(graph, dest)
     if (andStart) startNodes(graph, time)
     return graph
   }
 
-  let finish = (vgraph, time) => {
-    _.forEach((key) => finishNode(nodes[key], time), Object.keys(vgraph))
+  let finish = (graph, time) => {
+    _.forEach((node) => finishNode(node, time), graph)
   }
 
   // let set = (node, params) => {
@@ -159,13 +163,13 @@ let RenderContext = (nodeDefs, um) => {
   return { render, finish }
 }
 
-module.exports = RenderContext
+module.exports = Renderer
 
 ////////////////////////////////////////////////////////////////////////////////
 
 if (process.env.TEST) {
 
-  describe('render context', () => {
+  describe('renderer', () => {
 
     it('can render an example vgraph', () => {
 
@@ -232,8 +236,8 @@ if (process.env.TEST) {
       expGraph.foo3._conns = ['finalDest']
 
       // The test
-      let renderContext = RenderContext(nodeDefs)
-      let graph = renderContext.render(vgraph, 1, true, 'finalDest')
+      let renderer = Renderer(nodeDefs)
+      let graph = renderer.render(vgraph, 1, true, 'finalDest')
       expect(graph).to.containSubset(expGraph)
     })
   })

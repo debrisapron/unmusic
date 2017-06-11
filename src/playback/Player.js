@@ -5,11 +5,11 @@ let Player = (sequencer, controller) => {
 
   let play = (score) => {
     let onceReady = controller.prepare(score)
-    let events = sequencerEventsFrom(score)
+    let sequence = sequenceFrom(score)
     return onceReady.then(() => {
       sequencer.setTempo(score.tempo || 120)
-      sequencer.setEvents(events)
-      sequencer.play()
+      sequencer.setSequence(sequence)
+      sequencer.start()
     }).catch((err) => {
       throw err
     })
@@ -23,7 +23,7 @@ let Player = (sequencer, controller) => {
     stopCbs = {}
   }
 
-  let sequencerEventsFrom = (score) => {
+  let sequenceFrom = (score) => {
     let lastPayload = _.last(score.actions).payload
     let length = lastPayload.time + (lastPayload.dur || 0)
     let nestedDisorderedEvents = score.actions
@@ -41,8 +41,8 @@ let Player = (sequencer, controller) => {
         return [startEvent, stopEvent]
       })
     let events = _.sortBy(['time', 'ord'], _.flatten(nestedDisorderedEvents))
-    if (_.last(events).time < length) events.push({ time: length })
-    return events.map((ev) => [ev.time, ev.fn])
+      .map((ev) => [ev.time, ev.fn])
+    return { events, length }
   }
 
   let wrap = (time, length) => {
@@ -77,15 +77,15 @@ if (process.env.TEST) {
   describe('player', () => {
 
     it('can play a simple score', () => {
-      let events
+      let sequence
       let tempo
       let startedActions = []
       let stoppedActions = []
       let dur = 1/4
       let mockSeq = {
-        setEvents: (_events) => events = _events,
+        setSequence: (_sequence) => sequence = _sequence,
         setTempo: (_tempo) => tempo = _tempo,
-        play: () => 0,
+        start: () => 0,
         stop: () => 999
       }
       let controller = {
@@ -105,11 +105,12 @@ if (process.env.TEST) {
 
       return player.play(score).then(() => {
         expect(tempo).to.equal(130)
-        const times = events.map((ev) => ev[0])
-        const expTimes = [0, 0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1]
+        expect(sequence.length).to.equal(1)
+        const times = sequence.events.map((ev) => ev[0])
+        const expTimes = [0, 0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75]
         expect(times).to.deep.equal(expTimes)
         // Simulate sequencer calling first 6 callbacks
-        events.slice(0, 6).forEach((ev) => ev[1](0))
+        sequence.events.slice(0, 6).forEach((ev) => ev[1](0))
         player.stop()
         const notes = startedActions.map((a) => a.payload.nn)
         const expNotes = [undefined, 1, 2]
@@ -122,11 +123,11 @@ if (process.env.TEST) {
   })
 
   it('can play a score with offsets', () => {
-    let events
+    let sequence
     let mockSeq = {
-      setEvents: (_events) => events = _events,
+      setSequence: (_sequence) => sequence = _sequence,
       setTempo: (_tempo) => tempo = _tempo,
-      play: () => 0
+      start: () => 0
     }
     let controller = {
       prepare: () => Promise.resolve()
@@ -139,8 +140,8 @@ if (process.env.TEST) {
     let player = Player(mockSeq, controller)
 
     return player.play(score).then(() => {
-      const times = events.map((ev) => ev[0])
-      const expTimes = [7/32, 17/32, 25/32, 31/32, 1]
+      const times = sequence.events.map((ev) => ev[0])
+      const expTimes = [7/32, 17/32, 25/32, 31/32]
       expect(times).to.deep.equal(expTimes)
     })
   })
