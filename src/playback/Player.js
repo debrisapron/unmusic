@@ -27,7 +27,7 @@ let Player = (sequencer, controller) => {
     let lastPayload = _.last(score.actions).payload
     let length = lastPayload.time + (lastPayload.dur || 0)
     let nestedDisorderedEvents = score.actions
-      .filter((action) => action.type != 'NOOP')
+      .filter((action) => action.type !== 'NOOP')
       .map((action) => {
         let { payload } = action
         let id = _.uniqueId()

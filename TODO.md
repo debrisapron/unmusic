@@ -1,7 +1,6 @@
 - tuna nodes
 - tone nodes
 - automation
-- joins
 - midi in
 
 - automap sample names to notes

@@ -1,10 +1,6 @@
-let WaaNode = require('../support/WaaNode')
-
-let osc = WaaNode({
+module.exports =  {
   out: true,
   audioParams: ['frequency', 'detune'],
   defaultParam: 'frequency',
   factory: (um) => um.ac.createOscillator()
-})
-
-module.exports = osc
+}

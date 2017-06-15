@@ -30,11 +30,11 @@ function Controller(um) {
   function handle(time, action) {
     let vgraph = _.get('payload.vgraph', action)
     if (!vgraph) return
-    let graph = render({
+    let graph = renderGraph({
       um, vgraph, time, cache,
       andStart: true,
       dest: um.ac.destination
     })
-    return (time) => finish(graph, time)
+    return (time) => finishGraph(graph, time)
   }
 }

@@ -1,11 +1,7 @@
-let WaaNode = require('../support/WaaNode')
-
-let delay = WaaNode({
+module.exports = {
   in: true,
   out: true,
   audioParams: ['delayTime'],
   defaultParam: 'delayTime',
   factory: (um, params) => um.ac.createDelay(params.maxDelayTime || 1)
-})
-
-module.exports = delay
+}

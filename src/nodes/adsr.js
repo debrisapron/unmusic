@@ -1,7 +1,8 @@
 let Envelope = require('envelope-generator')
 
-let adsr = {
+module.exports = {
   out: true,
+  configure: false,
   factory: (um, params) => new Envelope(um.ac, params),
   finish: (node, time, andStop = true) => {
     node.release(time)
@@ -10,5 +11,3 @@ let adsr = {
     return fTime
   }
 }
-
-module.exports = adsr

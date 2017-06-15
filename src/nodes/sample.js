@@ -1,20 +1,6 @@
 let h = require('./support/helpers')
-let WaaNode = require('./support/WaaNode')
 
-function stretch(um, node, stretchParams) {
-  // TODO Stretch in mode: 'rate' and mode: 'granular' should have followTempo option
-  // which will require something like an `um.__wholeNoteDur` constant node.
-  // TODO Should really stretch using detune param since adding works correctly.
-  let buffDur = node.buffer.duration
-  let wholeNoteDur = 240 / um.__state.tempo
-  let desiredDur = stretchParams.to * wholeNoteDur
-  let playbackRate = buffDur / desiredDur
-  node.playbackRate.value = playbackRate
-}
-
-// Exports
-
-let sample = WaaNode({
+module.exports = {
   out: true,
   audioParams: ['playbackRate', 'detune'],
   rateIn: 'playbackRate',
@@ -31,10 +17,20 @@ let sample = WaaNode({
     if (params.url) return h.loadUrl(um, params.url)
     throw new Error('sample node must have file or url param specified.')
   }
+}
 
-})
+////////////////////////////////////////////////////////////////////////////////
 
-module.exports = sample
+function stretch(um, node, stretchParams) {
+  // TODO Stretch in mode: 'rate' and mode: 'granular' should have followTempo option
+  // which will require something like an `um.__wholeNoteDur` constant node.
+  // TODO Should really stretch using detune param since adding works correctly.
+  let buffDur = node.buffer.duration
+  let wholeNoteDur = 240 / um.__state.tempo
+  let desiredDur = stretchParams.to * wholeNoteDur
+  let playbackRate = buffDur / desiredDur
+  node.playbackRate.value = playbackRate
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

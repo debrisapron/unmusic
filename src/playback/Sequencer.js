@@ -1,11 +1,8 @@
 let _ = require('lodash/fp')
-let Tone = require('tone')
 
-let Sequencer = (ac) => {
+let Sequencer = (um) => {
   let part
   let partLength
-
-  if (ac) Tone.context = ac
 
   let toneEventsFrom = (sequence) => {
     return _.sortBy(
@@ -16,11 +13,11 @@ let Sequencer = (ac) => {
 
   let triggerEvent = (time, { fn }) => fn(time)
 
-  let isStarted = () => Tone.Transport.state === 'started'
+  let isStarted = () => um.Tone.Transport.state === 'started'
 
   let wholeNotesToSecs = (wholeNotes) => {
     // We avoid using 1n because Tone translates 1n to 1m
-    return Tone.Transport.toSeconds('2n') * 2 * wholeNotes
+    return um.Tone.Transport.toSeconds('2n') * 2 * wholeNotes
   }
 
   let mutatePart = (evs) => {
@@ -29,7 +26,7 @@ let Sequencer = (ac) => {
   }
 
   let replacePart = (evs, length) => {
-    let newPart = new Tone.Part(triggerEvent, evs)
+    let newPart = new um.Tone.Part(triggerEvent, evs)
     newPart.loop = true
     newPart.loopEnd = wholeNotesToSecs(length)
     // TODO snap to nearest quarter note
@@ -54,19 +51,19 @@ let Sequencer = (ac) => {
   }
 
   let setTempo = (tempo) => {
-    Tone.Transport.bpm.value = tempo
+    um.Tone.Transport.bpm.value = tempo
   }
 
   let start = () => {
-    if (!isStarted()) { Tone.Transport.start() }
+    if (!isStarted()) { um.Tone.Transport.start() }
   }
 
   let stop = () => {
     if (isStarted()) {
-      Tone.Transport.stop()
+      um.Tone.Transport.stop()
       part.stop()
     }
-    return ac.currentTime
+    return um.Tone.context.currentTime
   }
 
   return { setSequence, setTempo, start, stop }
@@ -77,7 +74,7 @@ module.exports = Sequencer
 ////////////////////////////////////////////////////////////////////////////////
 
 if (process.env.TEST === 'SLOW') {
-  let ac = window.__umAudioContext || (window.__umAudioContext = new window.AudioContext())
+  let Tone = require('Tone')
 
   // lodash fp round doesn't support precision :/
   let round = require('lodash').round
@@ -96,10 +93,10 @@ if (process.env.TEST === 'SLOW') {
         [1/4, cb],
         [1/2, cb]
       ], length: 1 }
-      let sequencer = Sequencer(ac)
+      let sequencer = Sequencer({ Tone })
       sequencer.setTempo(240)
       sequencer.setSequence(sequence)
-      startTime = ac.currentTime
+      startTime = Tone.context.currentTime
       sequencer.start()
       setTimeout(finish, 1020)
 

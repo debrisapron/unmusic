@@ -1,5 +1,6 @@
 let _ = require('lodash/fp')
 let _$ = require('lodash')
+let Tone = require('tone')
 let { getScore } = require('./scoring/support/helpers')
 let addNode = require('./scoring/addNode')
 let Controller = require('./playback/Controller')
@@ -23,6 +24,20 @@ let NODES = [
   { name: 'waa.delay', nodeDef: require('./nodes/waa/delay') },
   { name: 'waa.gain', nodeDef: require('./nodes/waa/gain') },
   { name: 'waa.osc', nodeDef: require('./nodes/waa/osc') },
+  { name: 'autofilter', nodeDef: require('./nodes/tone/autofilter') },
+  { name: 'autopan', nodeDef: require('./nodes/tone/autopan') },
+  { name: 'autowah', nodeDef: require('./nodes/tone/autowah') },
+  { name: 'cheby', nodeDef: require('./nodes/tone/cheby') },
+  { name: 'chorus', nodeDef: require('./nodes/tone/chorus') },
+  { name: 'delay', nodeDef: require('./nodes/tone/delay') },
+  { name: 'dist', nodeDef: require('./nodes/tone/dist') },
+  { name: 'pingpong', nodeDef: require('./nodes/tone/pingpong') },
+  { name: 'reverb1', nodeDef: require('./nodes/tone/reverb1') },
+  { name: 'reverb2', nodeDef: require('./nodes/tone/reverb2') },
+  { name: 'shift', nodeDef: require('./nodes/tone/shift') },
+  { name: 'trem', nodeDef: require('./nodes/tone/trem') },
+  { name: 'vib', nodeDef: require('./nodes/tone/vib') },
+  { name: 'widen', nodeDef: require('./nodes/tone/widen') },
   { name: 'adsr', nodeDef: require('./nodes/adsr') },
   { name: 'sample', nodeDef: require('./nodes/sample') },
   { name: 'vol', nodeDef: require('./nodes/vol') },
@@ -39,10 +54,32 @@ let wrapComposerFn = (fn) => {
     : _.curry((options, thing) => fn(options, getScore(thing)))
 }
 
+let wrapNodeDef = (nodeDef) => {
+  if (nodeDef.configure === false || nodeDef.vgraph) return nodeDef
+  let newFactory = (um, params) => {
+    let node = nodeDef.factory(um, params)
+    configureNode(nodeDef.audioParams, params, node)
+    return node
+  }
+  return _.set('factory', newFactory, nodeDef)
+}
+
+let configureNode = (audioParams, params, node) => {
+  Object.keys(params).forEach((key) => {
+    let val = params[key]
+    if (audioParams.includes(key)) {
+      node[key].value = val
+    } else {
+      node[key] = val
+    }
+  })
+}
+
 // Exports
 
 let Unmusic = (config = {}) => {
   let audioContext = config.audioContext || getDefaultAudioContext()
+  Tone.context = audioContext
   config = _.merge(_.omit('audioContext', config), {
     cwd: '/',
     audio: {}
@@ -51,7 +88,7 @@ let Unmusic = (config = {}) => {
   let state = {}
   let nodeDefs = {}
   let controller = Controller(um)
-  let sequencer = Sequencer(audioContext)
+  let sequencer = Sequencer(um)
   let player = Player(sequencer, controller)
 
   let use = (plugins) => {
@@ -67,7 +104,7 @@ let Unmusic = (config = {}) => {
         return
       }
       if (nodeDef) {
-        _$.set(nodeDefs, name, nodeDef)
+        _$.set(nodeDefs, name, wrapNodeDef(nodeDef))
         composerFn = (params, score) => {
           if (_.isString(params) || _.isNumber(params)) {
             params = { [nodeDef.defaultParam]: params }
@@ -99,7 +136,8 @@ let Unmusic = (config = {}) => {
     { name: 'stop', resource: player.stop },
     { name: '__state', resource: state },
     { name: '__nodeDefs', resource: nodeDefs },
-    { name: 'pipe', resource: _.pipe }
+    { name: 'pipe', resource: _.pipe },
+    { name: 'Tone', resource: Tone }
   ])
 
   use(SCORING)
