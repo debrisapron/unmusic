@@ -9,7 +9,7 @@ module.exports = {
     let node = um.ac.createBufferSource()
     if (params.file) node.buffer = h.getLoadedFile(params.file)
     if (params.url) node.buffer = h.getLoadedUrl(params.url)
-    if (node.buffer && params.stretch) stretch(um, node, params.stretch)
+    if (node.buffer && params.stretch) stretch(um, node, params)
     return node
   },
   prepare: (um, params) => {
@@ -17,18 +17,27 @@ module.exports = {
     if (params.url) return h.loadUrl(um, params.url)
     throw new Error('sample node must have file or url param specified.')
   }
+  // start: (node, time) => {
+  //   if (node.__um.params.reverse) {
+  //     console.log('OK')
+  //     console.log(node.buffer.duration)
+  //     node.start(time, node.buffer.duration)
+  //   } else {
+  //     node.start(time)
+  //   }
+  // }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function stretch(um, node, stretchParams) {
+function stretch(um, node, params) {
   // TODO Stretch in mode: 'rate' and mode: 'granular' should have followTempo option
   // which will require something like an `um.__wholeNoteDur` constant node.
   // TODO Should really stretch using detune param since adding works correctly.
   let buffDur = node.buffer.duration
   let wholeNoteDur = 240 / um.__state.tempo
-  let desiredDur = stretchParams.to * wholeNoteDur
-  let playbackRate = buffDur / desiredDur
+  let desiredDur = params.stretch.to * wholeNoteDur
+  let playbackRate = (buffDur / desiredDur) * (params.reverse ? -1 : 1)
   node.playbackRate.value = playbackRate
 }
 
@@ -42,7 +51,7 @@ if (process.env.TEST) {
       // constant = { factory: (__, params) => ({ params, connect: () => {} }) }
       let mockUm = { __state: { tempo: 120 } }
       let mockNode = { buffer: { duration: 1 }, playbackRate: {} }
-      stretch(mockUm, mockNode, { to: 2 })
+      stretch(mockUm, mockNode, { stretch: { to: 2 } })
       expect(mockNode.playbackRate.value).to.equal(0.25)
     })
   })

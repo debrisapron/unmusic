@@ -1,7 +1,9 @@
+- new node function signatures
 - tuna nodes
-- tone nodes
 - automation
 - midi in
+
+- preroll when sequence has negative offset
 
 - automap sample names to notes
 - soundfonts

@@ -4,10 +4,8 @@ module.exports = {
   out: true,
   configure: false,
   factory: (um, params) => new Envelope(um.ac, params),
-  finish: (node, time, andStop = true) => {
+  finish: (node, time) => {
     node.release(time)
-    let fTime = node.getReleaseCompleteTime()
-    if (andStop) node.stop(fTime)
-    return fTime
+    return node.getReleaseCompleteTime()
   }
 }

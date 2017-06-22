@@ -35,6 +35,6 @@ function Controller(um) {
       andStart: true,
       dest: um.ac.destination
     })
-    return (time) => finishGraph(graph, time)
+    return (time) => finishGraph(graph, time, cache)
   }
 }
