@@ -1,5 +1,5 @@
 let _ = require('lodash/fp')
-let h = require('./support/helpers')
+let h = require('./helpers')
 
 let seq = (...args) => {
   let [fns, scores] = _.partition(_.isFunction, args)

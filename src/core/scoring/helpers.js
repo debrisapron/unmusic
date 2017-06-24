@@ -1,5 +1,5 @@
 let _ = require('lodash/fp')
-let evalUmlang = require('../../umlang/evalUmlang')
+let evalUmlang = require('../umlang/evalUmlang')
 
 // let mapScoreActions = _.curry((cb, score) => {
 //   return _.set('actions', score.actions.map(cb), score)

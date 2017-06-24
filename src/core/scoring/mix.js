@@ -1,5 +1,5 @@
 let _ = require('lodash/fp')
-let h = require('./support/helpers')
+let h = require('./helpers')
 
 let mixScores = (scores) => {
   let [loops, nonLoops] = _.partition((score) => score.loop, scores)
