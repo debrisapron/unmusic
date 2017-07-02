@@ -1,24 +1,29 @@
-(
-var b, pseq, stream;
-TempoClock.default.tempo_(2.0);
-b = Buffer.read(s, "/Users/debrisapron/Dropbox/projects/audio/samples/clap808.wav");
-pseq = Pseq([
-	[1,   { PlayBuf.ar(1, b); }],
-	[2,   { PlayBuf.ar(1, b); }],
-	[0.5, { PlayBuf.ar(1, b); }],
-	[0.5, { PlayBuf.ar(1, b); }]
-], 4);
-stream = pseq.asStream;
-Task({
-	var t, fn;
-	while {
-		# t, fn = stream.next;
-		t.notNil
-	} {
-		s.makeBundle(s.latency, { fn.play; });
-		t.yield;
-	}
-}).play(quant: TempoClock.default.beats);
-)
+d = Dictionary.new;
 
-var x = 1; x.postln;
+p = { |events|
+	var stream = Pseq(events).asStream;
+	var player = Task({
+		var event;
+		while {
+			event = stream.next;
+			event.notNil
+		} {
+			if(event.size > 1, { s.makeBundle(s.latency, { event[1].play; }); });
+			event[0].yield;
+		}
+	});
+	player.play(quant: TempoClock.default.beats);
+};
+
+TempoClock.default.tempo_(2.0833333333333335);
+
+d.put("buffer1", Buffer.read(s, "/Users/debrisapron/repos/atavistic_leviathan/2-ssri/waves/distKick.wav"));
+
+p.value([
+	[0.1],
+	[0.25, { PlayBuf.ar(1, d.at("buffer1")); }],
+	[0.25, { PlayBuf.ar(1, d.at("buffer1")); }],
+	[0.25],
+	[0.25, { PlayBuf.ar(1, d.at("buffer1")); }],
+	[0.25, { PlayBuf.ar(1, d.at("buffer1")); }]
+]);

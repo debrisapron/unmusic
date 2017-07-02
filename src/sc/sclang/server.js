@@ -3,7 +3,7 @@ let sc = require('supercolliderjs')
 let sclang
 let ready
 
-module.exports = { boot, eval }
+module.exports = { boot, evalSclang }
 
 function boot() {
   return sc.lang.boot()
@@ -13,9 +13,20 @@ function boot() {
     .then(() => ready = true)
 }
 
-function eval(code) {
+function evalSclang(code) {
   if (!ready) {
     throw new Error('SuperCollider server is not ready!')
   }
   return sclang.interpret(code)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+if (process.env.TEST) {
+  evalSclang.history = []
+  sc = {
+    lang: {
+      boot: () => Promise.resolve({ interpret: (code) => evalSclang.history.push(code) })
+    }
+  }
 }
