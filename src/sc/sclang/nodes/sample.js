@@ -14,6 +14,13 @@ function renderSample({ params, config, context }) {
     context.nextId++
     r.init = `d.put("${bufferId}", Buffer.read(s, "${filePath}"));`
   }
-  r.expr = `Pan2.ar(PlayBuf.ar(numChannels: 1, bufnum: d.at("${bufferId}")), 0)`
+  r.expr =
+`Pan2.ar(
+    PlayBuf.ar(
+        numChannels: 1,
+        bufnum: d.at("${bufferId}")
+    ),
+    0
+)`
   return r
 }
