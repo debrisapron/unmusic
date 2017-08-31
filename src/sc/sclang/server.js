@@ -1,16 +1,31 @@
 let sc = require('supercolliderjs')
 
+let booted
 let sclang
 let ready
+let debug
 
-module.exports = { boot, evalSclang }
+module.exports = { boot, evalSclang, on, removeListener }
 
 function boot() {
-  return sc.lang.boot()
-    .then((_sclang) => sclang = _sclang)
-    .then(() => sclang.interpret('s.boot;'))
+  if (booted) {
+    throw new Error('SCLang server has already been booted.')
+  }
+  booted = true
+  return sc.lang.boot({ debug })
+    .then((_sclang) => {
+      sclang = _sclang
+      on('stderr', (err) => console.error(`SCERR: ${err}`))
+      on('stdout', (data) => {
+        console.log(data.split('\n').map((ln) => `SCOUT: ${ln}`).join('\n'))
+      })
+      return sclang.interpret('s.boot;')
+    })
     .then(() => new Promise((resolve) => setTimeout(resolve, 1000)))
     .then(() => ready = true)
+    .catch((err) => {
+      throw err
+    })
 }
 
 function evalSclang(code) {
@@ -20,13 +35,25 @@ function evalSclang(code) {
   return sclang.interpret(code)
 }
 
+function on(...args) {
+  return sclang.on(...args)
+}
+
+function removeListener(...args) {
+  return sclang.removeListener(...args)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 if (process.env.TEST) {
-  evalSclang.history = []
-  sc = {
-    lang: {
-      boot: () => Promise.resolve({ interpret: (code) => evalSclang.history.push(code) })
+  // debug = true
+  let evals = []
+  module.exports = {
+    boot,
+    _evals: evals,
+    evalSclang: (code) => {
+      evals.push(code)
+      return evalSclang(code)
     }
   }
 }
