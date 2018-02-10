@@ -7,10 +7,9 @@
     "test:watch": "mocha --watch test.js",
     "build:grammar": "nearleyc src/core/umlang/grammar.ne > src/core/umlang/grammar.js"
   },
-  "author": "",
+  "author": "DEBRIS APRON <debrisapron@gmail.com>",
   "dependencies": {
-    "lodash": "^4.14.1",
-    "supercolliderjs": "^0.14.2"
+    "lodash": "^4.14.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
