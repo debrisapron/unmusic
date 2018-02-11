@@ -1,10 +1,11 @@
 {
   "name": "unmusic",
+  "main": "src",
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "test": "mocha test.js",
-    "test:watch": "mocha --watch test.js",
+    "test": "mocha test",
+    "test:watch": "mocha --watch test",
     "build:grammar": "nearleyc src/core/umlang/grammar.ne > src/core/umlang/grammar.js"
   },
   "author": "DEBRIS APRON <debrisapron@gmail.com>",
