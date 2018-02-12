@@ -1,6 +1,6 @@
-# *UNDER CONTSTRUCTION*
+# *UNDER CONSTRUCTION*
 
-# ∪∩m∪sic
+# unmusic
 
 unmusic (um) is a JS library for composing & live-coding music.
 
