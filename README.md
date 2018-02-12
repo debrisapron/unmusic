@@ -1,6 +1,8 @@
+# *UNDER CONTSTRUCTION*
+
 # ∪∩m∪sic
 
-unmusic (um) is a composition-oriented JS library for music & sound design with the Web Audio API.
+unmusic (um) is a JS library for composing & live-coding music.
 
 ## Why another music library?
 
@@ -16,8 +18,10 @@ I want to
 ## Example
 
 ```
+// Plays a repeating four-note sequence on MIDI channel 1
 let um = require('unmusic')()
-um.playOnce(um.sample({ url: 'http://piano.com' }, 'C E G E'))
+let piano = um.midiOut({ cha: 1 })
+um.play(um.part(piano, 'C E G E'))
 ```
 
 ## Installation
@@ -25,34 +29,26 @@ um.playOnce(um.sample({ url: 'http://piano.com' }, 'C E G E'))
 If you want to use um to actually compose music your best bet is probably the um-atom(link) plugin for the Atom text editor(link) which provides basic DAW-style functionality around um & eliminates some boilerplate for you. However you can also directly use um as a dependency for your own JS projects by installing it from npm:
 
 ```
-npm install unmusic
+yarn add unmusic
+npm install unmusic --save
 ```
 
 ## Quick start
 
-The fundamental idea of um is simple: Build a score by nesting composer functions, then play the score. Scores are nothing more than plain JS objects, so composer functions are pure & very easy to write. Unlike traditional music scores, um scores contain information about both macro structure (parts, bars, notes etc) and micro structure (samples, synths, fx etc).
+The fundamental idea of um is simple: Build a score by nesting scoring functions, then play the score. Scores are nothing more than plain JS objects, so composer functions are pure & very easy to write. Unlike traditional music scores, um scores can contain information about both macro structure (parts, bars, notes etc) and micro structure (samples, synths, fx etc).
 
-Let's start by explaining the example we gave at the beginning of this README. (Note that all examples from hereon in will assume that you instantiate um at the beginning of your code. Furthermore, note that um-atom will both fill in this boilerplate for you, *and* destructure the um object so you can use all um functions without preceding them with `um.`.)
-
-```
-um.playOnce(um.sample({ url: 'http://piano.com' }, 'C E G E'))
-```
-
-`um.sample` is a composer function. It takes a params object and a score, and returns a new score. The returned score will instantiates a sample node for every note action of the passed-in score, or to put it another way, it will play a sample for every note.
-
-Also, `um.sample` is curried(link), so we can simply pass it a params object and it will return a new function that just takes and returns a score, remembering the params we used to create the new function. For example, if we want to make our piano sound more reusable, we could rewrite the example above like this:
+Let's start by explaining the example we gave at the beginning of this README.
 
 ```
-let piano = um.sample({ url: 'http://piano.com' })
-um.playOnce(piano('C E G E'))
+let piano = um.midiOut({ cha: 1 })
 ```
 
-Now let's say we want to combine this with a simple two-note bassline:
+This assigns the variable `piano` to a function which will play on the first available MIDI device, on MIDI channel 1.
 
 ```
-let piano = um.sample({ url: 'http://piano.com' })
-let bass = um.sample({ url: 'http://bass.com' })
-um.playOnce(um.mix(piano('C E G E'), bass('\2 C G')))
+um.play(um.part(piano, 'C E G E'))
 ```
 
-We've introduced two new ideas here. Firstly, we've used `\2` in our phrase to set the note length to half notes. Secondly, we've used `um.mix` to play the piano and bass together simultaneously.
+This creates a four-note sequence and plays it with the piano function assigned in the previous line.
+
+...TO BE CONTINUED
