@@ -20,8 +20,8 @@ I want to
 ```
 // Plays a repeating four-note sequence on MIDI channel 1
 let um = require('unmusic')()
-let piano = um.midiOut({ cha: 1 })
-um.play(um.part(piano, 'C E G E'))
+let piano = um.part(um.midiOut({ cha: 1 }))
+um.play(piano('C E G E'))
 ```
 
 ## Installation
@@ -40,13 +40,13 @@ The fundamental idea of um is simple: Build a score by nesting scoring functions
 Let's start by explaining the example we gave at the beginning of this README.
 
 ```
-let piano = um.midiOut({ cha: 1 })
+let piano = um.part(um.midiOut({ cha: 1 }))
 ```
 
 This assigns the variable `piano` to a function which will play on the first available MIDI device, on MIDI channel 1.
 
 ```
-um.play(um.part(piano, 'C E G E'))
+um.play(piano('C E G E'))
 ```
 
 This creates a four-note sequence and plays it with the piano function assigned in the previous line.

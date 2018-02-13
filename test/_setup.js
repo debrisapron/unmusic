@@ -1,5 +1,6 @@
-let chai = require('chai')
-let chaiSubset = require('chai-subset')
+import chai from 'chai'
+import Unmusic from '../src'
 
-chai.use(chaiSubset)
 global.expect = chai.expect
+
+beforeEach(() => global.um = Unmusic())

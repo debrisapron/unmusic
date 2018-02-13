@@ -7,6 +7,6 @@ describe('config', () => {
     let expected = { actions: [
       { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
     ], config: { a: 1 } }
-    expect(config({ a: 1 }, s)).to.deep.equal(expected)
+    expect(um.config({ a: 1 }, s)).to.deep.equal(expected)
   })
 })

@@ -1,6 +1,6 @@
 import _ from 'lodash/fp'
 import nearley from 'nearley'
-import grammar from './grammar.js'
+import grammar from './grammar'
 
 let DEFAULT_DURATION = 1/4
 let PARAM_ALIASES = {
@@ -104,9 +104,9 @@ function parse(s) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function eval(s) {
+function umlangEval(s) {
   s = (s || '').trim()
   return generateScore(optimizeIntermediate(generateIntermediate(parse(s))))
 }
 
-export default eval
+export default umlangEval

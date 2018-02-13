@@ -1,3 +1,6 @@
+import nearley from 'nearley'
+import grammar from '../src/scoring/umlang/grammar'
+
 describe('umlang parser', () => {
 
   it('can parse an umlang string', () => {
@@ -8,6 +11,11 @@ describe('umlang parser', () => {
       ['SETTING', { param: 'x', value: 1 }],
       ['OCTAVE_CHANGE', 1],
     ]
-    expect(parse(s)).to.deep.equal(expected)
+    let parser = new nearley.Parser(grammar.ParserRules, grammar.ParserStart)
+    parser.feed(s)
+    let parsings = parser.results
+    expect(parsings.length).to.equal(1)
+    let results = parsings[0]
+    expect(results).to.deep.equal(expected)
   })
 })

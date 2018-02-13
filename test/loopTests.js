@@ -7,6 +7,6 @@ describe('loop', () => {
     let expected = { actions: [
       { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
     ], loop: true }
-    expect(loop(s)).to.deep.equal(expected)
+    expect(um.loop(s)).to.deep.equal(expected)
   })
 })

@@ -1,7 +1,4 @@
-let sort = (score) => {
-  let sortedActions = _.sortBy(['payload.time', 'payload.nn'], score.actions)
-  return _.set('actions', sortedActions, score)
-}
+import _ from 'lodash/fp'
 
 describe('mix', () => {
 
@@ -23,7 +20,7 @@ describe('mix', () => {
       { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
     ] }
-    expect(mix(s1, s2)).to.deep.equal(expected)
+    expect(um.mix(s1, s2)).to.deep.equal(expected)
   })
 
   it('can mix two scores, one looped, one not', () => {
@@ -44,7 +41,7 @@ describe('mix', () => {
       { type: 'NOTE', payload: { time: 5/8, nn: 69, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 3/4, nn: 70, dur: 1/4 } }
     ] }
-    expect(sort(mix(s1, s2))).to.deep.equal(expected)
+    expect(sort(um.mix(s1, s2))).to.deep.equal(expected)
   })
 
   it('can mix two looped scores', () => {
@@ -68,6 +65,11 @@ describe('mix', () => {
       { type: 'NOTE', payload: { time: 5/4, nn: 69, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 5/4, nn: 70, dur: 1/4 } }
     ], loop: true }
-    expect(sort(mix(s1, s2))).to.deep.equal(expected)
+    expect(sort(um.mix(s1, s2))).to.deep.equal(expected)
   })
 })
+
+function sort(score) {
+  let sortedActions = _.sortBy(['payload.time', 'payload.nn'], score.actions)
+  return _.set('actions', sortedActions, score)
+}

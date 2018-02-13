@@ -1,3 +1,5 @@
+import evalUmlang from '../src/scoring/umlang/eval'
+
 describe('umlang evaluator', () => {
 
   it('can eval a single note', () => {

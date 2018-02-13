@@ -7,6 +7,6 @@ describe('tempo', () => {
     let expected = { actions: [
       { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
     ], tempo: 105 }
-    expect(tempo(105, s)).to.deep.equal(expected)
+    expect(um.tempo(105, s)).to.deep.equal(expected)
   })
 })

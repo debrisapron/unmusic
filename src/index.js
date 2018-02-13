@@ -32,6 +32,15 @@ function offset(amount, score) {
   return score
 }
 
+function part(callback, score) {
+  score = _.cloneDeep(score)
+  score.actions.forEach(({ payload, type }) => {
+    if (type === 'NOOP') { return }
+    payload.callback = callback
+  })
+  return score
+}
+
 function seq(...args) {
   let [fns, scores] = _.partition(_.isFunction, args)
   return _.pipe(fns)(concatScores(scores))
