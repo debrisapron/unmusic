@@ -2,11 +2,19 @@ import _ from 'lodash/fp'
 import concatScores from './scoring/concatScores'
 import getScore from './scoring/getScore'
 import mixScores from './scoring/mixScores'
+import Player from './playback/player'
+import Sequencer from './playback/sequencer'
 
 function wrapScoringFunction(fn) {
   return fn.length === 1
     ? (thing) => fn(getScore(thing))
     : _.curry((options, thing) => fn(options, getScore(thing)))
+}
+
+function getDefaultAudioContext() {
+  if (typeof window === 'undefined') { return }
+  return window.__umAudioContext ||
+    (window.__umAudioContext = new AudioContext())
 }
 
 // Scoring functions
@@ -52,18 +60,21 @@ function tempo(bpm, score) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function Unmusic(settings) {
-  settings = _.merge({ cwd: '/', audio: {} }, settings)
+function Unmusic(audioContext = getDefaultAudioContext()) {
+  let sequencer = Sequencer(audioContext)
+  let player = Player(sequencer)
 
   // um itself is the seq function
   let um = seq
+  um.audioContext = audioContext
   um.config = wrapScoringFunction(config)
   um.loop = wrapScoringFunction(loop)
   um.mix = mix
   um.offset = wrapScoringFunction(offset)
   um.part = wrapScoringFunction(part)
+  um.play = player.play
   um.seq = seq
-  um.settings = settings
+  um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
 
   return um

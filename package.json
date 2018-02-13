@@ -16,7 +16,8 @@
     "nearley": "^2.11.1"
   },
   "dependencies": {
-    "lodash": "^4.17.5"
+    "lodash": "^4.17.5",
+    "waaclock": "^0.5.3"
   },
   "@std/esm": "cjs"
 }
