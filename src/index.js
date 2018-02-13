@@ -57,13 +57,14 @@ function Unmusic(settings) {
 
   // um itself is the seq function
   let um = seq
-  um.settings = settings
-  um.seq = seq
-  um.mix = mix
-  um.loop = wrapScoringFunction(loop)
-  um.offset = wrapScoringFunction(offset)
-  um.tempo = wrapScoringFunction(tempo)
   um.config = wrapScoringFunction(config)
+  um.loop = wrapScoringFunction(loop)
+  um.mix = mix
+  um.offset = wrapScoringFunction(offset)
+  um.part = wrapScoringFunction(part)
+  um.seq = seq
+  um.settings = settings
+  um.tempo = wrapScoringFunction(tempo)
 
   return um
 }
