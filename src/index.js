@@ -1,9 +1,11 @@
 import _ from 'lodash/fp'
+import Tone from 'Tone'
 import concatScores from './scoring/concatScores'
 import getScore from './scoring/getScore'
 import mixScores from './scoring/mixScores'
-import Player from './playback/player'
-import Sequencer from './playback/sequencer'
+import Player from './playback/Player'
+import Sequencer from './playback/Sequencer'
+import * as midi from './midi'
 
 function wrapScoringFunction(fn) {
   return fn.length === 1
@@ -12,7 +14,6 @@ function wrapScoringFunction(fn) {
 }
 
 function getDefaultAudioContext() {
-  if (typeof window === 'undefined') { return }
   return window.__umAudioContext ||
     (window.__umAudioContext = new AudioContext())
 }
@@ -40,8 +41,13 @@ function offset(amount, score) {
   return score
 }
 
-function part(callback, score) {
+function part(handler, score) {
   score = _.cloneDeep(score)
+  let callback = _.isFunction(handler) ? handler : handler.handle
+  if (handler.prepare && handler.id) {
+    score.dependencies = score.dependencies || {}
+    score.dependencies[handler.id] = handler.prepare
+  }
   score.actions.forEach(({ payload, type }) => {
     if (type === 'NOOP') { return }
     payload.callback = callback
@@ -61,7 +67,8 @@ function tempo(bpm, score) {
 ////////////////////////////////////////////////////////////////////////////////
 
 function Unmusic(audioContext = getDefaultAudioContext()) {
-  let sequencer = Sequencer(audioContext)
+  Tone.context = audioContext
+  let sequencer = Sequencer()
   let player = Player(sequencer)
 
   // um itself is the seq function
@@ -69,6 +76,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   um.audioContext = audioContext
   um.config = wrapScoringFunction(config)
   um.loop = wrapScoringFunction(loop)
+  um.midi = midi
   um.mix = mix
   um.offset = wrapScoringFunction(offset)
   um.part = wrapScoringFunction(part)

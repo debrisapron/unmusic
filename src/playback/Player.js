@@ -1,16 +1,17 @@
 import _ from 'lodash/fp'
 
-function Player(sequencer) {
+let Player = (sequencer) => {
   let stopCbs = {}
 
-  function play(score) {
-    let events = sequencerEventsFrom(score)
+  let play = async (score) => {
+    let sequence = sequenceFrom(score)
     sequencer.setTempo(score.tempo || 120)
-    sequencer.setEvents(events)
-    sequencer.play()
+    sequencer.setSequence(sequence)
+    await Promise.all(Object.values(score.dependencies || {}))
+    sequencer.start()
   }
 
-  function stop() {
+  let stop = () => {
     let stopTime = sequencer.stop()
     _.forEach((stopCb) => {
       if (stopCb) stopCb(stopTime)
@@ -18,33 +19,42 @@ function Player(sequencer) {
     stopCbs = {}
   }
 
-  function sequencerEventsFrom(score) {
+  let sequenceFrom = (score) => {
     let lastPayload = _.last(score.actions).payload
     let length = lastPayload.time + (lastPayload.dur || 0)
     let nestedDisorderedEvents = score.actions
-      .filter((action) => action.type != 'NOOP')
+      .filter((action) => action.type !== 'NOOP')
       .map((action) => {
         let { payload } = action
         let id = _.uniqueId()
-        let startEvent = { time: payload.time, fn: (time) => startAction(time, id, action), ord: 1 }
+        let startTime = payload.time + (payload.offset || 0)
+        startTime = wrap(startTime, length)
+        let startEvent = { time: startTime, fn: (t) => startAction(t, id, action), ord: 1 }
         if (!payload.dur) return [startEvent]
-        let endTime = (payload.time + payload.dur) % length
-        let stopEvent = { time: endTime, fn: (time) => endAction(time, id), ord: 0 }
+        let endTime = startTime + payload.dur
+        endTime = wrap(endTime, length)
+        let stopEvent = { time: endTime, fn: (t) => endAction(t, id), ord: 0 }
         return [startEvent, stopEvent]
       })
     let events = _.sortBy(['time', 'ord'], _.flatten(nestedDisorderedEvents))
-    if (_.last(events).time < length) events.push({ time: length })
-    return events.map((ev) => [ev.time, ev.fn])
+      .map((ev) => [ev.time, ev.fn])
+    return { events, length }
   }
 
-  function startAction(time, id, action) {
+  let wrap = (time, length) => {
+    time = time % length
+    if(time >= 0) return time
+    return time + length
+  }
+
+  let startAction = (time, id, action) => {
     let { payload } = action
     let stopCb = handle(time, action)
     if (!_.isFunction(stopCb)) return
     stopCbs[id] = stopCb
   }
 
-  function endAction(time, id) {
+  let endAction = (time, id) => {
     let stopCb = stopCbs[id]
     if (!stopCb) return
     stopCbs[id] = undefined
@@ -53,7 +63,7 @@ function Player(sequencer) {
 
   function handle(time, action) {
     let callback = action.payload.callback
-    return callback && callback(time, action)
+    return callback && callback(_.merge(action, { meta: { deadline: time } }))
   }
 
   return { play, stop }
