@@ -84,6 +84,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   um.seq = seq
   um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
+  um.Tone = Tone
 
   return um
 }

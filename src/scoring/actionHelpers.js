@@ -13,26 +13,26 @@ function endOf(action) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function wrap(actions) {
+export function wrap(actions) {
   return { actions }
 }
 
-function lengthOf(actions) {
+export function lengthOf(actions) {
   return endOf(_.last(actions))
 }
 
-function get(thing) {
+export function get(thing) {
   return (Array.isArray(thing) && thing) || thing.actions || evalUmlang(thing)
 }
 
-function concat(actionLists) {
+export function concat(actionLists) {
   return actionLists.reduce((acc, curr) => {
     return acc.concat(nudge(lengthOf(acc), curr))
   })
 }
 
 // Remove any redundant NOOP actions
-function clean(actions) {
+export function clean(actions) {
   let lastIndex = actions.length - 1
   return actions.filter((action, i) => {
     // Include all non-NOOP actions
@@ -44,5 +44,3 @@ function clean(actions) {
     return action.payload.time > endOf(prevAction)
   })
 }
-
-export { clean, concat, get, lengthOf, wrap }
