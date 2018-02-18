@@ -7,7 +7,9 @@ let Player = (sequencer) => {
     let sequence = sequenceFrom(score)
     sequencer.setTempo(score.tempo || 120)
     sequencer.setSequence(sequence)
-    await Promise.all(Object.values(score.dependencies || {}))
+    await Promise.all(
+      Object.values(score.dependencies || {}).map((f) => f())
+    )
     sequencer.start()
   }
 

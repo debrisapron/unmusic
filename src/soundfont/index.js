@@ -1,12 +1,12 @@
 import _ from 'lodash/fp'
-import Soundfont from 'soundfont-player'
+import { instrument as createInstrument } from 'soundfont-player'
 import musyngkite from 'soundfont-player/musyngkite.json'
 
 function Instrument(audioContext, name) {
   let player
 
   async function prepare() {
-    player = await Soundfont.instrument(audioContext, name)
+    player = await createInstrument(audioContext, name)
   }
 
   function handle(action) {
@@ -20,12 +20,12 @@ function Instrument(audioContext, name) {
   return { prepare, handle, id: `sf-${name}` }
 }
 
-function Instruments(audioContext) {
+function Soundfont(audioContext) {
   let instruments = {}
   musyngkite.forEach((instrName) => {
-    instruments[_.camelCase(instrName)] = Instruments(audioContext, instrName)
+    instruments[_.camelCase(instrName)] = Instrument(audioContext, instrName)
   })
   return instruments
 }
 
-export default Instruments
+export default Soundfont

@@ -24,12 +24,13 @@
 }</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ace.js" type="text/javascript" charset="utf-8"></script>
-<script src="../dist/unmusic.js" type="text/javascript" charset="utf-8"></script>
+<script src="unmusic.js" type="text/javascript" charset="utf-8"></script>
 <script>
   var editor = ace.edit("editor")
   editor.setTheme("ace/theme/monokai")
   editor.session.setMode("ace/mode/javascript")
-  console.log(um)
+  window.um = window.Unmusic.default()
+  // um.play(um.part(um.sf.acousticGrandPiano, 'C D E F'))
 </script>
 </body>
 </html>

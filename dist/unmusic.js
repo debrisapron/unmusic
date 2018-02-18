@@ -4,9 +4,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["um"] = factory();
+		exports["Unmusic"] = factory();
 	else
-		root["um"] = factory();
+		root["Unmusic"] = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -23972,7 +23972,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   um.part = wrapScoringFunction(part)
   um.play = player.play
   um.seq = seq
-  um.sf = __WEBPACK_IMPORTED_MODULE_8__soundfont__["a" /* default */]
+  um.sf = Object(__WEBPACK_IMPORTED_MODULE_8__soundfont__["a" /* default */])(audioContext)
   um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
   um.Tone = __WEBPACK_IMPORTED_MODULE_1_Tone___default.a
@@ -25901,7 +25901,9 @@ let Player = (sequencer) => {
     let sequence = sequenceFrom(score)
     sequencer.setTempo(score.tempo || 120)
     sequencer.setSequence(sequence)
-    await Promise.all(Object.values(score.dependencies || {}))
+    await Promise.all(
+      Object.values(score.dependencies || {}).map((f) => f())
+    )
     sequencer.start()
   }
 
@@ -26184,7 +26186,7 @@ function Instrument(audioContext, name) {
   let player
 
   async function prepare() {
-    player = await __WEBPACK_IMPORTED_MODULE_1_soundfont_player___default.a.instrument(audioContext, name)
+    player = await Object(__WEBPACK_IMPORTED_MODULE_1_soundfont_player__["instrument"])(audioContext, name)
   }
 
   function handle(action) {
@@ -26198,15 +26200,15 @@ function Instrument(audioContext, name) {
   return { prepare, handle, id: `sf-${name}` }
 }
 
-function Instruments(audioContext) {
+function Soundfont(audioContext) {
   let instruments = {}
   __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default.a.forEach((instrName) => {
-    instruments[__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.camelCase(instrName)] = Instruments(audioContext, instrName)
+    instruments[__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.camelCase(instrName)] = Instrument(audioContext, instrName)
   })
   return instruments
 }
 
-/* harmony default export */ __webpack_exports__["a"] = (Instruments);
+/* harmony default export */ __webpack_exports__["a"] = (Soundfont);
 
 
 /***/ }),
