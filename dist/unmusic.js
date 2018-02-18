@@ -4,9 +4,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["Unmusic"] = factory();
+		exports["um"] = factory();
 	else
-		root["Unmusic"] = factory();
+		root["um"] = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -86,11 +86,11 @@ module.exports = __webpack_require__(7)(_, _);
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return clean; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return concat; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "c", function() { return get; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "d", function() { return lengthOf; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "e", function() { return wrap; });
+/* harmony export (immutable) */ __webpack_exports__["e"] = wrap;
+/* harmony export (immutable) */ __webpack_exports__["d"] = lengthOf;
+/* harmony export (immutable) */ __webpack_exports__["c"] = get;
+/* harmony export (immutable) */ __webpack_exports__["b"] = concat;
+/* harmony export (immutable) */ __webpack_exports__["a"] = clean;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__umlang_eval__ = __webpack_require__(11);
@@ -140,8 +140,6 @@ function clean(actions) {
     return action.payload.time > endOf(prevAction)
   })
 }
-
-
 
 
 /***/ }),
@@ -23885,8 +23883,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__scoring_concatScores__ = __webpack_require__(10);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__scoring_getScore__ = __webpack_require__(14);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__scoring_mixScores__ = __webpack_require__(15);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__playback_player__ = __webpack_require__(16);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__playback_sequencer__ = __webpack_require__(17);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__playback_Player__ = __webpack_require__(16);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__playback_Sequencer__ = __webpack_require__(17);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__midi__ = __webpack_require__(18);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__soundfont__ = __webpack_require__(21);
+
+
 
 
 
@@ -23929,8 +23931,13 @@ function offset(amount, score) {
   return score
 }
 
-function part(callback, score) {
+function part(handler, score) {
   score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.cloneDeep(score)
+  let callback = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.isFunction(handler) ? handler : handler.handle
+  if (handler.prepare && handler.id) {
+    score.dependencies = score.dependencies || {}
+    score.dependencies[handler.id] = handler.prepare
+  }
   score.actions.forEach(({ payload, type }) => {
     if (type === 'NOOP') { return }
     payload.callback = callback
@@ -23951,21 +23958,24 @@ function tempo(bpm, score) {
 
 function Unmusic(audioContext = getDefaultAudioContext()) {
   __WEBPACK_IMPORTED_MODULE_1_Tone___default.a.context = audioContext
-  let sequencer = Object(__WEBPACK_IMPORTED_MODULE_6__playback_sequencer__["a" /* default */])()
-  let player = Object(__WEBPACK_IMPORTED_MODULE_5__playback_player__["a" /* default */])(sequencer)
+  let sequencer = Object(__WEBPACK_IMPORTED_MODULE_6__playback_Sequencer__["a" /* default */])()
+  let player = Object(__WEBPACK_IMPORTED_MODULE_5__playback_Player__["a" /* default */])(sequencer)
 
   // um itself is the seq function
   let um = seq
   um.audioContext = audioContext
   um.config = wrapScoringFunction(config)
   um.loop = wrapScoringFunction(loop)
+  um.midi = __WEBPACK_IMPORTED_MODULE_7__midi__
   um.mix = mix
   um.offset = wrapScoringFunction(offset)
   um.part = wrapScoringFunction(part)
   um.play = player.play
   um.seq = seq
+  um.sf = __WEBPACK_IMPORTED_MODULE_8__soundfont__["a" /* default */]
   um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
+  um.Tone = __WEBPACK_IMPORTED_MODULE_1_Tone___default.a
 
   return um
 }
@@ -25887,10 +25897,11 @@ function mixScores(scores) {
 let Player = (sequencer) => {
   let stopCbs = {}
 
-  let play = (score) => {
+  let play = async (score) => {
     let sequence = sequenceFrom(score)
     sequencer.setTempo(score.tempo || 120)
     sequencer.setSequence(sequence)
+    await Promise.all(Object.values(score.dependencies || {}))
     sequencer.start()
   }
 
@@ -25946,7 +25957,7 @@ let Player = (sequencer) => {
 
   function handle(time, action) {
     let callback = action.payload.callback
-    return callback && callback(time, action)
+    return callback && callback(__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(action, { meta: { deadline: time } }))
   }
 
   return { play, stop }
@@ -26038,6 +26049,1619 @@ function Sequencer() {
 
 /* harmony default export */ __webpack_exports__["a"] = (Sequencer);
 
+
+/***/ }),
+/* 18 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony export (immutable) */ __webpack_exports__["out"] = out;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__helpers__ = __webpack_require__(19);
+
+
+function out({ dev = 0, cha = 'all' } = {}) {
+  let midiOut
+
+  function prepare() {
+    return __WEBPACK_IMPORTED_MODULE_0__helpers__["b" /* enable */]()
+  }
+
+  function handle(action) {
+    midiOut = midiOut || __WEBPACK_IMPORTED_MODULE_0__helpers__["a" /* MidiOut */](dev)
+    let note = action.payload.nn || 69
+    let channel = action.payload.cha || cha
+    let velocity = action.payload.vel || 80
+    let deadline = action.meta.deadline
+    midiOut.playNote(note, channel, {
+      velocity,
+      rawVelocity: true,
+      time: deadline
+    })
+    return (deadline) => midiOut.stopNote(note, channel, { time: deadline })
+  }
+
+  return { prepare, handle, id: 'midi' }
+}
+
+
+/***/ }),
+/* 19 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["b"] = enable;
+/* harmony export (immutable) */ __webpack_exports__["a"] = MidiOut;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_webmidi__ = __webpack_require__(20);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_webmidi___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_webmidi__);
+
+
+function enable() {
+  return new Promise((resolve, reject) => {
+    __WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.enable((err) => {
+      if (err) { reject(err) }
+      resolve()
+    })
+  })
+    .then(() => {
+      console.log('MIDI enabled successfully.')
+      console.log('Available outputs:')
+      console.log(__WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.outputs)
+    })
+    .catch((err) => {
+      console.log('MIDI could not be enabled.')
+      console.error(err)
+    })
+}
+
+function MidiOut(device) {
+  if (!__WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.outputs.length) {
+    throw new Error('No MIDI output found.')
+  }
+  if (!isNaN(device)) {
+    if (__WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.outputs.length <= device) {
+      throw new Error('MIDI output index not found.')
+    }
+    return __WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.outputs[device]
+  }
+  return __WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.getOutputByName(device)
+}
+
+
+/***/ }),
+/* 20 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
+
+WebMidi v2.0.0
+
+WebMidi.js helps you tame the Web MIDI API. Send and receive MIDI messages with ease. Control instruments with user-friendly functions (playNote, sendPitchBend, etc.). React to MIDI input with simple event listeners (noteon, pitchbend, controlchange, etc.).
+https://github.com/cotejp/webmidi
+
+
+The MIT License (MIT)
+
+Copyright (c) 2015-2017, Jean-Philippe Côté
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+*/
+
+!function(scope){"use strict";function WebMidi(){if(WebMidi.prototype._singleton)throw new Error("WebMidi is a singleton, it cannot be instantiated directly.");WebMidi.prototype._singleton=this,this._inputs=[],this._outputs=[],this._userHandlers={},this._stateChangeQueue=[],this._processingStateChange=!1,this._midiInterfaceEvents=["connected","disconnected"],this._notes=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"],this._semitones={C:0,D:2,E:4,F:5,G:7,A:9,B:11},Object.defineProperties(this,{MIDI_SYSTEM_MESSAGES:{value:{sysex:240,timecode:241,songposition:242,songselect:243,tuningrequest:246,sysexend:247,clock:248,start:250,"continue":251,stop:252,activesensing:254,reset:255,unknownsystemmessage:-1},writable:!1,enumerable:!0,configurable:!1},MIDI_CHANNEL_MESSAGES:{value:{noteoff:8,noteon:9,keyaftertouch:10,controlchange:11,channelmode:11,programchange:12,channelaftertouch:13,pitchbend:14},writable:!1,enumerable:!0,configurable:!1},MIDI_REGISTERED_PARAMETER:{value:{pitchbendrange:[0,0],channelfinetuning:[0,1],channelcoarsetuning:[0,2],tuningprogram:[0,3],tuningbank:[0,4],modulationrange:[0,5],azimuthangle:[61,0],elevationangle:[61,1],gain:[61,2],distanceratio:[61,3],maximumdistance:[61,4],maximumdistancegain:[61,5],referencedistanceratio:[61,6],panspreadangle:[61,7],rollangle:[61,8]},writable:!1,enumerable:!0,configurable:!1},MIDI_CONTROL_CHANGE_MESSAGES:{value:{bankselectcoarse:0,modulationwheelcoarse:1,breathcontrollercoarse:2,footcontrollercoarse:4,portamentotimecoarse:5,dataentrycoarse:6,volumecoarse:7,balancecoarse:8,pancoarse:10,expressioncoarse:11,effectcontrol1coarse:12,effectcontrol2coarse:13,generalpurposeslider1:16,generalpurposeslider2:17,generalpurposeslider3:18,generalpurposeslider4:19,bankselectfine:32,modulationwheelfine:33,breathcontrollerfine:34,footcontrollerfine:36,portamentotimefine:37,dataentryfine:38,volumefine:39,balancefine:40,panfine:42,expressionfine:43,effectcontrol1fine:44,effectcontrol2fine:45,holdpedal:64,portamento:65,sustenutopedal:66,softpedal:67,legatopedal:68,hold2pedal:69,soundvariation:70,resonance:71,soundreleasetime:72,soundattacktime:73,brightness:74,soundcontrol6:75,soundcontrol7:76,soundcontrol8:77,soundcontrol9:78,soundcontrol10:79,generalpurposebutton1:80,generalpurposebutton2:81,generalpurposebutton3:82,generalpurposebutton4:83,reverblevel:91,tremololevel:92,choruslevel:93,celestelevel:94,phaserlevel:95,databuttonincrement:96,databuttondecrement:97,nonregisteredparametercoarse:98,nonregisteredparameterfine:99,registeredparametercoarse:100,registeredparameterfine:101},writable:!1,enumerable:!0,configurable:!1},MIDI_CHANNEL_MODE_MESSAGES:{value:{allsoundoff:120,resetallcontrollers:121,localcontrol:122,allnotesoff:123,omnimodeoff:124,omnimodeon:125,monomodeon:126,polymodeon:127},writable:!1,enumerable:!0,configurable:!1}}),Object.defineProperties(this,{supported:{enumerable:!0,get:function(){return"requestMIDIAccess"in navigator}},enabled:{enumerable:!0,get:function(){return void 0!==this["interface"]}.bind(this)},inputs:{enumerable:!0,get:function(){return this._inputs}.bind(this)},outputs:{enumerable:!0,get:function(){return this._outputs}.bind(this)},sysexEnabled:{enumerable:!0,get:function(){return!(!this["interface"]||!this["interface"].sysexEnabled)}.bind(this)},time:{enumerable:!0,get:function(){return performance.now()}}})}function Input(midiInput){var that=this;this._userHandlers={channel:{},system:{}},this._midiInput=midiInput,Object.defineProperties(this,{connection:{enumerable:!0,get:function(){return that._midiInput.connection}},id:{enumerable:!0,get:function(){return that._midiInput.id}},manufacturer:{enumerable:!0,get:function(){return that._midiInput.manufacturer}},name:{enumerable:!0,get:function(){return that._midiInput.name}},state:{enumerable:!0,get:function(){return that._midiInput.state}},type:{enumerable:!0,get:function(){return that._midiInput.type}}}),this._initializeUserHandlers()}function Output(midiOutput){var that=this;this._midiOutput=midiOutput,Object.defineProperties(this,{connection:{enumerable:!0,get:function(){return that._midiOutput.connection}},id:{enumerable:!0,get:function(){return that._midiOutput.id}},manufacturer:{enumerable:!0,get:function(){return that._midiOutput.manufacturer}},name:{enumerable:!0,get:function(){return that._midiOutput.name}},state:{enumerable:!0,get:function(){return that._midiOutput.state}},type:{enumerable:!0,get:function(){return that._midiOutput.type}}})}var wm=new WebMidi;WebMidi.prototype.enable=function(callback,sysex){return this.enabled?void 0:this.supported?void navigator.requestMIDIAccess({sysex:sysex}).then(function(midiAccess){function onPortsOpen(){this._updateInputsAndOutputs(),this["interface"].onstatechange=this._onInterfaceStateChange.bind(this),"function"==typeof callback&&callback.call(this),events.forEach(function(event){this._onInterfaceStateChange(event)}.bind(this))}var events=[],promises=[];this["interface"]=midiAccess,this._resetInterfaceUserHandlers(),this["interface"].onstatechange=function(e){events.push(e)};for(var inputs=midiAccess.inputs.values(),input=inputs.next();input&&!input.done;input=inputs.next())promises.push(input.value.open());for(var outputs=midiAccess.outputs.values(),output=outputs.next();output&&!output.done;output=outputs.next())promises.push(output.value.open());Promise?Promise.all(promises).then(onPortsOpen.bind(this)):setTimeout(onPortsOpen.bind(this),200)}.bind(this),function(err){"function"==typeof callback&&callback.call(this,err)}.bind(this)):void("function"==typeof callback&&callback(new Error("The Web MIDI API is not supported by your browser.")))},WebMidi.prototype.disable=function(){if(!this.supported)throw new Error("The Web MIDI API is not supported by your browser.");this["interface"]&&(this["interface"].onstatechange=void 0),this["interface"]=void 0,this._inputs=[],this._outputs=[],this._resetInterfaceUserHandlers()},WebMidi.prototype.addListener=function(type,listener){if(!this.enabled)throw new Error("WebMidi must be enabled before adding event listeners.");if("function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(!(this._midiInterfaceEvents.indexOf(type)>=0))throw new TypeError("The specified event type is not supported.");return this._userHandlers[type].push(listener),this},WebMidi.prototype.hasListener=function(type,listener){if(!this.enabled)throw new Error("WebMidi must be enabled before checking event listeners.");if("function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(!(this._midiInterfaceEvents.indexOf(type)>=0))throw new TypeError("The specified event type is not supported.");for(var o=0;o<this._userHandlers[type].length;o++)if(this._userHandlers[type][o]===listener)return!0;return!1},WebMidi.prototype.removeListener=function(type,listener){if(!this.enabled)throw new Error("WebMidi must be enabled before removing event listeners.");if(void 0!==listener&&"function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(this._midiInterfaceEvents.indexOf(type)>=0)if(listener)for(var o=0;o<this._userHandlers[type].length;o++)this._userHandlers[type][o]===listener&&this._userHandlers[type].splice(o,1);else this._userHandlers[type]=[];else{if(void 0!==type)throw new TypeError("The specified event type is not supported.");this._resetInterfaceUserHandlers()}return this},WebMidi.prototype.getInputById=function(id){if(!this.enabled)throw new Error("WebMidi is not enabled.");for(var i=0;i<this.inputs.length;i++)if(this.inputs[i].id===id)return this.inputs[i];return!1},WebMidi.prototype.getOutputById=function(id){if(!this.enabled)throw new Error("WebMidi is not enabled.");for(var i=0;i<this.outputs.length;i++)if(this.outputs[i].id===id)return this.outputs[i];return!1},WebMidi.prototype.getInputByName=function(name){if(!this.enabled)throw new Error("WebMidi is not enabled.");for(var i=0;i<this.inputs.length;i++)if(~this.inputs[i].name.indexOf(name))return this.inputs[i];return!1},WebMidi.prototype.getOctave=function(number){return number&&number>=0&&127>=number?Math.floor(parseInt(number)/12-1)-1:void 0},WebMidi.prototype.getOutputByName=function(name){if(!this.enabled)throw new Error("WebMidi is not enabled.");for(var i=0;i<this.outputs.length;i++)if(~this.outputs[i].name.indexOf(name))return this.outputs[i];return!1},WebMidi.prototype.guessNoteNumber=function(input){var output=!1;if(input&&input.toFixed&&input>=0&&127>=input?output=Math.round(input):parseInt(input)>=0&&parseInt(input)<=127?output=parseInt(input):("string"==typeof input||input instanceof String)&&(output=this.noteNameToNumber(input)),output===!1)throw new Error("Invalid note number ("+input+").");return output},WebMidi.prototype.noteNameToNumber=function(name){"string"!=typeof name&&(name="");var matches=name.match(/([CDEFGAB])(#{0,2}|b{0,2})(-?\d+)/i);if(!matches)throw new RangeError("Invalid note name.");var semitones=wm._semitones[matches[1].toUpperCase()],octave=parseInt(matches[3]),result=12*(octave+2)+semitones;if(matches[2].toLowerCase().indexOf("b")>-1?result-=matches[2].length:matches[2].toLowerCase().indexOf("#")>-1&&(result+=matches[2].length),0>semitones||-2>octave||octave>8||0>result||result>127)throw new RangeError("Invalid note name or note outside valid range.");return result},WebMidi.prototype._updateInputsAndOutputs=function(){this._updateInputs(),this._updateOutputs()},WebMidi.prototype._updateInputs=function(){for(var i=0;i<this._inputs.length;i++){for(var remove=!0,updated=this["interface"].inputs.values(),input=updated.next();input&&!input.done;input=updated.next())if(this._inputs[i]._midiInput===input.value){remove=!1;break}remove&&this._inputs.splice(i,1)}this["interface"]&&this["interface"].inputs.forEach(function(nInput){for(var add=!0,j=0;j<this._inputs.length;j++)this._inputs[j]._midiInput===nInput&&(add=!1);add&&this._inputs.push(this._createInput(nInput))}.bind(this))},WebMidi.prototype._updateOutputs=function(){for(var i=0;i<this._outputs.length;i++){for(var remove=!0,updated=this["interface"].outputs.values(),output=updated.next();output&&!output.done;output=updated.next())if(this._outputs[i]._midiOutput===output.value){remove=!1;break}remove&&this._outputs.splice(i,1)}this["interface"]&&this["interface"].outputs.forEach(function(nOutput){for(var add=!0,j=0;j<this._outputs.length;j++)this._outputs[j]._midiOutput===nOutput&&(add=!1);add&&this._outputs.push(this._createOutput(nOutput))}.bind(this))},WebMidi.prototype._createInput=function(midiInput){var input=new Input(midiInput);return input._midiInput.onmidimessage=input._onMidiMessage.bind(input),input},WebMidi.prototype._createOutput=function(midiOutput){var output=new Output(midiOutput);return output._midiOutput.onmidimessage=output._onMidiMessage.bind(output),output},WebMidi.prototype._onInterfaceStateChange=function(e){this._updateInputsAndOutputs();var event={timestamp:e.timeStamp,type:e.port.state};this["interface"]&&"connected"===e.port.state?"output"===e.port.type?event.port=this.getOutputById(e.port.id):"input"===e.port.type&&(event.port=this.getInputById(e.port.id)):event.port={connection:"closed",id:e.port.id,manufacturer:e.port.manufacturer,name:e.port.name,state:e.port.state,type:e.port.type},this._userHandlers[e.port.state].forEach(function(handler){handler(event)})},WebMidi.prototype._resetInterfaceUserHandlers=function(){for(var i=0;i<this._midiInterfaceEvents.length;i++)this._userHandlers[this._midiInterfaceEvents[i]]=[]},Input.prototype.addListener=function(type,channel,listener){var that=this;if(void 0===channel&&(channel="all"),Array.isArray(channel)||(channel=[channel]),channel.forEach(function(item){if("all"!==item&&!(item>=1&&16>=item))throw new RangeError("The 'channel' parameter is invalid.")}),"function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(wm.MIDI_SYSTEM_MESSAGES[type])this._userHandlers.system[type]||(this._userHandlers.system[type]=[]),this._userHandlers.system[type].push(listener);else{if(!wm.MIDI_CHANNEL_MESSAGES[type])throw new TypeError("The specified event type is not supported.");if(channel.indexOf("all")>-1){channel=[];for(var j=1;16>=j;j++)channel.push(j)}this._userHandlers.channel[type]||(this._userHandlers.channel[type]=[]),channel.forEach(function(ch){that._userHandlers.channel[type][ch]||(that._userHandlers.channel[type][ch]=[]),that._userHandlers.channel[type][ch].push(listener)})}return this},Input.prototype.on=Input.prototype.addListener,Input.prototype.hasListener=function(type,channel,listener){var that=this;if("function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(void 0===channel&&(channel="all"),channel.constructor!==Array&&(channel=[channel]),wm.MIDI_SYSTEM_MESSAGES[type]){for(var o=0;o<this._userHandlers.system[type].length;o++)if(this._userHandlers.system[type][o]===listener)return!0}else if(wm.MIDI_CHANNEL_MESSAGES[type]){if(channel.indexOf("all")>-1){channel=[];for(var j=1;16>=j;j++)channel.push(j)}return this._userHandlers.channel[type]?channel.every(function(chNum){var listeners=that._userHandlers.channel[type][chNum];return listeners&&listeners.indexOf(listener)>-1}):!1}return!1},Input.prototype.removeListener=function(type,channel,listener){var that=this;if(void 0!==listener&&"function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(void 0===channel&&(channel="all"),channel.constructor!==Array&&(channel=[channel]),wm.MIDI_SYSTEM_MESSAGES[type])if(void 0===listener)this._userHandlers.system[type]=[];else for(var o=0;o<this._userHandlers.system[type].length;o++)this._userHandlers.system[type][o]===listener&&this._userHandlers.system[type].splice(o,1);else if(wm.MIDI_CHANNEL_MESSAGES[type]){if(channel.indexOf("all")>-1){channel=[];for(var j=1;16>=j;j++)channel.push(j)}if(!this._userHandlers.channel[type])return this;channel.forEach(function(chNum){var listeners=that._userHandlers.channel[type][chNum];if(listeners)if(void 0===listener)that._userHandlers.channel[type][chNum]=[];else for(var l=0;l<listeners.length;l++)listeners[l]===listener&&listeners.splice(l,1)})}else{if(void 0!==type)throw new TypeError("The specified event type is not supported.");this._initializeUserHandlers()}return this},Input.prototype._initializeUserHandlers=function(){for(var prop1 in wm.MIDI_CHANNEL_MESSAGES)wm.MIDI_CHANNEL_MESSAGES.hasOwnProperty(prop1)&&(this._userHandlers.channel[prop1]={});for(var prop2 in wm.MIDI_SYSTEM_MESSAGES)wm.MIDI_SYSTEM_MESSAGES.hasOwnProperty(prop2)&&(this._userHandlers.system[prop2]=[])},Input.prototype._onMidiMessage=function(e){e.data[0]<240?this._parseChannelEvent(e):e.data[0]<=255&&this._parseSystemEvent(e)},Input.prototype._parseChannelEvent=function(e){var data1,data2,command=e.data[0]>>4,channel=(15&e.data[0])+1;e.data.length>1&&(data1=e.data[1],data2=e.data.length>2?e.data[2]:void 0);var event={target:this,data:e.data,timestamp:e.timeStamp,channel:channel};command===wm.MIDI_CHANNEL_MESSAGES.noteoff||command===wm.MIDI_CHANNEL_MESSAGES.noteon&&0===data2?(event.type="noteoff",event.note={number:data1,name:wm._notes[data1%12],octave:wm.getOctave(data1)},event.velocity=data2/127,event.rawVelocity=data2):command===wm.MIDI_CHANNEL_MESSAGES.noteon?(event.type="noteon",event.note={number:data1,name:wm._notes[data1%12],octave:wm.getOctave(data1)},event.velocity=data2/127,event.rawVelocity=data2):command===wm.MIDI_CHANNEL_MESSAGES.keyaftertouch?(event.type="keyaftertouch",event.note={number:data1,name:wm._notes[data1%12],octave:wm.getOctave(data1)},event.value=data2/127):command===wm.MIDI_CHANNEL_MESSAGES.controlchange&&data1>=0&&119>=data1?(event.type="controlchange",event.controller={number:data1,name:this.getCcNameByNumber(data1)},event.value=data2):command===wm.MIDI_CHANNEL_MESSAGES.channelmode&&data1>=120&&127>=data1?(event.type="channelmode",event.controller={number:data1,name:this.getChannelModeByNumber(data1)},event.value=data2):command===wm.MIDI_CHANNEL_MESSAGES.programchange?(event.type="programchange",event.value=data1):command===wm.MIDI_CHANNEL_MESSAGES.channelaftertouch?(event.type="channelaftertouch",event.value=data1/127):command===wm.MIDI_CHANNEL_MESSAGES.pitchbend?(event.type="pitchbend",event.value=((data2<<7)+data1-8192)/8192):event.type="unknownchannelmessage",this._userHandlers.channel[event.type]&&this._userHandlers.channel[event.type][channel]&&this._userHandlers.channel[event.type][channel].forEach(function(callback){callback(event)})},Input.prototype.getCcNameByNumber=function(number){if(number=parseInt(number),!(number>=0&&119>=number))throw new RangeError("The control change number must be between 0 and 119.");for(var cc in wm.MIDI_CONTROL_CHANGE_MESSAGES)if(number===wm.MIDI_CONTROL_CHANGE_MESSAGES[cc])return cc;return void 0},Input.prototype.getChannelModeByNumber=function(number){if(number=parseInt(number),!(number>=120&&status<=127))throw new RangeError("The control change number must be between 120 and 127.");for(var cm in wm.MIDI_CHANNEL_MODE_MESSAGES)if(number===wm.MIDI_CHANNEL_MODE_MESSAGES[cm])return cm},Input.prototype._parseSystemEvent=function(e){var command=e.data[0],event={target:this,data:e.data,timestamp:e.timeStamp};command===wm.MIDI_SYSTEM_MESSAGES.sysex?event.type="sysex":command===wm.MIDI_SYSTEM_MESSAGES.timecode?event.type="timecode":command===wm.MIDI_SYSTEM_MESSAGES.songposition?event.type="songposition":command===wm.MIDI_SYSTEM_MESSAGES.songselect?(event.type="songselect",event.song=e.data[1]):command===wm.MIDI_SYSTEM_MESSAGES.tuningrequest?event.type="tuningrequest":command===wm.MIDI_SYSTEM_MESSAGES.clock?event.type="clock":command===wm.MIDI_SYSTEM_MESSAGES.start?event.type="start":command===wm.MIDI_SYSTEM_MESSAGES["continue"]?event.type="continue":command===wm.MIDI_SYSTEM_MESSAGES.stop?event.type="stop":command===wm.MIDI_SYSTEM_MESSAGES.activesensing?event.type="activesensing":command===wm.MIDI_SYSTEM_MESSAGES.reset?event.type="reset":event.type="unknownsystemmessage",this._userHandlers.system[event.type]&&this._userHandlers.system[event.type].forEach(function(callback){callback(event)})},Output.prototype.send=function(status,data,timestamp){if(!(status>=128&&255>=status))throw new RangeError("The status byte must be an integer between 128 (0x80) and 255 (0xFF).");Array.isArray(data)||(data=parseInt(data)>=0&&parseInt(data)<=127?[parseInt(data)]:[]);var message=[status];return data.forEach(function(item){if(!(item>=0&&255>=item))throw new RangeError("The data bytes must be integers between 0 (0x00) and 255 (0xFF).");message.push(item)}),this._midiOutput.send(message,parseFloat(timestamp)||0),this},Output.prototype.sendSysex=function(manufacturer,data,options){if(!wm.sysexEnabled)throw new Error("SysEx message support must first be activated.");return options=options||{},manufacturer=[].concat(manufacturer),data.forEach(function(item){if(0>item||item>127)throw new RangeError("The data bytes of a SysEx message must be integers between 0 (0x00) and 127 (0x7F).")}),data=manufacturer.concat(data,wm.MIDI_SYSTEM_MESSAGES.sysexend),this.send(wm.MIDI_SYSTEM_MESSAGES.sysex,data,this._parseTimeParameter(options.time)),this},Output.prototype.sendTimecodeQuarterFrame=function(value,options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.timecode,value,this._parseTimeParameter(options.time)),this},Output.prototype.sendSongPosition=function(value,options){value=parseInt(value)||0,options=options||{};var msb=value>>7&127,lsb=127&value;return this.send(wm.MIDI_SYSTEM_MESSAGES.songposition,[msb,lsb],this._parseTimeParameter(options.time)),this},Output.prototype.sendSongSelect=function(value,options){if(value=parseInt(value),options=options||{},!(value>=0&&127>=value))throw new RangeError("The song number must be between 0 and 127.");return this.send(wm.MIDI_SYSTEM_MESSAGES.songselect,[value],this._parseTimeParameter(options.time)),this},Output.prototype.sendTuningRequest=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.tuningrequest,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendClock=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.clock,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendStart=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.start,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendContinue=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES["continue"],void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendStop=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.stop,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendActiveSensing=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.activesensing,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendReset=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.reset,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.stopNote=function(note,channel,options){if("all"===note)return this.sendChannelMode("allnotesoff",0,channel,options);var nVelocity=64;return options=options||{},options.velocity=parseFloat(options.velocity),options.rawVelocity?!isNaN(options.velocity)&&options.velocity>=0&&options.velocity<=127&&(nVelocity=options.velocity):!isNaN(options.velocity)&&options.velocity>=0&&options.velocity<=1&&(nVelocity=127*options.velocity),this._convertNoteToArray(note).forEach(function(item){this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.noteoff<<4)+(ch-1),[item,Math.round(nVelocity)],this._parseTimeParameter(options.time))}.bind(this))}.bind(this)),this},Output.prototype.playNote=function(note,channel,options){var nVelocity=64;if(options=options||{},options.velocity=parseFloat(options.velocity),options.rawVelocity?!isNaN(options.velocity)&&options.velocity>=0&&options.velocity<=127&&(nVelocity=options.velocity):!isNaN(options.velocity)&&options.velocity>=0&&options.velocity<=1&&(nVelocity=127*options.velocity),options.time=this._parseTimeParameter(options.time),this._convertNoteToArray(note).forEach(function(item){this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.noteon<<4)+(ch-1),[item,Math.round(nVelocity)],options.time)}.bind(this))}.bind(this)),options.duration=parseFloat(options.duration),options.duration){options.duration<=0&&(options.duration=0);var nRelease=64;options.release=parseFloat(options.release),options.rawVelocity?!isNaN(options.release)&&options.release>=0&&options.release<=127&&(nRelease=options.release):!isNaN(options.release)&&options.release>=0&&options.release<=1&&(nRelease=127*options.release),this._convertNoteToArray(note).forEach(function(item){this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.noteoff<<4)+(ch-1),[item,Math.round(nRelease)],(options.time||wm.time)+options.duration)}.bind(this))}.bind(this))}return this},Output.prototype.sendKeyAftertouch=function(note,channel,pressure,options){var that=this;if(options=options||{},1>channel||channel>16)throw new RangeError("The channel must be between 1 and 16.");pressure=parseFloat(pressure),(isNaN(pressure)||0>pressure||pressure>1)&&(pressure=.5);var nPressure=Math.round(127*pressure);return this._convertNoteToArray(note).forEach(function(item){that._convertChannelToArray(channel).forEach(function(ch){that.send((wm.MIDI_CHANNEL_MESSAGES.keyaftertouch<<4)+(ch-1),[item,nPressure],that._parseTimeParameter(options.time))})}),this},Output.prototype.sendControlChange=function(controller,value,channel,options){if(options=options||{},"string"==typeof controller){if(controller=wm.MIDI_CONTROL_CHANGE_MESSAGES[controller],!controller)throw new TypeError("Invalid controller name.")}else if(controller=parseInt(controller),!(controller>=0&&119>=controller))throw new RangeError("Controller numbers must be between 0 and 119.");if(value=parseInt(value)||0,!(value>=0&&127>=value))throw new RangeError("Controller value must be between 0 and 127.");return this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.controlchange<<4)+(ch-1),[controller,value],this._parseTimeParameter(options.time))}.bind(this)),this},Output.prototype._selectRegisteredParameter=function(parameter,channel,time){var that=this;if(parameter[0]=parseInt(parameter[0]),!(parameter[0]>=0&&parameter[0]<=127))throw new RangeError("The control65 value must be between 0 and 127");if(parameter[1]=parseInt(parameter[1]),!(parameter[1]>=0&&parameter[1]<=127))throw new RangeError("The control64 value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(101,parameter[0],channel,{time:time}),that.sendControlChange(100,parameter[1],channel,{time:time})}),this},Output.prototype._selectNonRegisteredParameter=function(parameter,channel,time){var that=this;if(parameter[0]=parseInt(parameter[0]),!(parameter[0]>=0&&parameter[0]<=127))throw new RangeError("The control63 value must be between 0 and 127");if(parameter[1]=parseInt(parameter[1]),!(parameter[1]>=0&&parameter[1]<=127))throw new RangeError("The control62 value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(99,parameter[0],channel,{time:time}),that.sendControlChange(98,parameter[1],channel,{time:time})}),this},Output.prototype._setCurrentRegisteredParameter=function(data,channel,time){var that=this;if(data=[].concat(data),data[0]=parseInt(data[0]),!(data[0]>=0&&data[0]<=127))throw new RangeError("The msb value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(6,data[0],channel,{time:time})}),data[1]=parseInt(data[1]),data[1]>=0&&data[1]<=127&&this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(38,data[1],channel,{time:time})}),this},Output.prototype._deselectRegisteredParameter=function(channel,time){var that=this;return this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(101,127,channel,{time:time}),that.sendControlChange(100,127,channel,{time:time})}),this},Output.prototype.setRegisteredParameter=function(parameter,data,channel,options){var that=this;if(options=options||{},!Array.isArray(parameter)){if(!wm.MIDI_REGISTERED_PARAMETER[parameter])throw new Error("The specified parameter is not available.");parameter=wm.MIDI_REGISTERED_PARAMETER[parameter]}return this._convertChannelToArray(channel).forEach(function(ch){that._selectRegisteredParameter(parameter,channel,options.time),that._setCurrentRegisteredParameter(data,channel,options.time),that._deselectRegisteredParameter(channel,options.time)}),this},Output.prototype.setNonRegisteredParameter=function(parameter,data,channel,options){var that=this;if(options=options||{},!(parameter[0]>=0&&parameter[0]<=127&&parameter[1]>=0&&parameter[1]<=127))throw new Error("Position 0 and 1 of the 2-position parameter array must both be between 0 and 127.");return data=[].concat(data),this._convertChannelToArray(channel).forEach(function(ch){that._selectNonRegisteredParameter(parameter,channel,options.time),that._setCurrentRegisteredParameter(data,channel,options.time),that._deselectRegisteredParameter(channel,options.time)}),this},Output.prototype.incrementRegisteredParameter=function(parameter,channel,options){var that=this;if(options=options||{},!Array.isArray(parameter)){if(!wm.MIDI_REGISTERED_PARAMETER[parameter])throw new Error("The specified parameter is not available.");parameter=wm.MIDI_REGISTERED_PARAMETER[parameter]}return this._convertChannelToArray(channel).forEach(function(ch){that._selectRegisteredParameter(parameter,channel,options.time),that.sendControlChange(96,0,channel,{time:options.time}),that._deselectRegisteredParameter(channel,options.time)}),this},Output.prototype.decrementRegisteredParameter=function(parameter,channel,options){if(options=options||{},!Array.isArray(parameter)){if(!wm.MIDI_REGISTERED_PARAMETER[parameter])throw new TypeError("The specified parameter is not available.");parameter=wm.MIDI_REGISTERED_PARAMETER[parameter]}return this._convertChannelToArray(channel).forEach(function(ch){this._selectRegisteredParameter(parameter,channel,options.time),this.sendControlChange(97,0,channel,{time:options.time}),this._deselectRegisteredParameter(channel,options.time)}.bind(this)),this},Output.prototype.setPitchBendRange=function(semitones,cents,channel,options){var that=this;if(options=options||{},semitones=parseInt(semitones)||0,!(semitones>=0&&127>=semitones))throw new RangeError("The semitones value must be between 0 and 127");if(cents=parseInt(cents)||0,!(cents>=0&&127>=cents))throw new RangeError("The cents value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("pitchbendrange",[semitones,cents],channel,{time:options.time})}),this},Output.prototype.setModulationRange=function(semitones,cents,channel,options){var that=this;if(options=options||{},semitones=parseInt(semitones)||0,!(semitones>=0&&127>=semitones))throw new RangeError("The semitones value must be between 0 and 127");if(cents=parseInt(cents)||0,!(cents>=0&&127>=cents))throw new RangeError("The cents value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("modulationrange",[semitones,cents],channel,{time:options.time})}),this},Output.prototype.setMasterTuning=function(value,channel,options){var that=this;if(options=options||{},value=parseFloat(value)||0,-65>=value||value>=64)throw new RangeError("The value must be a decimal number larger than -65 and smaller than 64.");var coarse=parseInt(value)+64,fine=value-parseInt(value);fine=Math.round((fine+1)/2*16383);var msb=fine>>7&127,lsb=127&fine;return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("channelcoarsetuning",coarse,channel,{time:options.time}),that.setRegisteredParameter("channelfinetuning",[msb,lsb],channel,{time:options.time})}),this},Output.prototype.setTuningProgram=function(value,channel,options){var that=this;if(options=options||{},value=parseInt(value)||0,!(value>=0&&127>=value))throw new RangeError("The program value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("tuningprogram",value,channel,{time:options.time})}),this},Output.prototype.setTuningBank=function(value,channel,options){var that=this;if(options=options||{},value=parseInt(value)||0,!(value>=0&&127>=value))throw new RangeError("The bank value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("tuningbank",value,channel,{time:options.time})}),this},Output.prototype.sendChannelMode=function(command,value,channel,options){if(options=options||{},"string"==typeof command){if(command=wm.MIDI_CHANNEL_MODE_MESSAGES[command],!command)throw new TypeError("Invalid channel mode message name.")}else if(command=parseInt(command),!(command>=120&&127>=command))throw new RangeError("Channel mode numerical identifiers must be between 120 and 127.");if(value=parseInt(value)||0,0>value||value>127)throw new RangeError("Value must be an integer between 0 and 127.");return this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.channelmode<<4)+(ch-1),[command,value],this._parseTimeParameter(options.time))}.bind(this)),this},Output.prototype.sendProgramChange=function(program,channel,options){var that=this;if(options=options||{},program=parseInt(program),isNaN(program)||0>program||program>127)throw new RangeError("Program numbers must be between 0 and 127.");return this._convertChannelToArray(channel).forEach(function(ch){
+that.send((wm.MIDI_CHANNEL_MESSAGES.programchange<<4)+(ch-1),[program],that._parseTimeParameter(options.time))}),this},Output.prototype.sendChannelAftertouch=function(pressure,channel,options){var that=this;options=options||{},pressure=parseFloat(pressure),(isNaN(pressure)||0>pressure||pressure>1)&&(pressure=.5);var nPressure=Math.round(127*pressure);return this._convertChannelToArray(channel).forEach(function(ch){that.send((wm.MIDI_CHANNEL_MESSAGES.channelaftertouch<<4)+(ch-1),[nPressure],that._parseTimeParameter(options.time))}),this},Output.prototype.sendPitchBend=function(bend,channel,options){var that=this;if(options=options||{},bend=parseFloat(bend),isNaN(bend)||-1>bend||bend>1)throw new RangeError("Pitch bend value must be between -1 and 1.");var nLevel=Math.round((bend+1)/2*16383),msb=nLevel>>7&127,lsb=127&nLevel;return this._convertChannelToArray(channel).forEach(function(ch){that.send((wm.MIDI_CHANNEL_MESSAGES.pitchbend<<4)+(ch-1),[lsb,msb],that._parseTimeParameter(options.time))}),this},Output.prototype._parseTimeParameter=function(time){var parsed,value;return"string"==typeof time&&"+"===time.substring(0,1)?(parsed=parseFloat(time),parsed&&parsed>0&&(value=wm.time+parsed)):(parsed=parseFloat(time),parsed>wm.time&&(value=parsed)),value},Output.prototype._convertNoteToArray=function(note){var notes=[];return Array.isArray(note)||(note=[note]),note.forEach(function(item){notes.push(wm.guessNoteNumber(item))}),notes},Output.prototype._convertChannelToArray=function(channel){if(("all"===channel||void 0===channel)&&(channel=["all"]),Array.isArray(channel)||(channel=[channel]),channel.indexOf("all")>-1){channel=[];for(var i=1;16>=i;i++)channel.push(i)}return channel.forEach(function(ch){if(!(ch>=1&&16>=ch))throw new RangeError("MIDI channels must be between 1 and 16.")}),channel},Output.prototype._onMidiMessage=function(e){}, true?!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = (function(){return wm}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)):"undefined"!=typeof module&&module.exports?module.exports=wm:scope.WebMidi||(scope.WebMidi=wm)}(this);
+
+/***/ }),
+/* 21 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_soundfont_player__ = __webpack_require__(22);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_soundfont_player___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_soundfont_player__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json__ = __webpack_require__(37);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json__);
+
+
+
+
+function Instrument(audioContext, name) {
+  let player
+
+  async function prepare() {
+    player = await __WEBPACK_IMPORTED_MODULE_1_soundfont_player___default.a.instrument(audioContext, name)
+  }
+
+  function handle(action) {
+    let nn = action.payload.nn || 69
+    let vel = action.payload.vel || 80
+    let deadline = action.meta.deadline
+    let node = player.play(nn, deadline, { gain: vel / 127 })
+    return (deadline) => node.stop(deadline)
+  }
+
+  return { prepare, handle, id: `sf-${name}` }
+}
+
+function Instruments(audioContext) {
+  let instruments = {}
+  __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default.a.forEach((instrName) => {
+    instruments[__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.camelCase(instrName)] = Instruments(audioContext, instrName)
+  })
+  return instruments
+}
+
+/* harmony default export */ __webpack_exports__["a"] = (Instruments);
+
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var load = __webpack_require__(23)
+var player = __webpack_require__(26)
+
+/**
+ * Load a soundfont instrument. It returns a promise that resolves to a
+ * instrument object.
+ *
+ * The instrument object returned by the promise has the following properties:
+ *
+ * - name: the instrument name
+ * - play: A function to play notes from the buffer with the signature
+ * `play(note, time, duration, options)`
+ *
+ *
+ * The valid options are:
+ *
+ * - `format`: the soundfont format. 'mp3' by default. Can be 'ogg'
+ * - `soundfont`: the soundfont name. 'MusyngKite' by default. Can be 'FluidR3_GM'
+ * - `nameToUrl` <Function>: a function to convert from instrument names to URL
+ * - `destination`: by default Soundfont uses the `audioContext.destination` but you can override it.
+ * - `gain`: the gain of the player (1 by default)
+ * - `notes`: an array of the notes to decode. It can be an array of strings
+ * with note names or an array of numbers with midi note numbers. This is a
+ * performance option: since decoding mp3 is a cpu intensive process, you can limit
+ * limit the number of notes you want and reduce the time to load the instrument.
+ *
+ * @param {AudioContext} ac - the audio context
+ * @param {String} name - the instrument name. For example: 'acoustic_grand_piano'
+ * @param {Object} options - (Optional) the same options as Soundfont.loadBuffers
+ * @return {Promise}
+ *
+ * @example
+ * var Soundfont = require('sounfont-player')
+ * Soundfont.instrument('marimba').then(function (marimba) {
+ *   marimba.play('C4')
+ * })
+ */
+function instrument (ac, name, options) {
+  if (arguments.length === 1) return function (n, o) { return instrument(ac, n, o) }
+  var opts = options || {}
+  var isUrl = opts.isSoundfontURL || isSoundfontURL
+  var toUrl = opts.nameToUrl || nameToUrl
+  var url = isUrl(name) ? name : toUrl(name, opts.soundfont, opts.format)
+
+  return load(ac, url, { only: opts.only || opts.notes }).then(function (buffers) {
+    var p = player(ac, buffers, opts).connect(ac.destination)
+    p.url = url
+    p.name = name
+    return p
+  })
+}
+
+function isSoundfontURL (name) {
+  return /\.js(\?.*)?$/i.test(name)
+}
+
+/**
+ * Given an instrument name returns a URL to to the Benjamin Gleitzman's
+ * package of [pre-rendered sound fonts](https://github.com/gleitz/midi-js-soundfonts)
+ *
+ * @param {String} name - instrument name
+ * @param {String} soundfont - (Optional) the soundfont name. One of 'FluidR3_GM'
+ * or 'MusyngKite' ('MusyngKite' by default)
+ * @param {String} format - (Optional) Can be 'mp3' or 'ogg' (mp3 by default)
+ * @returns {String} the Soundfont file url
+ * @example
+ * var Soundfont = require('soundfont-player')
+ * Soundfont.nameToUrl('marimba', 'mp3')
+ */
+function nameToUrl (name, sf, format) {
+  format = format === 'ogg' ? format : 'mp3'
+  sf = sf === 'FluidR3_GM' ? sf : 'MusyngKite'
+  return 'https://gleitz.github.io/midi-js-soundfonts/' + sf + '/' + name + '-' + format + '.js'
+}
+
+// In the 1.0.0 release it will be:
+// var Soundfont = {}
+var Soundfont = __webpack_require__(35)
+Soundfont.instrument = instrument
+Soundfont.nameToUrl = nameToUrl
+
+if (typeof module === 'object' && module.exports) module.exports = Soundfont
+if (typeof window !== 'undefined') window.Soundfont = Soundfont
+
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var base64 = __webpack_require__(24)
+var fetch = __webpack_require__(25)
+
+// Given a regex, return a function that test if against a string
+function fromRegex (r) {
+  return function (o) { return typeof o === 'string' && r.test(o) }
+}
+// Try to apply a prefix to a name
+function prefix (pre, name) {
+  return typeof pre === 'string' ? pre + name
+    : typeof pre === 'function' ? pre(name)
+    : name
+}
+
+/**
+ * Load one or more audio files
+ *
+ *
+ * Possible option keys:
+ *
+ * - __from__ {Function|String}: a function or string to convert from file names to urls.
+ * If is a string it will be prefixed to the name:
+ * `load(ac, 'snare.mp3', { from: 'http://audio.net/samples/' })`
+ * If it's a function it receives the file name and should return the url as string.
+ * - __only__ {Array} - when loading objects, if provided, only the given keys
+ * will be included in the decoded object:
+ * `load(ac, 'piano.json', { only: ['C2', 'D2'] })`
+ *
+ * @param {AudioContext} ac - the audio context
+ * @param {Object} source - the object to be loaded
+ * @param {Object} options - (Optional) the load options for that object
+ * @param {Object} defaultValue - (Optional) the default value to return as
+ * in a promise if not valid loader found
+ */
+function load (ac, source, options, defVal) {
+  var loader =
+    // Basic audio loading
+      isArrayBuffer(source) ? loadArrayBuffer
+    : isAudioFileName(source) ? loadAudioFile
+    : isPromise(source) ? loadPromise
+    // Compound objects
+    : isArray(source) ? loadArrayData
+    : isObject(source) ? loadObjectData
+    : isJsonFileName(source) ? loadJsonFile
+    // Base64 encoded audio
+    : isBase64Audio(source) ? loadBase64Audio
+    : isJsFileName(source) ? loadMidiJSFile
+    : null
+
+  var opts = options || {}
+  return loader ? loader(ac, source, opts)
+    : defVal ? Promise.resolve(defVal)
+    : Promise.reject('Source not valid (' + source + ')')
+}
+load.fetch = fetch
+
+// BASIC AUDIO LOADING
+// ===================
+
+// Load (decode) an array buffer
+function isArrayBuffer (o) { return o instanceof ArrayBuffer }
+function loadArrayBuffer (ac, array, options) {
+  return new Promise(function (done, reject) {
+    ac.decodeAudioData(array,
+      function (buffer) { done(buffer) },
+      function () { reject("Can't decode audio data (" + array.slice(0, 30) + '...)') }
+    )
+  })
+}
+
+// Load an audio filename
+var isAudioFileName = fromRegex(/\.(mp3|wav|ogg)(\?.*)?$/i)
+function loadAudioFile (ac, name, options) {
+  var url = prefix(options.from, name)
+  return load(ac, load.fetch(url, 'arraybuffer'), options)
+}
+
+// Load the result of a promise
+function isPromise (o) { return o && typeof o.then === 'function' }
+function loadPromise (ac, promise, options) {
+  return promise.then(function (value) {
+    return load(ac, value, options)
+  })
+}
+
+// COMPOUND OBJECTS
+// ================
+
+// Try to load all the items of an array
+var isArray = Array.isArray
+function loadArrayData (ac, array, options) {
+  return Promise.all(array.map(function (data) {
+    return load(ac, data, options, data)
+  }))
+}
+
+// Try to load all the values of a key/value object
+function isObject (o) { return o && typeof o === 'object' }
+function loadObjectData (ac, obj, options) {
+  var dest = {}
+  var promises = Object.keys(obj).map(function (key) {
+    if (options.only && options.only.indexOf(key) === -1) return null
+    var value = obj[key]
+    return load(ac, value, options, value).then(function (audio) {
+      dest[key] = audio
+    })
+  })
+  return Promise.all(promises).then(function () { return dest })
+}
+
+// Load the content of a JSON file
+var isJsonFileName = fromRegex(/\.json(\?.*)?$/i)
+function loadJsonFile (ac, name, options) {
+  var url = prefix(options.from, name)
+  return load(ac, load.fetch(url, 'text').then(JSON.parse), options)
+}
+
+// BASE64 ENCODED FORMATS
+// ======================
+
+// Load strings with Base64 encoded audio
+var isBase64Audio = fromRegex(/^data:audio/)
+function loadBase64Audio (ac, source, options) {
+  var i = source.indexOf(',')
+  return load(ac, base64.decode(source.slice(i + 1)).buffer, options)
+}
+
+// Load .js files with MidiJS soundfont prerendered audio
+var isJsFileName = fromRegex(/\.js(\?.*)?$/i)
+function loadMidiJSFile (ac, name, options) {
+  var url = prefix(options.from, name)
+  return load(ac, load.fetch(url, 'text').then(midiJsToJson), options)
+}
+
+// convert a MIDI.js javascript soundfont file to json
+function midiJsToJson (data) {
+  var begin = data.indexOf('MIDI.Soundfont.')
+  if (begin < 0) throw Error('Invalid MIDI.js Soundfont format')
+  begin = data.indexOf('=', begin) + 2
+  var end = data.lastIndexOf(',')
+  return JSON.parse(data.slice(begin, end) + '}')
+}
+
+if (typeof module === 'object' && module.exports) module.exports = load
+if (typeof window !== 'undefined') window.loadAudio = load
+
+
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+// DECODE UTILITIES
+function b64ToUint6 (nChr) {
+  return nChr > 64 && nChr < 91 ? nChr - 65
+    : nChr > 96 && nChr < 123 ? nChr - 71
+    : nChr > 47 && nChr < 58 ? nChr + 4
+    : nChr === 43 ? 62
+    : nChr === 47 ? 63
+    : 0
+}
+
+// Decode Base64 to Uint8Array
+// ---------------------------
+function decode (sBase64, nBlocksSize) {
+  var sB64Enc = sBase64.replace(/[^A-Za-z0-9\+\/]/g, '')
+  var nInLen = sB64Enc.length
+  var nOutLen = nBlocksSize
+    ? Math.ceil((nInLen * 3 + 1 >> 2) / nBlocksSize) * nBlocksSize
+    : nInLen * 3 + 1 >> 2
+  var taBytes = new Uint8Array(nOutLen)
+
+  for (var nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx++) {
+    nMod4 = nInIdx & 3
+    nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << 18 - 6 * nMod4
+    if (nMod4 === 3 || nInLen - nInIdx === 1) {
+      for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3++, nOutIdx++) {
+        taBytes[nOutIdx] = nUint24 >>> (16 >>> nMod3 & 24) & 255
+      }
+      nUint24 = 0
+    }
+  }
+  return taBytes
+}
+
+module.exports = { decode: decode }
+
+
+/***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* global XMLHttpRequest */
+
+
+/**
+ * Given a url and a return type, returns a promise to the content of the url
+ * Basically it wraps a XMLHttpRequest into a Promise
+ *
+ * @param {String} url
+ * @param {String} type - can be 'text' or 'arraybuffer'
+ * @return {Promise}
+ */
+module.exports = function (url, type) {
+  return new Promise(function (done, reject) {
+    var req = new XMLHttpRequest()
+    if (type) req.responseType = type
+
+    req.open('GET', url)
+    req.onload = function () {
+      req.status === 200 ? done(req.response) : reject(Error(req.statusText))
+    }
+    req.onerror = function () { reject(Error('Network Error')) }
+    req.send()
+  })
+}
+
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var player = __webpack_require__(27)
+var events = __webpack_require__(29)
+var notes = __webpack_require__(30)
+var scheduler = __webpack_require__(32)
+var midi = __webpack_require__(33)
+
+function SamplePlayer (ac, source, options) {
+  return midi(scheduler(notes(events(player(ac, source, options)))))
+}
+
+if (typeof module === 'object' && module.exports) module.exports = SamplePlayer
+if (typeof window !== 'undefined') window.SamplePlayer = SamplePlayer
+
+
+/***/ }),
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* global AudioBuffer */
+
+
+var ADSR = __webpack_require__(28)
+
+var EMPTY = {}
+var DEFAULTS = {
+  gain: 1,
+  attack: 0.01,
+  decay: 0.1,
+  sustain: 0.9,
+  release: 0.3,
+  loop: false,
+  cents: 0,
+  loopStart: 0,
+  loopEnd: 0
+}
+
+/**
+ * Create a sample player.
+ *
+ * @param {AudioContext} ac - the audio context
+ * @param {ArrayBuffer|Object<String,ArrayBuffer>} source
+ * @param {Onject} options - (Optional) an options object
+ * @return {player} the player
+ * @example
+ * var SamplePlayer = require('sample-player')
+ * var ac = new AudioContext()
+ * var snare = SamplePlayer(ac, <AudioBuffer>)
+ * snare.play()
+ */
+function SamplePlayer (ac, source, options) {
+  var connected = false
+  var nextId = 0
+  var tracked = {}
+  var out = ac.createGain()
+  out.gain.value = 1
+
+  var opts = Object.assign({}, DEFAULTS, options)
+
+  /**
+   * @namespace
+   */
+  var player = { context: ac, out: out, opts: opts }
+  if (source instanceof AudioBuffer) player.buffer = source
+  else player.buffers = source
+
+  /**
+   * Start a sample buffer.
+   *
+   * The returned object has a function `stop(when)` to stop the sound.
+   *
+   * @param {String} name - the name of the buffer. If the source of the
+   * SamplePlayer is one sample buffer, this parameter is not required
+   * @param {Float} when - (Optional) when to start (current time if by default)
+   * @param {Object} options - additional sample playing options
+   * @return {AudioNode} an audio node with a `stop` function
+   * @example
+   * var sample = player(ac, <AudioBuffer>).connect(ac.destination)
+   * sample.start()
+   * sample.start(5, { gain: 0.7 }) // name not required since is only one AudioBuffer
+   * @example
+   * var drums = player(ac, { snare: <AudioBuffer>, kick: <AudioBuffer>, ... }).connect(ac.destination)
+   * drums.start('snare')
+   * drums.start('snare', 0, { gain: 0.3 })
+   */
+  player.start = function (name, when, options) {
+    // if only one buffer, reorder arguments
+    if (player.buffer && name !== null) return player.start(null, name, when)
+
+    var buffer = name ? player.buffers[name] : player.buffer
+    if (!buffer) {
+      console.warn('Buffer ' + name + ' not found.')
+      return
+    } else if (!connected) {
+      console.warn('SamplePlayer not connected to any node.')
+      return
+    }
+
+    var opts = options || EMPTY
+    when = Math.max(ac.currentTime, when || 0)
+    player.emit('start', when, name, opts)
+    var node = createNode(name, buffer, opts)
+    node.id = track(name, node)
+    node.env.start(when)
+    node.source.start(when)
+    player.emit('started', when, node.id, node)
+    if (opts.duration) node.stop(when + opts.duration)
+    return node
+  }
+
+  // NOTE: start will be override so we can't copy the function reference
+  // this is obviously not a good design, so this code will be gone soon.
+  /**
+   * An alias for `player.start`
+   * @see player.start
+   * @since 0.3.0
+   */
+  player.play = function (name, when, options) {
+    return player.start(name, when, options)
+  }
+
+  /**
+   * Stop some or all samples
+   *
+   * @param {Float} when - (Optional) an absolute time in seconds (or currentTime
+   * if not specified)
+   * @param {Array} nodes - (Optional) an array of nodes or nodes ids to stop
+   * @return {Array} an array of ids of the stoped samples
+   *
+   * @example
+   * var longSound = player(ac, <AudioBuffer>).connect(ac.destination)
+   * longSound.start(ac.currentTime)
+   * longSound.start(ac.currentTime + 1)
+   * longSound.start(ac.currentTime + 2)
+   * longSound.stop(ac.currentTime + 3) // stop the three sounds
+   */
+  player.stop = function (when, ids) {
+    var node
+    ids = ids || Object.keys(tracked)
+    return ids.map(function (id) {
+      node = tracked[id]
+      if (!node) return null
+      node.stop(when)
+      return node.id
+    })
+  }
+  /**
+   * Connect the player to a destination node
+   *
+   * @param {AudioNode} destination - the destination node
+   * @return {AudioPlayer} the player
+   * @chainable
+   * @example
+   * var sample = player(ac, <AudioBuffer>).connect(ac.destination)
+   */
+  player.connect = function (dest) {
+    connected = true
+    out.connect(dest)
+    return player
+  }
+
+  player.emit = function (event, when, obj, opts) {
+    if (player.onevent) player.onevent(event, when, obj, opts)
+    var fn = player['on' + event]
+    if (fn) fn(when, obj, opts)
+  }
+
+  return player
+
+  // =============== PRIVATE FUNCTIONS ============== //
+
+  function track (name, node) {
+    node.id = nextId++
+    tracked[node.id] = node
+    node.source.onended = function () {
+      var now = ac.currentTime
+      node.source.disconnect()
+      node.env.disconnect()
+      node.disconnect()
+      player.emit('ended', now, node.id, node)
+    }
+    return node.id
+  }
+
+  function createNode (name, buffer, options) {
+    var node = ac.createGain()
+    node.gain.value = 0 // the envelope will control the gain
+    node.connect(out)
+
+    node.env = envelope(ac, options, opts)
+    node.env.connect(node.gain)
+
+    node.source = ac.createBufferSource()
+    node.source.buffer = buffer
+    node.source.connect(node)
+    node.source.loop = options.loop || opts.loop
+    node.source.playbackRate.value = centsToRate(options.cents || opts.cents)
+    node.source.loopStart = options.loopStart || opts.loopStart
+    node.source.loopEnd = options.loopEnd || opts.loopEnd
+    node.stop = function (when) {
+      var time = when || ac.currentTime
+      player.emit('stop', time, name)
+      var stopAt = node.env.stop(time)
+      node.source.stop(stopAt)
+    }
+    return node
+  }
+}
+
+function isNum (x) { return typeof x === 'number' }
+var PARAMS = ['attack', 'decay', 'sustain', 'release']
+function envelope (ac, options, opts) {
+  var env = ADSR(ac)
+  var adsr = options.adsr || opts.adsr
+  PARAMS.forEach(function (name, i) {
+    if (adsr) env[name] = adsr[i]
+    else env[name] = options[name] || opts[name]
+  })
+  env.value.value = isNum(options.gain) ? options.gain
+    : isNum(opts.gain) ? opts.gain : 1
+  return env
+}
+
+/*
+ * Get playback rate for a given pitch change (in cents)
+ * Basic [math](http://www.birdsoft.demon.co.uk/music/samplert.htm):
+ * f2 = f1 * 2^( C / 1200 )
+ */
+function centsToRate (cents) { return cents ? Math.pow(2, cents / 1200) : 1 }
+
+module.exports = SamplePlayer
+
+
+/***/ }),
+/* 28 */
+/***/ (function(module, exports) {
+
+module.exports = ADSR
+
+function ADSR(audioContext){
+  var node = audioContext.createGain()
+
+  var voltage = node._voltage = getVoltage(audioContext)
+  var value = scale(voltage)
+  var startValue = scale(voltage)
+  var endValue = scale(voltage)
+
+  node._startAmount = scale(startValue)
+  node._endAmount = scale(endValue)
+
+  node._multiplier = scale(value)
+  node._multiplier.connect(node)
+  node._startAmount.connect(node)
+  node._endAmount.connect(node)
+
+  node.value = value.gain
+  node.startValue = startValue.gain
+  node.endValue = endValue.gain
+
+  node.startValue.value = 0
+  node.endValue.value = 0
+
+  Object.defineProperties(node, props)
+  return node
+}
+
+var props = {
+
+  attack: { value: 0, writable: true },
+  decay: { value: 0, writable: true },
+  sustain: { value: 1, writable: true },
+  release: {value: 0, writable: true },
+
+  getReleaseDuration: {
+    value: function(){
+      return this.release
+    }
+  },
+
+  start: {
+    value: function(at){
+      var target = this._multiplier.gain
+      var startAmount = this._startAmount.gain
+      var endAmount = this._endAmount.gain
+
+      this._voltage.start(at)
+      this._decayFrom = this._decayFrom = at+this.attack
+      this._startedAt = at
+
+      var sustain = this.sustain
+
+      target.cancelScheduledValues(at)
+      startAmount.cancelScheduledValues(at)
+      endAmount.cancelScheduledValues(at)
+
+      endAmount.setValueAtTime(0, at)
+
+      if (this.attack){
+        target.setValueAtTime(0, at)
+        target.linearRampToValueAtTime(1, at + this.attack)
+
+        startAmount.setValueAtTime(1, at)
+        startAmount.linearRampToValueAtTime(0, at + this.attack)
+      } else {
+        target.setValueAtTime(1, at)
+        startAmount.setValueAtTime(0, at)
+      }
+
+      if (this.decay){
+        target.setTargetAtTime(sustain, this._decayFrom, getTimeConstant(this.decay))
+      }
+    }
+  },
+
+  stop: {
+    value: function(at, isTarget){
+      if (isTarget){
+        at = at - this.release
+      }
+
+      var endTime = at + this.release
+      if (this.release){
+
+        var target = this._multiplier.gain
+        var startAmount = this._startAmount.gain
+        var endAmount = this._endAmount.gain
+
+        target.cancelScheduledValues(at)
+        startAmount.cancelScheduledValues(at)
+        endAmount.cancelScheduledValues(at)
+
+        var expFalloff = getTimeConstant(this.release)
+
+        // truncate attack (required as linearRamp is removed by cancelScheduledValues)
+        if (this.attack && at < this._decayFrom){
+          var valueAtTime = getValue(0, 1, this._startedAt, this._decayFrom, at)
+          target.linearRampToValueAtTime(valueAtTime, at)
+          startAmount.linearRampToValueAtTime(1-valueAtTime, at)
+          startAmount.setTargetAtTime(0, at, expFalloff)
+        }
+
+        endAmount.setTargetAtTime(1, at, expFalloff)
+        target.setTargetAtTime(0, at, expFalloff)
+      }
+
+      this._voltage.stop(endTime)
+      return endTime
+    }
+  },
+
+  onended: {
+    get: function(){
+      return this._voltage.onended
+    },
+    set: function(value){
+      this._voltage.onended = value
+    }
+  }
+
+}
+
+var flat = new Float32Array([1,1])
+function getVoltage(context){
+  var voltage = context.createBufferSource()
+  var buffer = context.createBuffer(1, 2, context.sampleRate)
+  buffer.getChannelData(0).set(flat)
+  voltage.buffer = buffer
+  voltage.loop = true
+  return voltage
+}
+
+function scale(node){
+  var gain = node.context.createGain()
+  node.connect(gain)
+  return gain
+}
+
+function getTimeConstant(time){
+  return Math.log(time+1)/Math.log(100)
+}
+
+function getValue(start, end, fromTime, toTime, at){
+  var difference = end - start
+  var time = toTime - fromTime
+  var truncateTime = at - fromTime
+  var phase = truncateTime / time
+  var value = start + phase * difference
+
+  if (value <= start) {
+      value = start
+  }
+  if (value >= end) {
+      value = end
+  }
+
+  return value
+}
+
+
+/***/ }),
+/* 29 */
+/***/ (function(module, exports) {
+
+
+module.exports = function (player) {
+  /**
+   * Adds a listener of an event
+   * @chainable
+   * @param {String} event - the event name
+   * @param {Function} callback - the event handler
+   * @return {SamplePlayer} the player
+   * @example
+   * player.on('start', function(time, note) {
+   *   console.log(time, note)
+   * })
+   */
+  player.on = function (event, cb) {
+    if (arguments.length === 1 && typeof event === 'function') return player.on('event', event)
+    var prop = 'on' + event
+    var old = player[prop]
+    player[prop] = old ? chain(old, cb) : cb
+    return player
+  }
+  return player
+}
+
+function chain (fn1, fn2) {
+  return function (a, b, c, d) { fn1(a, b, c, d); fn2(a, b, c, d) }
+}
+
+
+/***/ }),
+/* 30 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var note = __webpack_require__(31)
+var isMidi = function (n) { return n !== null && n !== [] && n >= 0 && n < 129 }
+var toMidi = function (n) { return isMidi(n) ? +n : note.midi(n) }
+
+// Adds note name to midi conversion
+module.exports = function (player) {
+  if (player.buffers) {
+    var map = player.opts.map
+    var toKey = typeof map === 'function' ? map : toMidi
+    var mapper = function (name) {
+      return name ? toKey(name) || name : null
+    }
+
+    player.buffers = mapBuffers(player.buffers, mapper)
+    var start = player.start
+    player.start = function (name, when, options) {
+      var key = mapper(name)
+      var dec = key % 1
+      if (dec) {
+        key = Math.floor(key)
+        options = Object.assign(options || {}, { cents: Math.floor(dec * 100) })
+      }
+      return start(key, when, options)
+    }
+  }
+  return player
+}
+
+function mapBuffers (buffers, toKey) {
+  return Object.keys(buffers).reduce(function (mapped, name) {
+    mapped[toKey(name)] = buffers[name]
+    return mapped
+  }, {})
+}
+
+
+/***/ }),
+/* 31 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var REGEX = /^([a-gA-G])(#{1,}|b{1,}|x{1,}|)(-?\d*)\s*(.*)\s*$/
+/**
+ * A regex for matching note strings in scientific notation.
+ *
+ * @name regex
+ * @function
+ * @return {RegExp} the regexp used to parse the note name
+ *
+ * The note string should have the form `letter[accidentals][octave][element]`
+ * where:
+ *
+ * - letter: (Required) is a letter from A to G either upper or lower case
+ * - accidentals: (Optional) can be one or more `b` (flats), `#` (sharps) or `x` (double sharps).
+ * They can NOT be mixed.
+ * - octave: (Optional) a positive or negative integer
+ * - element: (Optional) additionally anything after the duration is considered to
+ * be the element name (for example: 'C2 dorian')
+ *
+ * The executed regex contains (by array index):
+ *
+ * - 0: the complete string
+ * - 1: the note letter
+ * - 2: the optional accidentals
+ * - 3: the optional octave
+ * - 4: the rest of the string (trimmed)
+ *
+ * @example
+ * var parser = require('note-parser')
+ * parser.regex.exec('c#4')
+ * // => ['c#4', 'c', '#', '4', '']
+ * parser.regex.exec('c#4 major')
+ * // => ['c#4major', 'c', '#', '4', 'major']
+ * parser.regex().exec('CMaj7')
+ * // => ['CMaj7', 'C', '', '', 'Maj7']
+ */
+function regex () { return REGEX }
+
+var SEMITONES = [0, 2, 4, 5, 7, 9, 11]
+/**
+ * Parse a note name in scientific notation an return it's components,
+ * and some numeric properties including midi number and frequency.
+ *
+ * @name parse
+ * @function
+ * @param {String} note - the note string to be parsed
+ * @param {Boolean} isTonic - true if the note is the tonic of something.
+ * If true, en extra tonicOf property is returned. It's false by default.
+ * @param {Float} tunning - The frequency of A4 note to calculate frequencies.
+ * By default it 440.
+ * @return {Object} the parsed note name or null if not a valid note
+ *
+ * The parsed note name object will ALWAYS contains:
+ * - letter: the uppercase letter of the note
+ * - acc: the accidentals of the note (only sharps or flats)
+ * - pc: the pitch class (letter + acc)
+ * - step: s a numeric representation of the letter. It's an integer from 0 to 6
+ * where 0 = C, 1 = D ... 6 = B
+ * - alt: a numeric representation of the accidentals. 0 means no alteration,
+ * positive numbers are for sharps and negative for flats
+ * - chroma: a numeric representation of the pitch class. It's like midi for
+ * pitch classes. 0 = C, 1 = C#, 2 = D ... It can have negative values: -1 = Cb.
+ * Can detect pitch class enhramonics.
+ *
+ * If the note has octave, the parser object will contain:
+ * - oct: the octave number (as integer)
+ * - midi: the midi number
+ * - freq: the frequency (using tuning parameter as base)
+ *
+ * If the parameter `isTonic` is set to true, the parsed object will contain:
+ * - tonicOf: the rest of the string that follows note name (left and right trimmed)
+ *
+ * @example
+ * var parse = require('note-parser').parse
+ * parse('Cb4')
+ * // => { letter: 'C', acc: 'b', pc: 'Cb', step: 0, alt: -1, chroma: -1,
+ *         oct: 4, midi: 59, freq: 246.94165062806206 }
+ * // if no octave, no midi, no freq
+ * parse('fx')
+ * // => { letter: 'F', acc: '##', pc: 'F##', step: 3, alt: 2, chroma: 7 })
+ */
+function parse (str, isTonic, tuning) {
+  if (typeof str !== 'string') return null
+  var m = REGEX.exec(str)
+  if (!m || !isTonic && m[4]) return null
+
+  var p = { letter: m[1].toUpperCase(), acc: m[2].replace(/x/g, '##') }
+  p.pc = p.letter + p.acc
+  p.step = (p.letter.charCodeAt(0) + 3) % 7
+  p.alt = p.acc[0] === 'b' ? -p.acc.length : p.acc.length
+  p.chroma = SEMITONES[p.step] + p.alt
+  if (m[3]) {
+    p.oct = +m[3]
+    p.midi = p.chroma + 12 * (p.oct + 1)
+    p.freq = midiToFreq(p.midi, tuning)
+  }
+  if (isTonic) p.tonicOf = m[4]
+  return p
+}
+
+/**
+ * Given a midi number, return its frequency
+ * @param {Integer} midi - midi note number
+ * @param {Float} tuning - (Optional) the A4 tuning (440Hz by default)
+ * @return {Float} frequency in hertzs
+ */
+function midiToFreq (midi, tuning) {
+  return Math.pow(2, (midi - 69) / 12) * (tuning || 440)
+}
+
+var parser = { parse: parse, regex: regex, midiToFreq: midiToFreq }
+var FNS = ['letter', 'acc', 'pc', 'step', 'alt', 'chroma', 'oct', 'midi', 'freq']
+FNS.forEach(function (name) {
+  parser[name] = function (src) {
+    var p = parse(src)
+    return p && (typeof p[name] !== 'undefined') ? p[name] : null
+  }
+})
+
+module.exports = parser
+
+// extra API docs
+/**
+ * Get midi of a note
+ *
+ * @name midi
+ * @function
+ * @param {String} note - the note name
+ * @return {Integer} the midi number of the note or null if not a valid note
+ * or the note does NOT contains octave
+ * @example
+ * var parser = require('note-parser')
+ * parser.midi('A4') // => 69
+ * parser.midi('A') // => null
+ */
+/**
+ * Get freq of a note in hertzs (in a well tempered 440Hz A4)
+ *
+ * @name freq
+ * @function
+ * @param {String} note - the note name
+ * @return {Float} the freq of the number if hertzs or null if not valid note
+ * or the note does NOT contains octave
+ * @example
+ * var parser = require('note-parser')
+ * parser.freq('A4') // => 440
+ * parser.freq('A') // => null
+ */
+
+
+/***/ }),
+/* 32 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var isArr = Array.isArray
+var isObj = function (o) { return o && typeof o === 'object' }
+var OPTS = {}
+
+module.exports = function (player) {
+  /**
+   * Schedule a list of events to be played at specific time.
+   *
+   * It supports three formats of events for the events list:
+   *
+   * - An array with [time, note]
+   * - An array with [time, object]
+   * - An object with { time: ?, [name|note|midi|key]: ? }
+   *
+   * @param {Float} time - an absolute time to start (or AudioContext's
+   * currentTime if provided number is 0)
+   * @param {Array} events - the events list.
+   * @return {Array} an array of ids
+   *
+   * @example
+   * // Event format: [time, note]
+   * var piano = player(ac, ...).connect(ac.destination)
+   * piano.schedule(0, [ [0, 'C2'], [0.5, 'C3'], [1, 'C4'] ])
+   *
+   * @example
+   * // Event format: an object { time: ?, name: ? }
+   * var drums = player(ac, ...).connect(ac.destination)
+   * drums.schedule(0, [
+   *   { name: 'kick', time: 0 },
+   *   { name: 'snare', time: 0.5 },
+   *   { name: 'kick', time: 1 },
+   *   { name: 'snare', time: 1.5 }
+   * ])
+   */
+  player.schedule = function (time, events) {
+    var now = player.context.currentTime
+    var when = time < now ? now : time
+    player.emit('schedule', when, events)
+    var t, o, note, opts
+    return events.map(function (event) {
+      if (!event) return null
+      else if (isArr(event)) {
+        t = event[0]; o = event[1]
+      } else {
+        t = event.time; o = event
+      }
+
+      if (isObj(o)) {
+        note = o.name || o.key || o.note || o.midi || null
+        opts = o
+      } else {
+        note = o
+        opts = OPTS
+      }
+
+      return player.start(note, when + (t || 0), opts)
+    })
+  }
+  return player
+}
+
+
+/***/ }),
+/* 33 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var midimessage = __webpack_require__(34)
+
+module.exports = function (player) {
+  /**
+  * Connect a player to a midi input
+  *
+  * The options accepts:
+  *
+  * - channel: the channel to listen to. Listen to all channels by default.
+  *
+  * @param {MIDIInput} input
+  * @param {Object} options - (Optional)
+  * @return {SamplePlayer} the player
+  * @example
+  * var piano = player(...)
+  * window.navigator.requestMIDIAccess().then(function (midiAccess) {
+  *   midiAccess.inputs.forEach(function (midiInput) {
+  *     piano.listenToMidi(midiInput)
+  *   })
+  * })
+  */
+  player.listenToMidi = function (input, options) {
+    var started = {}
+    var opts = options || {}
+    var gain = opts.gain || function (vel) { return vel / 127 }
+
+    input.onmidimessage = function (msg) {
+      var mm = msg.messageType ? msg : midimessage(msg)
+      if (mm.messageType === 'noteon' && mm.velocity === 0) {
+        mm.messageType = 'noteoff'
+      }
+      if (opts.channel && mm.channel !== opts.channel) return
+
+      switch (mm.messageType) {
+        case 'noteon':
+          started[mm.key] = player.play(mm.key, 0, { gain: gain(mm.velocity) })
+          break
+        case 'noteoff':
+          if (started[mm.key]) {
+            started[mm.key].stop()
+            delete started[mm.key]
+          }
+          break
+      }
+    }
+    return player
+  }
+  return player
+}
+
+
+/***/ }),
+/* 34 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var require;var require;(function(e){if(true){module.exports=e()}else if(typeof define==="function"&&define.amd){define([],e)}else{var t;if(typeof window!=="undefined"){t=window}else if(typeof global!=="undefined"){t=global}else if(typeof self!=="undefined"){t=self}else{t=this}t.midimessage=e()}})(function(){var e,t,s;return function o(e,t,s){function a(n,i){if(!t[n]){if(!e[n]){var l=typeof require=="function"&&require;if(!i&&l)return require(n,!0);if(r)return r(n,!0);var h=new Error("Cannot find module '"+n+"'");throw h.code="MODULE_NOT_FOUND",h}var c=t[n]={exports:{}};e[n][0].call(c.exports,function(t){var s=e[n][1][t];return a(s?s:t)},c,c.exports,o,e,t,s)}return t[n].exports}var r=typeof require=="function"&&require;for(var n=0;n<s.length;n++)a(s[n]);return a}({1:[function(e,t,s){"use strict";Object.defineProperty(s,"__esModule",{value:true});s["default"]=function(e){function t(e){this._event=e;this._data=e.data;this.receivedTime=e.receivedTime;if(this._data&&this._data.length<2){console.warn("Illegal MIDI message of length",this._data.length);return}this._messageCode=e.data[0]&240;this.channel=e.data[0]&15;switch(this._messageCode){case 128:this.messageType="noteoff";this.key=e.data[1]&127;this.velocity=e.data[2]&127;break;case 144:this.messageType="noteon";this.key=e.data[1]&127;this.velocity=e.data[2]&127;break;case 160:this.messageType="keypressure";this.key=e.data[1]&127;this.pressure=e.data[2]&127;break;case 176:this.messageType="controlchange";this.controllerNumber=e.data[1]&127;this.controllerValue=e.data[2]&127;if(this.controllerNumber===120&&this.controllerValue===0){this.channelModeMessage="allsoundoff"}else if(this.controllerNumber===121){this.channelModeMessage="resetallcontrollers"}else if(this.controllerNumber===122){if(this.controllerValue===0){this.channelModeMessage="localcontroloff"}else{this.channelModeMessage="localcontrolon"}}else if(this.controllerNumber===123&&this.controllerValue===0){this.channelModeMessage="allnotesoff"}else if(this.controllerNumber===124&&this.controllerValue===0){this.channelModeMessage="omnimodeoff"}else if(this.controllerNumber===125&&this.controllerValue===0){this.channelModeMessage="omnimodeon"}else if(this.controllerNumber===126){this.channelModeMessage="monomodeon"}else if(this.controllerNumber===127){this.channelModeMessage="polymodeon"}break;case 192:this.messageType="programchange";this.program=e.data[1];break;case 208:this.messageType="channelpressure";this.pressure=e.data[1]&127;break;case 224:this.messageType="pitchbendchange";var t=e.data[2]&127;var s=e.data[1]&127;this.pitchBend=(t<<8)+s;break}}return new t(e)};t.exports=s["default"]},{}]},{},[1])(1)});
+//# sourceMappingURL=dist/index.js.map
+
+/***/ }),
+/* 35 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var parser = __webpack_require__(36)
+
+/**
+ * Create a Soundfont object
+ *
+ * @param {AudioContext} context - the [audio context](https://developer.mozilla.org/en/docs/Web/API/AudioContext)
+ * @param {Function} nameToUrl - (Optional) a function that maps the sound font name to the url
+ * @return {Soundfont} a soundfont object
+ */
+function Soundfont (ctx, nameToUrl) {
+  console.warn('new Soundfont() is deprected')
+  console.log('Please use Soundfont.instrument() instead of new Soundfont().instrument()')
+  if (!(this instanceof Soundfont)) return new Soundfont(ctx)
+
+  this.nameToUrl = nameToUrl || Soundfont.nameToUrl
+  this.ctx = ctx
+  this.instruments = {}
+  this.promises = []
+}
+
+Soundfont.prototype.onready = function (callback) {
+  console.warn('deprecated API')
+  console.log('Please use Promise.all(Soundfont.instrument(), Soundfont.instrument()).then() instead of new Soundfont().onready()')
+  Promise.all(this.promises).then(callback)
+}
+
+Soundfont.prototype.instrument = function (name, options) {
+  console.warn('new Soundfont().instrument() is deprecated.')
+  console.log('Please use Soundfont.instrument() instead.')
+  var ctx = this.ctx
+  name = name || 'default'
+  if (name in this.instruments) return this.instruments[name]
+  var inst = {name: name, play: oscillatorPlayer(ctx, options)}
+  this.instruments[name] = inst
+  if (name !== 'default') {
+    var promise = Soundfont.instrument(ctx, name, options).then(function (instrument) {
+      inst.play = instrument.play
+      return inst
+    })
+    this.promises.push(promise)
+    inst.onready = function (cb) {
+      console.warn('onready is deprecated. Use Soundfont.instrument().then()')
+      promise.then(cb)
+    }
+  } else {
+    inst.onready = function (cb) {
+      console.warn('onready is deprecated. Use Soundfont.instrument().then()')
+      cb()
+    }
+  }
+  return inst
+}
+
+/*
+ * Load the buffers of a given instrument name. It returns a promise that resolves
+ * to a hash with midi note numbers as keys, and audio buffers as values.
+ *
+ * @param {AudioContext} ac - the audio context
+ * @param {String} name - the instrument name (it accepts an url if starts with "http")
+ * @param {Object} options - (Optional) options object
+ * @return {Promise} a promise that resolves to a Hash of { midiNoteNum: <AudioBuffer> }
+ *
+ * The options object accepts the following keys:
+ *
+ * - nameToUrl {Function}: a function to convert from instrument names to urls.
+ * By default it uses Benjamin Gleitzman's package of
+ * [pre-rendered sound fonts](https://github.com/gleitz/midi-js-soundfonts)
+ * - notes {Array}: the list of note names to be decoded (all by default)
+ *
+ * @example
+ * var Soundfont = require('soundfont-player')
+ * Soundfont.loadBuffers(ctx, 'acoustic_grand_piano').then(function(buffers) {
+ *  buffers[60] // => An <AudioBuffer> corresponding to note C4
+ * })
+ */
+function loadBuffers (ac, name, options) {
+  console.warn('Soundfont.loadBuffers is deprecate.')
+  console.log('Use Soundfont.instrument(..) and get buffers properties from the result.')
+  return Soundfont.instrument(ac, name, options).then(function (inst) {
+    return inst.buffers
+  })
+}
+Soundfont.loadBuffers = loadBuffers
+
+/**
+ * Returns a function that plays an oscillator
+ *
+ * @param {AudioContext} ac - the audio context
+ * @param {Hash} defaultOptions - (Optional) a hash of options:
+ * - vcoType: the oscillator type (default: 'sine')
+ * - gain: the output gain value (default: 0.4)
+  * - destination: the player destination (default: ac.destination)
+ */
+function oscillatorPlayer (ctx, defaultOptions) {
+  defaultOptions = defaultOptions || {}
+  return function (note, time, duration, options) {
+    console.warn('The oscillator player is deprecated.')
+    console.log('Starting with version 0.9.0 you will have to wait until the soundfont is loaded to play sounds.')
+    var midi = note > 0 && note < 129 ? +note : parser.midi(note)
+    var freq = midi ? parser.midiToFreq(midi, 440) : null
+    if (!freq) return
+
+    duration = duration || 0.2
+
+    options = options || {}
+    var destination = options.destination || defaultOptions.destination || ctx.destination
+    var vcoType = options.vcoType || defaultOptions.vcoType || 'sine'
+    var gain = options.gain || defaultOptions.gain || 0.4
+
+    var vco = ctx.createOscillator()
+    vco.type = vcoType
+    vco.frequency.value = freq
+
+    /* VCA */
+    var vca = ctx.createGain()
+    vca.gain.value = gain
+
+    /* Connections */
+    vco.connect(vca)
+    vca.connect(destination)
+
+    vco.start(time)
+    if (duration > 0) vco.stop(time + duration)
+    return vco
+  }
+}
+
+/**
+ * Given a note name, return the note midi number
+ *
+ * @name noteToMidi
+ * @function
+ * @param {String} noteName
+ * @return {Integer} the note midi number or null if not a valid note name
+ */
+Soundfont.noteToMidi = parser.midi
+
+module.exports = Soundfont
+
+
+/***/ }),
+/* 36 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony export (immutable) */ __webpack_exports__["regex"] = regex;
+/* harmony export (immutable) */ __webpack_exports__["parse"] = parse;
+/* harmony export (immutable) */ __webpack_exports__["build"] = build;
+/* harmony export (immutable) */ __webpack_exports__["midi"] = midi;
+/* harmony export (immutable) */ __webpack_exports__["freq"] = freq;
+/* harmony export (immutable) */ __webpack_exports__["letter"] = letter;
+/* harmony export (immutable) */ __webpack_exports__["acc"] = acc;
+/* harmony export (immutable) */ __webpack_exports__["pc"] = pc;
+/* harmony export (immutable) */ __webpack_exports__["step"] = step;
+/* harmony export (immutable) */ __webpack_exports__["alt"] = alt;
+/* harmony export (immutable) */ __webpack_exports__["chroma"] = chroma;
+/* harmony export (immutable) */ __webpack_exports__["oct"] = oct;
+
+
+// util
+function fillStr (s, num) { return Array(num + 1).join(s) }
+function isNum (x) { return typeof x === 'number' }
+function isStr (x) { return typeof x === 'string' }
+function isDef (x) { return typeof x !== 'undefined' }
+function midiToFreq (midi, tuning) {
+  return Math.pow(2, (midi - 69) / 12) * (tuning || 440)
+}
+
+var REGEX = /^([a-gA-G])(#{1,}|b{1,}|x{1,}|)(-?\d*)\s*(.*)\s*$/
+/**
+ * A regex for matching note strings in scientific notation.
+ *
+ * @name regex
+ * @function
+ * @return {RegExp} the regexp used to parse the note name
+ *
+ * The note string should have the form `letter[accidentals][octave][element]`
+ * where:
+ *
+ * - letter: (Required) is a letter from A to G either upper or lower case
+ * - accidentals: (Optional) can be one or more `b` (flats), `#` (sharps) or `x` (double sharps).
+ * They can NOT be mixed.
+ * - octave: (Optional) a positive or negative integer
+ * - element: (Optional) additionally anything after the duration is considered to
+ * be the element name (for example: 'C2 dorian')
+ *
+ * The executed regex contains (by array index):
+ *
+ * - 0: the complete string
+ * - 1: the note letter
+ * - 2: the optional accidentals
+ * - 3: the optional octave
+ * - 4: the rest of the string (trimmed)
+ *
+ * @example
+ * var parser = require('note-parser')
+ * parser.regex.exec('c#4')
+ * // => ['c#4', 'c', '#', '4', '']
+ * parser.regex.exec('c#4 major')
+ * // => ['c#4major', 'c', '#', '4', 'major']
+ * parser.regex().exec('CMaj7')
+ * // => ['CMaj7', 'C', '', '', 'Maj7']
+ */
+function regex () { return REGEX }
+
+var SEMITONES = [0, 2, 4, 5, 7, 9, 11]
+/**
+ * Parse a note name in scientific notation an return it's components,
+ * and some numeric properties including midi number and frequency.
+ *
+ * @name parse
+ * @function
+ * @param {String} note - the note string to be parsed
+ * @param {Boolean} isTonic - true the strings it's supposed to contain a note number
+ * and some category (for example an scale: 'C# major'). It's false by default,
+ * but when true, en extra tonicOf property is returned with the category ('major')
+ * @param {Float} tunning - The frequency of A4 note to calculate frequencies.
+ * By default it 440.
+ * @return {Object} the parsed note name or null if not a valid note
+ *
+ * The parsed note name object will ALWAYS contains:
+ * - letter: the uppercase letter of the note
+ * - acc: the accidentals of the note (only sharps or flats)
+ * - pc: the pitch class (letter + acc)
+ * - step: s a numeric representation of the letter. It's an integer from 0 to 6
+ * where 0 = C, 1 = D ... 6 = B
+ * - alt: a numeric representation of the accidentals. 0 means no alteration,
+ * positive numbers are for sharps and negative for flats
+ * - chroma: a numeric representation of the pitch class. It's like midi for
+ * pitch classes. 0 = C, 1 = C#, 2 = D ... 11 = B. Can be used to find enharmonics
+ * since, for example, chroma of 'Cb' and 'B' are both 11
+ *
+ * If the note has octave, the parser object will contain:
+ * - oct: the octave number (as integer)
+ * - midi: the midi number
+ * - freq: the frequency (using tuning parameter as base)
+ *
+ * If the parameter `isTonic` is set to true, the parsed object will contain:
+ * - tonicOf: the rest of the string that follows note name (left and right trimmed)
+ *
+ * @example
+ * var parse = require('note-parser').parse
+ * parse('Cb4')
+ * // => { letter: 'C', acc: 'b', pc: 'Cb', step: 0, alt: -1, chroma: -1,
+ *         oct: 4, midi: 59, freq: 246.94165062806206 }
+ * // if no octave, no midi, no freq
+ * parse('fx')
+ * // => { letter: 'F', acc: '##', pc: 'F##', step: 3, alt: 2, chroma: 7 })
+ */
+function parse (str, isTonic, tuning) {
+  if (typeof str !== 'string') return null
+  var m = REGEX.exec(str)
+  if (!m || (!isTonic && m[4])) return null
+
+  var p = { letter: m[1].toUpperCase(), acc: m[2].replace(/x/g, '##') }
+  p.pc = p.letter + p.acc
+  p.step = (p.letter.charCodeAt(0) + 3) % 7
+  p.alt = p.acc[0] === 'b' ? -p.acc.length : p.acc.length
+  var pos = SEMITONES[p.step] + p.alt
+  p.chroma = pos < 0 ? 12 + pos : pos % 12
+  if (m[3]) { // has octave
+    p.oct = +m[3]
+    p.midi = pos + 12 * (p.oct + 1)
+    p.freq = midiToFreq(p.midi, tuning)
+  }
+  if (isTonic) p.tonicOf = m[4]
+  return p
+}
+
+var LETTERS = 'CDEFGAB'
+function accStr (n) { return !isNum(n) ? '' : n < 0 ? fillStr('b', -n) : fillStr('#', n) }
+function octStr (n) { return !isNum(n) ? '' : '' + n }
+
+/**
+ * Create a string from a parsed object or `step, alteration, octave` parameters
+ * @param {Object} obj - the parsed data object
+ * @return {String} a note string or null if not valid parameters
+ * @since 1.2
+ * @example
+ * parser.build(parser.parse('cb2')) // => 'Cb2'
+ *
+ * @example
+ * // it accepts (step, alteration, octave) parameters:
+ * parser.build(3) // => 'F'
+ * parser.build(3, -1) // => 'Fb'
+ * parser.build(3, -1, 4) // => 'Fb4'
+ */
+function build (s, a, o) {
+  if (s === null || typeof s === 'undefined') return null
+  if (s.step) return build(s.step, s.alt, s.oct)
+  if (s < 0 || s > 6) return null
+  return LETTERS.charAt(s) + accStr(a) + octStr(o)
+}
+
+/**
+ * Get midi of a note
+ *
+ * @name midi
+ * @function
+ * @param {String|Integer} note - the note name or midi number
+ * @return {Integer} the midi number of the note or null if not a valid note
+ * or the note does NOT contains octave
+ * @example
+ * var parser = require('note-parser')
+ * parser.midi('A4') // => 69
+ * parser.midi('A') // => null
+ * @example
+ * // midi numbers are bypassed (even as strings)
+ * parser.midi(60) // => 60
+ * parser.midi('60') // => 60
+ */
+function midi (note) {
+  if ((isNum(note) || isStr(note)) && note >= 0 && note < 128) return +note
+  var p = parse(note)
+  return p && isDef(p.midi) ? p.midi : null
+}
+
+/**
+ * Get freq of a note in hertzs (in a well tempered 440Hz A4)
+ *
+ * @name freq
+ * @function
+ * @param {String} note - the note name or note midi number
+ * @param {String} tuning - (Optional) the A4 frequency (440 by default)
+ * @return {Float} the freq of the number if hertzs or null if not valid note
+ * @example
+ * var parser = require('note-parser')
+ * parser.freq('A4') // => 440
+ * parser.freq('A') // => null
+ * @example
+ * // can change tuning (440 by default)
+ * parser.freq('A4', 444) // => 444
+ * parser.freq('A3', 444) // => 222
+ * @example
+ * // it accepts midi numbers (as numbers and as strings)
+ * parser.freq(69) // => 440
+ * parser.freq('69', 442) // => 442
+ */
+function freq (note, tuning) {
+  var m = midi(note)
+  return m === null ? null : midiToFreq(m, tuning)
+}
+
+function letter (src) { return (parse(src) || {}).letter }
+function acc (src) { return (parse(src) || {}).acc }
+function pc (src) { return (parse(src) || {}).pc }
+function step (src) { return (parse(src) || {}).step }
+function alt (src) { return (parse(src) || {}).alt }
+function chroma (src) { return (parse(src) || {}).chroma }
+function oct (src) { return (parse(src) || {}).oct }
+
+
+/***/ }),
+/* 37 */
+/***/ (function(module, exports) {
+
+module.exports = ["accordion","acoustic_bass","acoustic_grand_piano","acoustic_guitar_nylon","acoustic_guitar_steel","agogo","alto_sax","applause","bag_pipe","banjo","baritone_sax","bassoon","bird_tweet","blown_bottle","brass_section","breath_noise","bright_acoustic_piano","celesta","cello","choir_aahs","church_organ","clarinet","clavichord","contrabass","distortion_guitar","drawbar_organ","dulcimer","electric_bass_finger","electric_bass_pick","electric_grand_piano","electric_guitar_clean","electric_guitar_jazz","electric_guitar_muted","electric_piano_1","electric_piano_2","english_horn","fiddle","flute","french_horn","fretless_bass","fx_1_rain","fx_2_soundtrack","fx_3_crystal","fx_4_atmosphere","fx_5_brightness","fx_6_goblins","fx_7_echoes","fx_8_scifi","glockenspiel","guitar_fret_noise","guitar_harmonics","gunshot","harmonica","harpsichord","helicopter","honkytonk_piano","kalimba","koto","lead_1_square","lead_2_sawtooth","lead_3_calliope","lead_4_chiff","lead_5_charang","lead_6_voice","lead_7_fifths","lead_8_bass_lead","marimba","melodic_tom","music_box","muted_trumpet","oboe","ocarina","orchestra_hit","orchestral_harp","overdriven_guitar","pad_1_new_age","pad_2_warm","pad_3_polysynth","pad_4_choir","pad_5_bowed","pad_6_metallic","pad_7_halo","pad_8_sweep","pan_flute","percussive_organ","piccolo","pizzicato_strings","recorder","reed_organ","reverse_cymbal","rock_organ","seashore","shakuhachi","shamisen","shanai","sitar","slap_bass_1","slap_bass_2","soprano_sax","steel_drums","string_ensemble_1","string_ensemble_2","synth_bass_1","synth_bass_2","synth_drum","synth_voice","synthbrass_1","synthbrass_2","synthstrings_1","synthstrings_2","taiko_drum","tango_accordion","telephone_ring","tenor_sax","timpani","tinkle_bell","tremolo_strings","trombone","trumpet","tuba","tubular_bells","vibraphone","viola","violin","voice_oohs","whistle","woodblock","xylophone"]
 
 /***/ })
 /******/ ]);

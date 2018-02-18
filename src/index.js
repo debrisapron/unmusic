@@ -6,6 +6,7 @@ import mixScores from './scoring/mixScores'
 import Player from './playback/Player'
 import Sequencer from './playback/Sequencer'
 import * as midi from './midi'
+import soundfont from './soundfont'
 
 function wrapScoringFunction(fn) {
   return fn.length === 1
@@ -82,6 +83,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   um.part = wrapScoringFunction(part)
   um.play = player.play
   um.seq = seq
+  um.sf = soundfont
   um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
   um.Tone = Tone

@@ -5,7 +5,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'unmusic.js',
-    library: 'Unmusic',
+    library: 'um',
     libraryTarget: "umd"
   }
 }
