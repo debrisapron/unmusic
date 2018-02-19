@@ -23886,7 +23886,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__playback_Player__ = __webpack_require__(16);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__playback_Sequencer__ = __webpack_require__(17);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__midi__ = __webpack_require__(18);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__soundfont__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__instruments_Soundfont__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__instruments_ToneInstruments__ = __webpack_require__(38);
+
 
 
 
@@ -23965,6 +23967,8 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   let um = seq
   um.audioContext = audioContext
   um.config = wrapScoringFunction(config)
+  um.instr = Object(__WEBPACK_IMPORTED_MODULE_9__instruments_ToneInstruments__["a" /* default */])(__WEBPACK_IMPORTED_MODULE_1_Tone___default.a)
+  um.instr.sf = Object(__WEBPACK_IMPORTED_MODULE_8__instruments_Soundfont__["a" /* default */])(audioContext)
   um.loop = wrapScoringFunction(loop)
   um.midi = __WEBPACK_IMPORTED_MODULE_7__midi__
   um.mix = mix
@@ -23972,7 +23976,6 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   um.part = wrapScoringFunction(part)
   um.play = player.play
   um.seq = seq
-  um.sf = Object(__WEBPACK_IMPORTED_MODULE_8__soundfont__["a" /* default */])(audioContext)
   um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
   um.Tone = __WEBPACK_IMPORTED_MODULE_1_Tone___default.a
@@ -26189,15 +26192,18 @@ function Instrument(audioContext, name) {
     player = await Object(__WEBPACK_IMPORTED_MODULE_1_soundfont_player__["instrument"])(audioContext, name)
   }
 
-  function handle(action) {
-    let nn = action.payload.nn || 69
-    let vel = action.payload.vel || 80
-    let deadline = action.meta.deadline
-    let node = player.play(nn, deadline, { gain: vel / 127 })
-    return (deadline) => node.stop(deadline)
-  }
+  return (params = {}) => {
 
-  return { prepare, handle, id: `sf-${name}` }
+    function handle(action) {
+      let note = action.payload.nn || 69
+      let gain = ((action.payload.vel || 80) / 127) * (params.gain || 1)
+      let deadline = action.meta.deadline
+      let node = player.play(note, deadline, __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(params, { gain }))
+      return (deadline) => node.stop(deadline)
+    }
+
+    return { prepare, handle, id: `sf-${name}` }
+  }
 }
 
 function Soundfont(audioContext) {
@@ -27664,6 +27670,49 @@ function oct (src) { return (parse(src) || {}).oct }
 /***/ (function(module, exports) {
 
 module.exports = ["accordion","acoustic_bass","acoustic_grand_piano","acoustic_guitar_nylon","acoustic_guitar_steel","agogo","alto_sax","applause","bag_pipe","banjo","baritone_sax","bassoon","bird_tweet","blown_bottle","brass_section","breath_noise","bright_acoustic_piano","celesta","cello","choir_aahs","church_organ","clarinet","clavichord","contrabass","distortion_guitar","drawbar_organ","dulcimer","electric_bass_finger","electric_bass_pick","electric_grand_piano","electric_guitar_clean","electric_guitar_jazz","electric_guitar_muted","electric_piano_1","electric_piano_2","english_horn","fiddle","flute","french_horn","fretless_bass","fx_1_rain","fx_2_soundtrack","fx_3_crystal","fx_4_atmosphere","fx_5_brightness","fx_6_goblins","fx_7_echoes","fx_8_scifi","glockenspiel","guitar_fret_noise","guitar_harmonics","gunshot","harmonica","harpsichord","helicopter","honkytonk_piano","kalimba","koto","lead_1_square","lead_2_sawtooth","lead_3_calliope","lead_4_chiff","lead_5_charang","lead_6_voice","lead_7_fifths","lead_8_bass_lead","marimba","melodic_tom","music_box","muted_trumpet","oboe","ocarina","orchestra_hit","orchestral_harp","overdriven_guitar","pad_1_new_age","pad_2_warm","pad_3_polysynth","pad_4_choir","pad_5_bowed","pad_6_metallic","pad_7_halo","pad_8_sweep","pan_flute","percussive_organ","piccolo","pizzicato_strings","recorder","reed_organ","reverse_cymbal","rock_organ","seashore","shakuhachi","shamisen","shanai","sitar","slap_bass_1","slap_bass_2","soprano_sax","steel_drums","string_ensemble_1","string_ensemble_2","synth_bass_1","synth_bass_2","synth_drum","synth_voice","synthbrass_1","synthbrass_2","synthstrings_1","synthstrings_2","taiko_drum","tango_accordion","telephone_ring","tenor_sax","timpani","tinkle_bell","tremolo_strings","trombone","trumpet","tuba","tubular_bells","vibraphone","viola","violin","voice_oohs","whistle","woodblock","xylophone"]
+
+/***/ }),
+/* 38 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
+
+
+let INSTRUMENTS = [
+  'AMSynth',
+  'DuoSynth',
+  'FMSynth',
+  'MembraneSynth',
+  'MetalSynth',
+  'MonoSynth',
+  'NoiseSynth',
+  'PluckSynth',
+  'Sampler'
+]
+
+function Instrument(Tone, instrName) {
+  return (params) => (action) => {
+    let instrument = new Tone[instrName](params).toMaster()
+    let note = action.payload.nn || 69
+    let velocity = (action.payload.vel || 80) / 127
+    let deadline = action.meta.deadline
+    instrument.triggerAttack(note, deadline, velocity)
+    return (deadline) => instrument.triggerRelease(deadline)
+  }
+}
+
+function ToneInstruments(Tone) {
+  let instruments = {}
+  INSTRUMENTS.forEach((instrName) => {
+    instruments[__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.camelCase(instrName)] = Instrument(Tone, instrName)
+  })
+  return instruments
+}
+
+/* harmony default export */ __webpack_exports__["a"] = (ToneInstruments);
+
 
 /***/ })
 /******/ ]);

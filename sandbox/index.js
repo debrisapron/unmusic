@@ -1,6 +1,8 @@
 (() => {
 
-  let DEFAULT_CODE = `um.play(um.part(um.sf.acousticGrandPiano, 'A B C D'))`
+  let DEFAULT_CODE = `um.play(
+  um.part(um.instr.sf.acousticGrandPiano(), 'A B C D')
+)`
   let editor = ace.edit("editor")
   editor.setTheme("ace/theme/monokai")
   editor.session.setTabSize(2)

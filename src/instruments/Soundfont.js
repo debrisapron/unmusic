@@ -9,15 +9,18 @@ function Instrument(audioContext, name) {
     player = await createInstrument(audioContext, name)
   }
 
-  function handle(action) {
-    let nn = action.payload.nn || 69
-    let vel = action.payload.vel || 80
-    let deadline = action.meta.deadline
-    let node = player.play(nn, deadline, { gain: vel / 127 })
-    return (deadline) => node.stop(deadline)
-  }
+  return (params = {}) => {
 
-  return { prepare, handle, id: `sf-${name}` }
+    function handle(action) {
+      let note = action.payload.nn || 69
+      let gain = ((action.payload.vel || 80) / 127) * (params.gain || 1)
+      let deadline = action.meta.deadline
+      let node = player.play(note, deadline, _.merge(params, { gain }))
+      return (deadline) => node.stop(deadline)
+    }
+
+    return { prepare, handle, id: `sf-${name}` }
+  }
 }
 
 function Soundfont(audioContext) {
