@@ -21,6 +21,7 @@ function Sequencer() {
     return Tone.Transport.toSeconds('2n') * 2 * wholeNotes
   }
 
+  // FIXME After multiple invocations, this hangs the sequencer.
   let mutatePart = (evs) => {
     part.removeAll()
     evs.forEach((ev) => part.add(ev))
@@ -44,11 +45,12 @@ function Sequencer() {
 
   let setSequence = (sequence) => {
     let tevs = toneEventsFrom(sequence)
-    if (partLength === sequence.length) {
-      mutatePart(tevs)
-    } else {
+    // FIXME Get mutatePart working again.
+    // if (partLength === sequence.length) {
+    //   mutatePart(tevs)
+    // } else {
       replacePart(tevs, sequence.length)
-    }
+    // }
   }
 
   let setTempo = (tempo) => {

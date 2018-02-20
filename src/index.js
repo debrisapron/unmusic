@@ -7,7 +7,6 @@ import Player from './playback/Player'
 import Sequencer from './playback/Sequencer'
 import * as midi from './midi'
 import Soundfont from './instruments/Soundfont'
-import ToneInstruments from './instruments/ToneInstruments'
 
 function wrapScoringFunction(fn) {
   return fn.length === 1
@@ -45,7 +44,7 @@ function offset(amount, score) {
 
 function part(handler, score) {
   score = _.cloneDeep(score)
-  let callback = _.isFunction(handler) ? handler : handler.handle
+  let callback = _.isFunction(handler) ? handler : handler.start
   if (handler.prepare && handler.id) {
     score.dependencies = score.dependencies || {}
     score.dependencies[handler.id] = handler.prepare
@@ -77,7 +76,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   let um = seq
   um.audioContext = audioContext
   um.config = wrapScoringFunction(config)
-  um.instr = ToneInstruments(Tone)
+  um.instr = {}
   um.instr.sf = Soundfont(audioContext)
   um.loop = wrapScoringFunction(loop)
   um.midi = midi

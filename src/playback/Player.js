@@ -1,27 +1,11 @@
 import _ from 'lodash/fp'
 
-let Player = (sequencer) => {
+let depsCache = {}
+
+function Player(sequencer) {
   let stopCbs = {}
 
-  let play = async (score) => {
-    let sequence = sequenceFrom(score)
-    sequencer.setTempo(score.tempo || 120)
-    sequencer.setSequence(sequence)
-    await Promise.all(
-      Object.values(score.dependencies || {}).map((f) => f())
-    )
-    sequencer.start()
-  }
-
-  let stop = () => {
-    let stopTime = sequencer.stop()
-    _.forEach((stopCb) => {
-      if (stopCb) stopCb(stopTime)
-    }, stopCbs)
-    stopCbs = {}
-  }
-
-  let sequenceFrom = (score) => {
+  function sequenceFrom(score) {
     let lastPayload = _.last(score.actions).payload
     let length = lastPayload.time + (lastPayload.dur || 0)
     let nestedDisorderedEvents = score.actions
@@ -43,20 +27,20 @@ let Player = (sequencer) => {
     return { events, length }
   }
 
-  let wrap = (time, length) => {
+  function wrap(time, length) {
     time = time % length
     if(time >= 0) return time
     return time + length
   }
 
-  let startAction = (time, id, action) => {
+  function startAction(time, id, action) {
     let { payload } = action
     let stopCb = handle(time, action)
     if (!_.isFunction(stopCb)) return
     stopCbs[id] = stopCb
   }
 
-  let endAction = (time, id) => {
+  function endAction(time, id) {
     let stopCb = stopCbs[id]
     if (!stopCb) return
     stopCbs[id] = undefined
@@ -68,7 +52,32 @@ let Player = (sequencer) => {
     return callback && callback(_.merge(action, { meta: { deadline: time } }))
   }
 
-  return { play, stop }
+  //////////////////////////////////////////////////////////////////////////////
+
+  function prepare(score) {
+    let promises = Object.keys(score.dependencies || {}).map((k) => {
+      return depsCache[k] || (depsCache[k] = score.dependencies[k]())
+    })
+    return Promise.all(promises)
+  }
+
+  async function play(score) {
+    let sequence = sequenceFrom(score)
+    sequencer.setTempo(score.tempo || 120)
+    sequencer.setSequence(sequence)
+    await prepare(score)
+    sequencer.start()
+  }
+
+  function stop() {
+    let stopTime = sequencer.stop()
+    _.forEach((stopCb) => {
+      if (stopCb) stopCb(stopTime)
+    }, stopCbs)
+    stopCbs = {}
+  }
+
+  return { play, stop, prepare }
 }
 
 export default Player
