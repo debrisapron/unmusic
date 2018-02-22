@@ -23954,6 +23954,15 @@ function tempo(bpm, score) {
   return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('tempo', bpm, score)
 }
 
+function tran(amount, score) {
+  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.cloneDeep(score)
+  score.actions.forEach(({ payload }) => {
+    if (payload.nn == null) { return }
+    payload.nn = payload.nn + amount
+  })
+  return score
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 function Unmusic(audioContext = getDefaultAudioContext()) {
@@ -23977,6 +23986,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
   um.Tone = __WEBPACK_IMPORTED_MODULE_1_Tone___default.a
+  um.tran = wrapScoringFunction(tran)
 
   return um
 }
