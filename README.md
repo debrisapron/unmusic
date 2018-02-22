@@ -18,10 +18,10 @@ I want to
 ## Example
 
 ```
-// Plays a repeating four-note sequence on MIDI channel 1
-let um = require('unmusic')()
-let piano = um.part(um.midi.out({ cha: 1 }))
-um.play(piano('C E G E'))
+// Plays a repeating four-note piano sequence
+import Unmusic from 'unmusic'
+let um = Unmusic()
+um.play(um.part(um.instr.sf.acousticGrandPiano(), 'C E G F'))
 ```
 
 ## Installation
@@ -40,15 +40,11 @@ The fundamental idea of um is simple: Build a score by nesting scoring functions
 Let's start by explaining the example we gave at the beginning of this README.
 
 ```
-let piano = um.part(um.midi.out({ cha: 1 }))
+um.play(um.part(um.instr.sf.acousticGrandPiano(), 'C E G F'))
 ```
 
-This assigns the variable `piano` to a function which will play on the first available MIDI device, on MIDI channel 1.
+Firstly we have a call to `um.part`. This takes two arguments, a destination and a score, the latter of which can be either a string of _umscript_ or the return value of another scoring function. Here the destination is the `acousticGrandPiano` instrument from soundfont-player (link), which is included with Unmusic, and the score is four quarter-notes on the middle octave.
 
-```
-um.play(piano('C E G E'))
-```
-
-This creates a four-note sequence and plays it with the piano function assigned in the previous line.
+The return value of um.part is a score object which we then play with `um.play`. To stop it you just need to call `um.stop()`.
 
 ...TO BE CONTINUED
