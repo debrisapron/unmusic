@@ -65,6 +65,15 @@ function tempo(bpm, score) {
   return _.set('tempo', bpm, score)
 }
 
+function tran(amount, score) {
+  score = _.cloneDeep(score)
+  score.actions.forEach(({ payload }) => {
+    if (payload.nn == null) { return }
+    payload.nn = payload.nn + amount
+  })
+  return score
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 function Unmusic(audioContext = getDefaultAudioContext()) {
@@ -88,6 +97,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
   um.Tone = Tone
+  um.tran = wrapScoringFunction(tran)
 
   return um
 }
