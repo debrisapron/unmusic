@@ -1,13 +1,19 @@
 import _ from 'lodash/fp'
+import Sequencer from 'um-sequencer'
 
 let depsCache = {}
 
-function Player(sequencer) {
+function Player(audioContext) {
+  let sequencer = Sequencer(() => audioContext.currentTime)
   let stopCbs = {}
 
-  function sequenceFrom(score) {
+  function lengthOf(score) {
     let lastPayload = _.last(score.actions).payload
-    let length = lastPayload.time + (lastPayload.dur || 0)
+    return lastPayload.time + (lastPayload.dur || 0)
+  }
+
+  function eventsFrom(score) {
+    let length = lengthOf(score)
     let nestedDisorderedEvents = score.actions
       .filter((action) => action.type !== 'NOOP')
       .map((action) => {
@@ -15,16 +21,22 @@ function Player(sequencer) {
         let id = _.uniqueId()
         let startTime = payload.time + (payload.offset || 0)
         startTime = wrap(startTime, length)
-        let startEvent = { time: startTime, fn: (t) => startAction(t, id, action), ord: 1 }
+        let startEvent = {
+          time: startTime,
+          callback: (t) => startAction(t, id, action),
+          ord: 1
+        }
         if (!payload.dur) return [startEvent]
         let endTime = startTime + payload.dur
         endTime = wrap(endTime, length)
-        let stopEvent = { time: endTime, fn: (t) => endAction(t, id), ord: 0 }
+        let stopEvent = {
+          time: endTime,
+          callback: (t) => endAction(t, id),
+          ord: 0
+        }
         return [startEvent, stopEvent]
       })
-    let events = _.sortBy(['time', 'ord'], _.flatten(nestedDisorderedEvents))
-      .map((ev) => [ev.time, ev.fn])
-    return { events, length }
+    return _.sortBy(['time', 'ord'], _.flatten(nestedDisorderedEvents))
   }
 
   function wrap(time, length) {
@@ -35,7 +47,7 @@ function Player(sequencer) {
 
   function startAction(time, id, action) {
     let { payload } = action
-    let stopCb = handle(time, action)
+    let stopCb = dispatch(time, action)
     if (!_.isFunction(stopCb)) return
     stopCbs[id] = stopCb
   }
@@ -47,7 +59,7 @@ function Player(sequencer) {
     stopCb(time)
   }
 
-  function handle(time, action) {
+  function dispatch(time, action) {
     let callback = action.payload.callback
     return callback && callback(_.merge(action, { meta: { deadline: time } }))
   }
@@ -62,17 +74,18 @@ function Player(sequencer) {
   }
 
   async function play(score) {
-    let sequence = sequenceFrom(score)
-    sequencer.setTempo(score.tempo || 120)
-    sequencer.setSequence(sequence)
+    let loopLength = lengthOf(score)
+    let events = eventsFrom(score)
+    let tempo = score.tempo || 120
     await prepare(score)
-    sequencer.start()
+    sequencer.play(events, { tempo, loopLength })
   }
 
   function stop() {
-    let stopTime = sequencer.stop()
+    sequencer.stop()
+    let stopTime = audioContext.currentTime
     _.forEach((stopCb) => {
-      if (stopCb) stopCb(stopTime)
+      if (stopCb) { stopCb(stopTime) }
     }, stopCbs)
     stopCbs = {}
   }

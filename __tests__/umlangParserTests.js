@@ -3,7 +3,7 @@ import grammar from '../src/scoring/umlang/grammar'
 
 describe('umlang parser', () => {
 
-  it('can parse an umlang string', () => {
+  test('can parse an umlang string', () => {
     let s = 'C /16 x=1 >'
     let expected = [
       ['NOTE', { type: 'PITCH_CLASS', value: 'C' }],
@@ -14,8 +14,8 @@ describe('umlang parser', () => {
     let parser = new nearley.Parser(grammar.ParserRules, grammar.ParserStart)
     parser.feed(s)
     let parsings = parser.results
-    expect(parsings.length).to.equal(1)
+    expect(parsings.length).toEqual(1)
     let results = parsings[0]
-    expect(results).to.deep.equal(expected)
+    expect(results).toMatchObject(expected)
   })
 })

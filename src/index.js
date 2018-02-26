@@ -1,10 +1,8 @@
 import _ from 'lodash/fp'
-import Tone from 'Tone'
 import concatScores from './scoring/concatScores'
 import getScore from './scoring/getScore'
 import mixScores from './scoring/mixScores'
 import Player from './playback/Player'
-import Sequencer from './playback/Sequencer'
 import * as midi from './midi'
 import Soundfont from './instruments/Soundfont'
 
@@ -16,7 +14,7 @@ function wrapScoringFunction(fn) {
 
 function getDefaultAudioContext() {
   return window.__umAudioContext ||
-    (window.__umAudioContext = new AudioContext())
+    (window.__umAudioContext = new window.AudioContext())
 }
 
 // Scoring functions
@@ -77,9 +75,7 @@ function tran(amount, score) {
 ////////////////////////////////////////////////////////////////////////////////
 
 function Unmusic(audioContext = getDefaultAudioContext()) {
-  Tone.context = audioContext
-  let sequencer = Sequencer()
-  let player = Player(sequencer)
+  let player = Player(audioContext)
 
   // um itself is the seq function
   let um = seq
@@ -96,7 +92,6 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   um.seq = seq
   um.stop = player.stop
   um.tempo = wrapScoringFunction(tempo)
-  um.Tone = Tone
   um.tran = wrapScoringFunction(tran)
 
   return um

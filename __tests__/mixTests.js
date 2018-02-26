@@ -2,7 +2,7 @@ import _ from 'lodash/fp'
 
 describe('mix', () => {
 
-  it('can mix two scores', () => {
+  test('can mix two scores', () => {
     let s1 = { actions: [
       { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
@@ -20,10 +20,10 @@ describe('mix', () => {
       { type: 'NOTE', payload: { time: 1/4, nn: 70, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
     ] }
-    expect(um.mix(s1, s2)).to.deep.equal(expected)
+    expect(um.mix(s1, s2)).toMatchObject(expected)
   })
 
-  it('can mix two scores, one looped, one not', () => {
+  test('can mix two scores, one looped, one not', () => {
     let s1 = { actions: [
       { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 3/8, nn: 69, dur: 1/4 } }
@@ -41,10 +41,10 @@ describe('mix', () => {
       { type: 'NOTE', payload: { time: 5/8, nn: 69, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 3/4, nn: 70, dur: 1/4 } }
     ] }
-    expect(sort(um.mix(s1, s2))).to.deep.equal(expected)
+    expect(sort(um.mix(s1, s2))).toMatchObject(expected)
   })
 
-  it('can mix two looped scores', () => {
+  test('can mix two looped scores', () => {
     let s1 = { actions: [
       { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 1/4, nn: 69, dur: 1/4 } }
@@ -65,7 +65,7 @@ describe('mix', () => {
       { type: 'NOTE', payload: { time: 5/4, nn: 69, dur: 1/4 } },
       { type: 'NOTE', payload: { time: 5/4, nn: 70, dur: 1/4 } }
     ], loop: true }
-    expect(sort(um.mix(s1, s2))).to.deep.equal(expected)
+    expect(sort(um.mix(s1, s2))).toMatchObject(expected)
   })
 })
 

@@ -1,12 +1,12 @@
-describe('loop', () => {
+describe('config', () => {
 
-  it('can loop a seq', () => {
+  test('can set config options for a score', () => {
     let s = { actions: [
       { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
     ] }
     let expected = { actions: [
       { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
-    ], loop: true }
-    expect(um.loop(s)).to.deep.equal(expected)
+    ], config: { a: 1 } }
+    expect(um.config({ a: 1 }, s)).toMatchObject(expected)
   })
 })

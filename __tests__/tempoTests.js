@@ -1,12 +1,12 @@
-describe('config', () => {
+describe('tempo', () => {
 
-  it('can set config options for a score', () => {
+  test('can set tempo of a seq', () => {
     let s = { actions: [
       { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
     ] }
     let expected = { actions: [
       { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } }
-    ], config: { a: 1 } }
-    expect(um.config({ a: 1 }, s)).to.deep.equal(expected)
+    ], tempo: 105 }
+    expect(um.tempo(105, s)).toMatchObject(expected)
   })
 })

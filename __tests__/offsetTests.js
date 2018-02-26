@@ -1,6 +1,6 @@
 describe('offset', () => {
 
-  it('can offset every action in a score', () => {
+  test('can offset every action in a score', () => {
     let score = { actions: [
       { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
       { type: 'NOOP', payload: { time: 3/4 } }
@@ -9,6 +9,6 @@ describe('offset', () => {
       { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4, offset: -1/32 } },
       { type: 'NOOP', payload: { time: 3/4 } }
     ] }
-    expect(um.offset(-1/32, score)).to.deep.equal(expScore)
+    expect(um.offset(-1/32, score)).toMatchObject(expScore)
   })
 })
