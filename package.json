@@ -2,7 +2,7 @@
   "name": "unmusic",
   "main": "dist/unmusic",
   "module": "src",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "scripts": {
     "test": "jest",
@@ -24,9 +24,13 @@
     "webmidi": "^2.0.0"
   },
   "jest": {
-    "setupFiles": ["./__setupTests"]
+    "setupFiles": [
+      "./__setupTests"
+    ]
   },
   "babel": {
-    "presets": ["env"]
+    "presets": [
+      "env"
+    ]
   }
 }
