@@ -44,4 +44,19 @@ describe('umlang evaluator', () => {
     ]
     expect(evalUmlang(s)).toMatchObject(expected)
   })
+
+  test('can use returns interchangably with spaces', () => {
+    let s = `  <
+d=/8 C
+ dur=/16 -10 /8
+_ /4 M55 _
+`
+    let expected = [
+      { type: 'NOTE', payload: { time: 0,     nn: 48, dur: 1/8 } },
+      { type: 'NOTE', payload: { time: 1/8,   nn: 47, dur: 1/16 } },
+      { type: 'NOTE', payload: { time: 5/16,  nn: 55, dur: 1/4 } },
+      { type: 'NOOP', payload: { time: 13/16 } }
+    ]
+    expect(evalUmlang(s)).toMatchObject(expected)
+  })
 })
