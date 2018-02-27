@@ -181,6 +181,12 @@ function config(opts, score) {
   return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('config', __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(score.config || {}, opts), score)
 }
 
+function flow(...args) {
+  if (__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.isFunction(args[0])) { return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.pipe(args) }
+  let [thing, ...fns] = args
+  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.pipe(fns)(Object(__WEBPACK_IMPORTED_MODULE_2__scoring_getScore__["a" /* default */])(thing))
+}
+
 function loop(score) {
   return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('loop', true, score)
 }
@@ -239,6 +245,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   let um = seq
   um.audioContext = audioContext
   um.config = wrapScoringFunction(config)
+  um.flow = flow
   um.instr = {}
   um.instr.sf = Object(__WEBPACK_IMPORTED_MODULE_6__instruments_Soundfont__["a" /* default */])(audioContext)
   um.loop = wrapScoringFunction(loop)

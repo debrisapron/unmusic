@@ -23,6 +23,12 @@ function config(opts, score) {
   return _.set('config', _.merge(score.config || {}, opts), score)
 }
 
+function flow(...args) {
+  if (_.isFunction(args[0])) { return _.pipe(args) }
+  let [thing, ...fns] = args
+  return _.pipe(fns)(getScore(thing))
+}
+
 function loop(score) {
   return _.set('loop', true, score)
 }
@@ -81,6 +87,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   let um = seq
   um.audioContext = audioContext
   um.config = wrapScoringFunction(config)
+  um.flow = flow
   um.instr = {}
   um.instr.sf = Soundfont(audioContext)
   um.loop = wrapScoringFunction(loop)
