@@ -10,6 +10,11 @@
   bottom: 0;
   left: 0;
 }
+#keyboard-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
 </style>
 </head>
 <body>
@@ -17,12 +22,17 @@
 <header>
   <button id="um-play">▶</button>
   <button id="um-stop">■</button>
+  <span id="keyboard-container">
+    <div id="keyboard"></div>
+  </span>
 </header>
 <div id="editor"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ace.js" type="text/javascript" charset="utf-8"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.fp.min.js" type="text/javascript" charset="utf-8"></script>
-<script src="dist/unmusic.js" type="text/javascript" charset="utf-8"></script>
-<script src="sandbox/index.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ace.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.fp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.1/mousetrap.min.js"></script>
+<script src="sandbox/qwerty-hancock.js"></script>
+<script src="dist/unmusic.js"></script>
+<script src="sandbox/index.js"></script>
 </body>
 </html>

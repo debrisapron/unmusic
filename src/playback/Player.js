@@ -64,6 +64,14 @@ function Player(audioContext) {
     return callback && callback(_.merge(action, { meta: { deadline: time } }))
   }
 
+  function flushHangingNotes() {
+    let stopTime = audioContext.currentTime
+    _.forEach((stopCb) => {
+      if (stopCb) { stopCb(stopTime) }
+    }, stopCbs)
+    stopCbs = {}
+  }
+
   //////////////////////////////////////////////////////////////////////////////
 
   function prepare(score) {
@@ -78,16 +86,13 @@ function Player(audioContext) {
     let events = eventsFrom(score)
     let tempo = score.tempo || 120
     await prepare(score)
+    flushHangingNotes()
     sequencer.play(events, { tempo, loopLength })
   }
 
   function stop() {
     sequencer.stop()
-    let stopTime = audioContext.currentTime
-    _.forEach((stopCb) => {
-      if (stopCb) { stopCb(stopTime) }
-    }, stopCbs)
-    stopCbs = {}
+    flushHangingNotes()
   }
 
   return { play, stop, prepare }
