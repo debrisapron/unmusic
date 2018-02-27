@@ -67,11 +67,9 @@ var grammar = {
     {"name": "INTEGER$ebnf$2", "symbols": [/[0-9]/]},
     {"name": "INTEGER$ebnf$2", "symbols": ["INTEGER$ebnf$2", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "INTEGER", "symbols": ["INTEGER$ebnf$1", "INTEGER$ebnf$2"], "postprocess": (data) => parseInt((data[0] === '-' ? '-' : '') + str(data[1]))},
-    {"name": "_$ebnf$1", "symbols": ["WHITESPACE"]},
-    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", "WHITESPACE"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": () => null},
-    {"name": "WHITESPACE", "symbols": [{"literal":" "}]},
-    {"name": "WHITESPACE", "symbols": [{"literal":"\n"}]}
+    {"name": "_$ebnf$1", "symbols": [/[\s]/]},
+    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": () => null}
 ]
   , ParserStart: "SEQUENCE"
 }

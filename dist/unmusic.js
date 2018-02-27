@@ -1972,9 +1972,9 @@ function umlangEval(s) {
 (function () {
 function id(x) { return x[0]; }
 
-	function str(data) {
-		return data.join('')
-	}
+  function str(data) {
+    return data.join('')
+  }
 var grammar = {
     Lexer: undefined,
     ParserRules: [
@@ -2036,8 +2036,8 @@ var grammar = {
     {"name": "INTEGER$ebnf$2", "symbols": [/[0-9]/]},
     {"name": "INTEGER$ebnf$2", "symbols": ["INTEGER$ebnf$2", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "INTEGER", "symbols": ["INTEGER$ebnf$1", "INTEGER$ebnf$2"], "postprocess": (data) => parseInt((data[0] === '-' ? '-' : '') + str(data[1]))},
-    {"name": "_$ebnf$1", "symbols": [{"literal":" "}]},
-    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", {"literal":" "}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "_$ebnf$1", "symbols": [/[\s]/]},
+    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": () => null}
 ]
   , ParserStart: "SEQUENCE"

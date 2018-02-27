@@ -48,6 +48,4 @@ NUMBER         -> FLOAT
                 | INTEGER
 FLOAT          -> INTEGER "." [0-9]:+           {% (data) => parseFloat(str(data)) %}
 INTEGER        -> [-+]:? [0-9]:+                {% (data) => parseInt((data[0] === '-' ? '-' : '') + str(data[1])) %}
-_              -> WHITESPACE:+                  {% () => null %}
-WHITESPACE     -> " "
-                | "\n"
+_              -> [\s]:+                        {% () => null %}
