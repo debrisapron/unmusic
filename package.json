@@ -2,7 +2,7 @@
   "name": "unmusic",
   "main": "dist/unmusic",
   "module": "src",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "",
   "scripts": {
     "test": "jest",
