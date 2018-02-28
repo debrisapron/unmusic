@@ -1,4 +1,4 @@
-import evalUmlang from '../src/scoring/umlang/eval'
+import evalUmlang from '../src/core/umlang/eval'
 
 describe('umlang evaluator', () => {
 

@@ -1,5 +1,5 @@
 import nearley from 'nearley'
-import grammar from '../src/scoring/umlang/grammar'
+import grammar from '../src/core/umlang/grammar'
 
 describe('umlang parser', () => {
 

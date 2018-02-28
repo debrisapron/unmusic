@@ -1,0 +1,12 @@
+- Replace um.part with um.assign, a function which applies middlewares to the signal chain
+  - All middlewares are a single function
+  - Signature is (action, deps, next)
+  - If called with no args, returns deps, id & clock, which are cached using id as key
+  - Processors (event fx) are applied to the action before calling next with the new action
+  - Audio fx are applied by connecting the returned node to an fx node & returning the fx node
+  - Convert existing destinations to middlewares
+- Add new um.proc namespace for processors
+  - Arpeggiator
+  - Delay
+  - Transpose
+- Alternate names: um.apply, um.arrange, um.arr
