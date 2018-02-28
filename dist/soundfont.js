@@ -4,9 +4,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["Unmusic"] = factory();
+		exports["soundfont"] = factory();
 	else
-		root["Unmusic"] = factory();
+		root["Unmusic"] = root["Unmusic"] || {}, root["Unmusic"]["soundfont"] = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 2);
+/******/ 	return __webpack_require__(__webpack_require__.s = 22);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -78,191 +78,62 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ (function(module, exports, __webpack_require__) {
 
 var _ = __webpack_require__(3).runInContext();
-module.exports = __webpack_require__(6)(_, _);
+module.exports = __webpack_require__(4)(_, _);
 
 
 /***/ }),
 /* 1 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+/***/ (function(module, exports) {
 
-"use strict";
-/* harmony export (immutable) */ __webpack_exports__["e"] = wrap;
-/* harmony export (immutable) */ __webpack_exports__["d"] = lengthOf;
-/* harmony export (immutable) */ __webpack_exports__["c"] = get;
-/* harmony export (immutable) */ __webpack_exports__["b"] = concat;
-/* harmony export (immutable) */ __webpack_exports__["a"] = clean;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__umlang_eval__ = __webpack_require__(10);
+var g;
 
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
 
-
-function nudge(amount, actions) {
-  return actions.map((action) => {
-    return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('payload.time', action.payload.time + amount, action)
-  })
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	// This works if the window reference is available
+	if(typeof window === "object")
+		g = window;
 }
 
-function endOf(action) {
-  return action.payload.time + (action.payload.dur || 0)
-}
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
 
-////////////////////////////////////////////////////////////////////////////////
-
-function wrap(actions) {
-  return { actions }
-}
-
-function lengthOf(actions) {
-  return endOf(__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.last(actions))
-}
-
-function get(thing) {
-  return (Array.isArray(thing) && thing) || thing.actions || Object(__WEBPACK_IMPORTED_MODULE_1__umlang_eval__["a" /* default */])(thing)
-}
-
-function concat(actionLists) {
-  return actionLists.reduce((acc, curr) => {
-    return acc.concat(nudge(lengthOf(acc), curr))
-  })
-}
-
-// Remove any redundant NOOP actions
-function clean(actions) {
-  let lastIndex = actions.length - 1
-  return actions.filter((action, i) => {
-    // Include all non-NOOP actions
-    if (action.type !== 'NOOP') { return true }
-    // Reject NOOP actions unless they are at the end
-    if (i !== lastIndex) { return false }
-    // Reject redundant NOOP actions (i.e. onset during another NOOP action)
-    let prevAction = actions[i - 1]
-    return action.payload.time > endOf(prevAction)
-  })
-}
+module.exports = g;
 
 
 /***/ }),
 /* 2 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+/***/ (function(module, exports) {
 
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__scoring_concatScores__ = __webpack_require__(9);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__scoring_getScore__ = __webpack_require__(13);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__scoring_mixScores__ = __webpack_require__(14);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__playback_Player__ = __webpack_require__(15);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__midi__ = __webpack_require__(17);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__instruments_Soundfont__ = __webpack_require__(20);
-
-
-
-
-
-
-
-
-function wrapScoringFunction(fn) {
-  return fn.length === 1
-    ? (thing) => fn(Object(__WEBPACK_IMPORTED_MODULE_2__scoring_getScore__["a" /* default */])(thing))
-    : __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.curry((options, thing) => fn(options, Object(__WEBPACK_IMPORTED_MODULE_2__scoring_getScore__["a" /* default */])(thing)))
-}
-
-function getDefaultAudioContext() {
-  return window.__umAudioContext ||
-    (window.__umAudioContext = new window.AudioContext())
-}
-
-// Scoring functions
-
-function config(opts, score) {
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('config', __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(score.config || {}, opts), score)
-}
-
-function flow(...args) {
-  if (__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.isFunction(args[0])) { return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.pipe(args) }
-  let [thing, ...fns] = args
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.pipe(fns)(Object(__WEBPACK_IMPORTED_MODULE_2__scoring_getScore__["a" /* default */])(thing))
-}
-
-function loop(score) {
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('loop', true, score)
-}
-
-function mix(...args) {
-  return Object(__WEBPACK_IMPORTED_MODULE_3__scoring_mixScores__["a" /* default */])(args)
-}
-
-function offset(amount, score) {
-  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.cloneDeep(score)
-  score.actions.forEach(({ payload, type }) => {
-    if (type === 'NOOP') { return }
-    payload.offset = amount
-  })
-  return score
-}
-
-function part(handler, score) {
-  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.cloneDeep(score)
-  let callback = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.isFunction(handler) ? handler : handler.start
-  if (handler.prepare && handler.id) {
-    score.dependencies = score.dependencies || {}
-    score.dependencies[handler.id] = handler.prepare
-  }
-  score.actions.forEach(({ payload, type }) => {
-    if (type === 'NOOP') { return }
-    payload.callback = callback
-  })
-  return score
-}
-
-function seq(...args) {
-  let [fns, scores] = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.partition(__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.isFunction, args)
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.pipe(fns)(Object(__WEBPACK_IMPORTED_MODULE_1__scoring_concatScores__["a" /* default */])(scores))
-}
-
-function tempo(bpm, score) {
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('tempo', bpm, score)
-}
-
-function tran(amount, score) {
-  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.cloneDeep(score)
-  score.actions.forEach(({ payload }) => {
-    if (payload.nn == null) { return }
-    payload.nn = payload.nn + amount
-  })
-  return score
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-function Unmusic(audioContext = getDefaultAudioContext()) {
-  let player = Object(__WEBPACK_IMPORTED_MODULE_4__playback_Player__["a" /* default */])(audioContext)
-
-  // um itself is the seq function
-  let um = seq
-  um.audioContext = audioContext
-  um.config = wrapScoringFunction(config)
-  um.flow = flow
-  um.instr = {}
-  um.instr.sf = Object(__WEBPACK_IMPORTED_MODULE_6__instruments_Soundfont__["a" /* default */])(audioContext)
-  um.loop = wrapScoringFunction(loop)
-  um.midi = __WEBPACK_IMPORTED_MODULE_5__midi__
-  um.mix = mix
-  um.offset = wrapScoringFunction(offset)
-  um.part = wrapScoringFunction(part)
-  um.play = player.play
-  um.seq = seq
-  um.stop = player.stop
-  um.tempo = wrapScoringFunction(tempo)
-  um.tran = wrapScoringFunction(tran)
-
-  return um
-}
-
-/* harmony default export */ __webpack_exports__["default"] = (Unmusic);
+module.exports = function(module) {
+	if(!module.webpackPolyfill) {
+		module.deprecate = function() {};
+		module.paths = [];
+		// module.parent = undefined by default
+		if(!module.children) module.children = [];
+		Object.defineProperty(module, "loaded", {
+			enumerable: true,
+			get: function() {
+				return module.l;
+			}
+		});
+		Object.defineProperty(module, "id", {
+			enumerable: true,
+			get: function() {
+				return module.i;
+			}
+		});
+		module.webpackPolyfill = 1;
+	}
+	return module;
+};
 
 
 /***/ }),
@@ -407,69 +278,14 @@ u=-1,i=t[o];++u<c;){var h=f[u],s=h.type,h=(0,h.iteratee)(i);if(2==s)i=h;else if(
 var e=$e(r);e.__index__=0,e.__values__=T,t?u.__wrapped__=e:t=e;var u=e,r=r.__wrapped__}return u.__wrapped__=n,t},An.prototype.reverse=function(){var n=this.__wrapped__;return n instanceof Un?(this.__actions__.length&&(n=new Un(this)),n=n.reverse(),n.__actions__.push({func:Ye,args:[Ke],thisArg:T}),new On(n,this.__chain__)):this.thru(Ke)},An.prototype.toJSON=An.prototype.valueOf=An.prototype.value=function(){return wr(this.__wrapped__,this.__actions__)},An.prototype.first=An.prototype.head,ji&&(An.prototype[ji]=Qe),
 An}(); true?(Fn._=rt, !(__WEBPACK_AMD_DEFINE_RESULT__ = (function(){return rt}).call(exports, __webpack_require__, exports, module),
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__))):Pn?((Pn.exports=rt)._=rt,Nn._=rt):Fn._=rt}).call(this);
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4), __webpack_require__(5)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(2)(module)))
 
 /***/ }),
 /* 4 */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports) {
-
-module.exports = function(module) {
-	if(!module.webpackPolyfill) {
-		module.deprecate = function() {};
-		module.paths = [];
-		// module.parent = undefined by default
-		if(!module.children) module.children = [];
-		Object.defineProperty(module, "loaded", {
-			enumerable: true,
-			get: function() {
-				return module.l;
-			}
-		});
-		Object.defineProperty(module, "id", {
-			enumerable: true,
-			get: function() {
-				return module.i;
-			}
-		});
-		module.webpackPolyfill = 1;
-	}
-	return module;
-};
-
-
-/***/ }),
-/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var mapping = __webpack_require__(7),
-    fallbackHolder = __webpack_require__(8);
+var mapping = __webpack_require__(5),
+    fallbackHolder = __webpack_require__(6);
 
 /** Built-in value reference. */
 var push = Array.prototype.push;
@@ -1044,7 +860,7 @@ module.exports = baseConvert;
 
 
 /***/ }),
-/* 7 */
+/* 5 */
 /***/ (function(module, exports) {
 
 /** Used to map aliases to their real names. */
@@ -1418,7 +1234,7 @@ exports.skipRearg = {
 
 
 /***/ }),
-/* 8 */
+/* 6 */
 /***/ (function(module, exports) {
 
 /**
@@ -1430,1147 +1246,31 @@ module.exports = {};
 
 
 /***/ }),
-/* 9 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__actionHelpers__ = __webpack_require__(1);
-
-
-function concatScores(scores) {
-  let actionLists = scores.map(__WEBPACK_IMPORTED_MODULE_0__actionHelpers__["c" /* get */])
-  return __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["e" /* wrap */](
-    __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["a" /* clean */](
-      __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["b" /* concat */](actionLists)
-    )
-  )
-}
-
-/* harmony default export */ __webpack_exports__["a"] = (concatScores);
-
-
-/***/ }),
-/* 10 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nearley__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nearley___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_nearley__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__grammar__ = __webpack_require__(12);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__grammar___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2__grammar__);
-
-
-
-
-let DEFAULT_DURATION = 1/4
-let PARAM_ALIASES = {
-  d: 'dur',
-  duration: 'dur',
-  v: 'vel',
-  velocity: 'vel'
-}
-let MIDDLE_A_NN = 69
-let PITCH_CLASSES = {
-  'C': -9, 'C♯': -8, 'D♭': -8, 'D': -7,
-  'D♯': -6, 'E♭': -6, 'E': -5, 'F': -4,
-  'F♯': -3, 'G♭': -3, 'G': -2, 'G♯': -1,
-  'A♭': -1, 'A': 0, 'A♯': 1, 'B♭': 1, 'B': 2
-}
-
-function noteActionFrom(instruction) {
-  let nn = nnFrom(instruction)
-  let payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.omit(['oct'], instruction.context)
-  payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('nn', nn, payload)
-  return { payload, type: 'NOTE' }
-}
-
-function nnFrom(instruction) {
-  switch(instruction.data.type) {
-    case 'PITCH_CLASS':
-      let value = instruction.data.value.replace('#', '♯').replace('b', '♭')
-      return (instruction.context.oct * 12) + MIDDLE_A_NN + PITCH_CLASSES[value]
-    case 'RELATIVE':
-      return (instruction.context.oct * 12) + MIDDLE_A_NN + instruction.data.value
-    case 'MIDI':
-      return instruction.data.value
-  }
-  throw new Error('This note type is unknown to the score generator')
-}
-
-function trigActionFrom(instruction) {
-  let payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.omit(['oct'], instruction.context)
-  payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('name', instruction.data, payload)
-  return { payload, type: 'TRIG' }
-}
-
-function restActionFrom(instruction) {
-  return { type: 'NOOP', payload: { time: instruction.context.time } }
-}
-
-function generateScore(instructions) {
-  return instructions.map((instruction) => {
-    switch(instruction.type) {
-      case 'NOTE': return noteActionFrom(instruction)
-      case 'TRIG': return trigActionFrom(instruction)
-      case 'REST': return restActionFrom(instruction)
-    }
-    throw new Error('This instruction type is unknown to the score generator')
-  })
-}
-
-function optimizeIntermediate(instructions) {
-  let lastIndex = instructions.length - 1
-  instructions = instructions.filter(({ type }, i) => type !== 'REST' || i === lastIndex)
-  let last = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.last(instructions)
-  if (last.type === 'REST') {
-    // HACK all aboard for mutation central
-    last.context.time = last.context.time + last.context.dur
-    delete last.context.dur
-  }
-  return instructions
-}
-
-function normalizeParamName(param) {
-  return PARAM_ALIASES[param] || param
-}
-
-function generateIntermediate(parsings) {
-  let context = { time: 0, oct: 0, dur: DEFAULT_DURATION }
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.compact(parsings.map((parsing) => {
-    let [type, data] = parsing
-    if (type === 'SETTING') {
-      context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set(normalizeParamName(data.param), data.value, context)
-      return null
-    }
-    if (type === 'OCTAVE_CHANGE') {
-      context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('oct', context.oct + data, context)
-      return null
-    }
-    let instruction = { context, data, type }
-    context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('time', context.time + context.dur, context)
-    return instruction
-  }))
-}
-
-function parse(s) {
-  let parser = new __WEBPACK_IMPORTED_MODULE_1_nearley___default.a.Parser(__WEBPACK_IMPORTED_MODULE_2__grammar___default.a.ParserRules, __WEBPACK_IMPORTED_MODULE_2__grammar___default.a.ParserStart)
-  parser.feed(s)
-  let parsings = parser.results
-  if (parsings.length > 1) {
-    throw new Error('Syntax error in sequence: combination is ambiguous')
-  }
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.compact(parsings[0])
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-function umlangEval(s) {
-  s = (s || '').trim()
-  return generateScore(optimizeIntermediate(generateIntermediate(parse(s))))
-}
-
-/* harmony default export */ __webpack_exports__["a"] = (umlangEval);
-
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports) {
-
-(function(root, factory) {
-    if (typeof module === 'object' && module.exports) {
-        module.exports = factory();
-    } else {
-        root.nearley = factory();
-    }
-}(this, function() {
-
-    function Rule(name, symbols, postprocess) {
-        this.id = ++Rule.highestId;
-        this.name = name;
-        this.symbols = symbols;        // a list of literal | regex class | nonterminal
-        this.postprocess = postprocess;
-        return this;
-    }
-    Rule.highestId = 0;
-
-    Rule.prototype.toString = function(withCursorAt) {
-        function stringifySymbolSequence (e) {
-            return e.literal ? JSON.stringify(e.literal) :
-                   e.type ? '%' + e.type : e.toString();
-        }
-        var symbolSequence = (typeof withCursorAt === "undefined")
-                             ? this.symbols.map(stringifySymbolSequence).join(' ')
-                             : (   this.symbols.slice(0, withCursorAt).map(stringifySymbolSequence).join(' ')
-                                 + " ● "
-                                 + this.symbols.slice(withCursorAt).map(stringifySymbolSequence).join(' ')     );
-        return this.name + " → " + symbolSequence;
-    }
-
-
-    // a State is a rule at a position from a given starting point in the input stream (reference)
-    function State(rule, dot, reference, wantedBy) {
-        this.rule = rule;
-        this.dot = dot;
-        this.reference = reference;
-        this.data = [];
-        this.wantedBy = wantedBy;
-        this.isComplete = this.dot === rule.symbols.length;
-    }
-
-    State.prototype.toString = function() {
-        return "{" + this.rule.toString(this.dot) + "}, from: " + (this.reference || 0);
-    };
-
-    State.prototype.nextState = function(child) {
-        var state = new State(this.rule, this.dot + 1, this.reference, this.wantedBy);
-        state.left = this;
-        state.right = child;
-        if (state.isComplete) {
-            state.data = state.build();
-        }
-        return state;
-    };
-
-    State.prototype.build = function() {
-        var children = [];
-        var node = this;
-        do {
-            children.push(node.right.data);
-            node = node.left;
-        } while (node.left);
-        children.reverse();
-        return children;
-    };
-
-    State.prototype.finish = function() {
-        if (this.rule.postprocess) {
-            this.data = this.rule.postprocess(this.data, this.reference, Parser.fail);
-        }
-    };
-
-
-    function Column(grammar, index) {
-        this.grammar = grammar;
-        this.index = index;
-        this.states = [];
-        this.wants = {}; // states indexed by the non-terminal they expect
-        this.scannable = []; // list of states that expect a token
-        this.completed = {}; // states that are nullable
-    }
-
-
-    Column.prototype.process = function(nextColumn) {
-        var states = this.states;
-        var wants = this.wants;
-        var completed = this.completed;
-
-        for (var w = 0; w < states.length; w++) { // nb. we push() during iteration
-            var state = states[w];
-
-            if (state.isComplete) {
-                state.finish();
-                if (state.data !== Parser.fail) {
-                    // complete
-                    var wantedBy = state.wantedBy;
-                    for (var i = wantedBy.length; i--; ) { // this line is hot
-                        var left = wantedBy[i];
-                        this.complete(left, state);
-                    }
-
-                    // special-case nullables
-                    if (state.reference === this.index) {
-                        // make sure future predictors of this rule get completed.
-                        var exp = state.rule.name;
-                        (this.completed[exp] = this.completed[exp] || []).push(state);
-                    }
-                }
-
-            } else {
-                // queue scannable states
-                var exp = state.rule.symbols[state.dot];
-                if (typeof exp !== 'string') {
-                    this.scannable.push(state);
-                    continue;
-                }
-
-                // predict
-                if (wants[exp]) {
-                    wants[exp].push(state);
-
-                    if (completed.hasOwnProperty(exp)) {
-                        var nulls = completed[exp];
-                        for (var i = 0; i < nulls.length; i++) {
-                            var right = nulls[i];
-                            this.complete(state, right);
-                        }
-                    }
-                } else {
-                    wants[exp] = [state];
-                    this.predict(exp);
-                }
-            }
-        }
-    }
-
-    Column.prototype.predict = function(exp) {
-        var rules = this.grammar.byName[exp] || [];
-
-        for (var i = 0; i < rules.length; i++) {
-            var r = rules[i];
-            var wantedBy = this.wants[exp];
-            var s = new State(r, 0, this.index, wantedBy);
-            this.states.push(s);
-        }
-    }
-
-    Column.prototype.complete = function(left, right) {
-        var copy = left.nextState(right);
-        this.states.push(copy);
-    }
-
-
-    function Grammar(rules, start) {
-        this.rules = rules;
-        this.start = start || this.rules[0].name;
-        var byName = this.byName = {};
-        this.rules.forEach(function(rule) {
-            if (!byName.hasOwnProperty(rule.name)) {
-                byName[rule.name] = [];
-            }
-            byName[rule.name].push(rule);
-        });
-    }
-
-    // So we can allow passing (rules, start) directly to Parser for backwards compatibility
-    Grammar.fromCompiled = function(rules, start) {
-        var lexer = rules.Lexer;
-        if (rules.ParserStart) {
-          start = rules.ParserStart;
-          rules = rules.ParserRules;
-        }
-        var rules = rules.map(function (r) { return (new Rule(r.name, r.symbols, r.postprocess)); });
-        var g = new Grammar(rules, start);
-        g.lexer = lexer; // nb. storing lexer on Grammar is iffy, but unavoidable
-        return g;
-    }
-
-
-    function StreamLexer() {
-      this.reset("");
-    }
-
-    StreamLexer.prototype.reset = function(data, state) {
-        this.buffer = data;
-        this.index = 0;
-        this.line = state ? state.line : 1;
-        this.lastLineBreak = state ? -state.col : 0;
-    }
-
-    StreamLexer.prototype.next = function() {
-        if (this.index < this.buffer.length) {
-            var ch = this.buffer[this.index++];
-            if (ch === '\n') {
-              this.line += 1;
-              this.lastLineBreak = this.index;
-            }
-            return {value: ch};
-        }
-    }
-
-    StreamLexer.prototype.save = function() {
-      return {
-        line: this.line,
-        col: this.index - this.lastLineBreak,
-      }
-    }
-
-    StreamLexer.prototype.formatError = function(token, message) {
-        // nb. this gets called after consuming the offending token,
-        // so the culprit is index-1
-        var buffer = this.buffer;
-        if (typeof buffer === 'string') {
-            var nextLineBreak = buffer.indexOf('\n', this.index);
-            if (nextLineBreak === -1) nextLineBreak = buffer.length;
-            var line = buffer.substring(this.lastLineBreak, nextLineBreak)
-            var col = this.index - this.lastLineBreak;
-            message += " at line " + this.line + " col " + col + ":\n\n";
-            message += "  " + line + "\n"
-            message += "  " + Array(col).join(" ") + "^"
-            return message;
-        } else {
-            return message + " at index " + (this.index - 1);
-        }
-    }
-
-
-    function Parser(rules, start, options) {
-        if (rules instanceof Grammar) {
-            var grammar = rules;
-            var options = start;
-        } else {
-            var grammar = Grammar.fromCompiled(rules, start);
-        }
-        this.grammar = grammar;
-
-        // Read options
-        this.options = {
-            keepHistory: false,
-            lexer: grammar.lexer || new StreamLexer,
-        };
-        for (var key in (options || {})) {
-            this.options[key] = options[key];
-        }
-
-        // Setup lexer
-        this.lexer = this.options.lexer;
-        this.lexerState = undefined;
-
-        // Setup a table
-        var column = new Column(grammar, 0);
-        var table = this.table = [column];
-
-        // I could be expecting anything.
-        column.wants[grammar.start] = [];
-        column.predict(grammar.start);
-        // TODO what if start rule is nullable?
-        column.process();
-        this.current = 0; // token index
-    }
-
-    // create a reserved token for indicating a parse fail
-    Parser.fail = {};
-
-    Parser.prototype.feed = function(chunk) {
-        var lexer = this.lexer;
-        lexer.reset(chunk, this.lexerState);
-
-        var token;
-        while (token = lexer.next()) {
-            // We add new states to table[current+1]
-            var column = this.table[this.current];
-
-            // GC unused states
-            if (!this.options.keepHistory) {
-                delete this.table[this.current - 1];
-            }
-
-            var n = this.current + 1;
-            var nextColumn = new Column(this.grammar, n);
-            this.table.push(nextColumn);
-
-            // Advance all tokens that expect the symbol
-            var literal = token.value;
-            var value = lexer.constructor === StreamLexer ? token.value : token;
-            var scannable = column.scannable;
-            for (var w = scannable.length; w--; ) {
-                var state = scannable[w];
-                var expect = state.rule.symbols[state.dot];
-                // Try to consume the token
-                // either regex or literal
-                if (expect.test ? expect.test(value) :
-                    expect.type ? expect.type === token.type
-                                : expect.literal === literal) {
-                    // Add it
-                    var next = state.nextState({data: value, token: token, isToken: true, reference: n - 1});
-                    nextColumn.states.push(next);
-                }
-            }
-
-            // Next, for each of the rules, we either
-            // (a) complete it, and try to see if the reference row expected that
-            //     rule
-            // (b) predict the next nonterminal it expects by adding that
-            //     nonterminal's start state
-            // To prevent duplication, we also keep track of rules we have already
-            // added
-
-            nextColumn.process();
-
-            // If needed, throw an error:
-            if (nextColumn.states.length === 0) {
-                // No states at all! This is not good.
-                var message = this.lexer.formatError(token, "invalid syntax") + "\n";
-                message += "Unexpected " + (token.type ? token.type + " token: " : "");
-                message += JSON.stringify(token.value !== undefined ? token.value : token) + "\n";
-                var err = new Error(message);
-                err.offset = this.current;
-                err.token = token;
-                throw err;
-            }
-
-            // maybe save lexer state
-            if (this.options.keepHistory) {
-              column.lexerState = lexer.save()
-            }
-
-            this.current++;
-        }
-        if (column) {
-          this.lexerState = lexer.save()
-        }
-
-        // Incrementally keep track of results
-        this.results = this.finish();
-
-        // Allow chaining, for whatever it's worth
-        return this;
-    };
-
-    Parser.prototype.save = function() {
-        var column = this.table[this.current];
-        column.lexerState = this.lexerState;
-        return column;
-    };
-
-    Parser.prototype.restore = function(column) {
-        var index = column.index;
-        this.current = index;
-        this.table[index] = column;
-        this.table.splice(index + 1);
-        this.lexerState = column.lexerState;
-
-        // Incrementally keep track of results
-        this.results = this.finish();
-    };
-
-    // nb. deprecated: use save/restore instead!
-    Parser.prototype.rewind = function(index) {
-        if (!this.options.keepHistory) {
-            throw new Error('set option `keepHistory` to enable rewinding')
-        }
-        // nb. recall column (table) indicies fall between token indicies.
-        //        col 0   --   token 0   --   col 1
-        this.restore(this.table[index]);
-    };
-
-    Parser.prototype.finish = function() {
-        // Return the possible parsings
-        var considerations = [];
-        var start = this.grammar.start;
-        var column = this.table[this.table.length - 1]
-        column.states.forEach(function (t) {
-            if (t.rule.name === start
-                    && t.dot === t.rule.symbols.length
-                    && t.reference === 0
-                    && t.data !== Parser.fail) {
-                considerations.push(t);
-            }
-        });
-        return considerations.map(function(c) {return c.data; });
-    };
-
-    return {
-        Parser: Parser,
-        Grammar: Grammar,
-        Rule: Rule,
-    };
-
-}));
-
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports) {
-
-// Generated automatically by nearley, version 2.11.1
-// http://github.com/Hardmath123/nearley
-(function () {
-function id(x) { return x[0]; }
-
-  function str(data) {
-    return data.join('')
-  }
-var grammar = {
-    Lexer: undefined,
-    ParserRules: [
-    {"name": "SEQUENCE", "symbols": ["TOKEN"], "postprocess": id},
-    {"name": "SEQUENCE", "symbols": ["SEQUENCE", "_", "TOKEN"], "postprocess": (data) => data[0].concat(data[2])},
-    {"name": "TOKEN", "symbols": ["NOTE"]},
-    {"name": "TOKEN", "symbols": ["TRIG"]},
-    {"name": "TOKEN", "symbols": ["REST"]},
-    {"name": "TOKEN", "symbols": ["OCTAVE_CHANGE"]},
-    {"name": "TOKEN", "symbols": ["SETTING"]},
-    {"name": "TOKEN", "symbols": ["CHORD_GROUP"]},
-    {"name": "NOTE", "symbols": ["PITCH_CLASS"], "postprocess": (data) => ['NOTE', { type: 'PITCH_CLASS', value: data[0] }]},
-    {"name": "NOTE", "symbols": [{"literal":"M"}, "INTEGER"], "postprocess": (data) => ['NOTE', { type: 'MIDI',        value: data[1] }]},
-    {"name": "NOTE", "symbols": ["INTEGER"], "postprocess": (data) => ['NOTE', { type: 'RELATIVE',    value: data[0] }]},
-    {"name": "PITCH_CLASS$ebnf$1", "symbols": [/[b♭#♯]/], "postprocess": id},
-    {"name": "PITCH_CLASS$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "PITCH_CLASS", "symbols": [/[A-G]/, "PITCH_CLASS$ebnf$1"], "postprocess": (data) => str(data)},
-    {"name": "TRIG", "symbols": ["IDENTIFIER"], "postprocess": (data) => ['TRIG', data[0]]},
-    {"name": "REST$ebnf$1", "symbols": [{"literal":"_"}]},
-    {"name": "REST$ebnf$1", "symbols": ["REST$ebnf$1", {"literal":"_"}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "REST", "symbols": ["REST$ebnf$1"], "postprocess": (data) => ['REST', data[0].length]},
-    {"name": "OCTAVE_CHANGE$ebnf$1", "symbols": [{"literal":"<"}]},
-    {"name": "OCTAVE_CHANGE$ebnf$1", "symbols": ["OCTAVE_CHANGE$ebnf$1", {"literal":"<"}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "OCTAVE_CHANGE", "symbols": ["OCTAVE_CHANGE$ebnf$1"], "postprocess": (data) => ['OCTAVE_CHANGE', parseInt('-' + data[0].length)]},
-    {"name": "OCTAVE_CHANGE$ebnf$2", "symbols": [{"literal":">"}]},
-    {"name": "OCTAVE_CHANGE$ebnf$2", "symbols": ["OCTAVE_CHANGE$ebnf$2", {"literal":">"}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "OCTAVE_CHANGE", "symbols": ["OCTAVE_CHANGE$ebnf$2"], "postprocess": (data) => ['OCTAVE_CHANGE', parseInt(data[0].length)]},
-    {"name": "SETTING", "symbols": ["IDENTIFIER", {"literal":"="}, "VALUE"], "postprocess": (data) => ['SETTING', { param: data[0],    value: data[2] }]},
-    {"name": "SETTING", "symbols": ["NOTE_VALUE"], "postprocess": (data) => ['SETTING', { param: 'duration', value: data[0] }]},
-    {"name": "VALUE", "symbols": ["NOTE_VALUE"], "postprocess": id},
-    {"name": "VALUE", "symbols": ["STRING"], "postprocess": (data) => !isNaN(data[0]) ? parseFloat(data[0]) : data[0]},
-    {"name": "NOTE_VALUE", "symbols": ["INTEGER", {"literal":"/"}, "INTEGER"], "postprocess": (data) => data[0] / data[2]},
-    {"name": "NOTE_VALUE", "symbols": [{"literal":"/"}, "INTEGER"], "postprocess": (data) => 1 / data[1]},
-    {"name": "NOTE_VALUE", "symbols": ["INTEGER", {"literal":"/"}], "postprocess": id},
-    {"name": "CHORD_GROUP$ebnf$1", "symbols": ["_"], "postprocess": id},
-    {"name": "CHORD_GROUP$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "CHORD_GROUP$ebnf$2", "symbols": ["_"], "postprocess": id},
-    {"name": "CHORD_GROUP$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "CHORD_GROUP", "symbols": [{"literal":"{"}, "CHORD_GROUP$ebnf$1", "CHORD_TOKENS", "CHORD_GROUP$ebnf$2", {"literal":"}"}], "postprocess": (data) => ['CHORD_GROUP', data[2]]},
-    {"name": "CHORD_TOKENS", "symbols": ["CHORD_TOKEN"], "postprocess": id},
-    {"name": "CHORD_TOKENS", "symbols": ["CHORD_TOKENS", "_", "CHORD_TOKEN"], "postprocess": (data) => data[0].concat(data[2])},
-    {"name": "CHORD_TOKEN", "symbols": ["NOTE"]},
-    {"name": "CHORD_TOKEN", "symbols": ["SETTING"]},
-    {"name": "CHORD_TOKEN", "symbols": ["OCTAVE_CHANGE"]},
-    {"name": "IDENTIFIER$ebnf$1", "symbols": ["STRING"], "postprocess": id},
-    {"name": "IDENTIFIER$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "IDENTIFIER", "symbols": ["LCASE_LETTER", "IDENTIFIER$ebnf$1"], "postprocess": (data) => str(data[0].concat(data[1]))},
-    {"name": "LCASE_LETTER", "symbols": [/[a-z]/]},
-    {"name": "STRING$ebnf$1", "symbols": [/[a-zA-Z$_0-9.]/]},
-    {"name": "STRING$ebnf$1", "symbols": ["STRING$ebnf$1", /[a-zA-Z$_0-9.]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "STRING", "symbols": ["STRING$ebnf$1"], "postprocess": (data) => str(data[0])},
-    {"name": "NUMBER", "symbols": ["FLOAT"]},
-    {"name": "NUMBER", "symbols": ["INTEGER"]},
-    {"name": "FLOAT$ebnf$1", "symbols": [/[0-9]/]},
-    {"name": "FLOAT$ebnf$1", "symbols": ["FLOAT$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "FLOAT", "symbols": ["INTEGER", {"literal":"."}, "FLOAT$ebnf$1"], "postprocess": (data) => parseFloat(str(data))},
-    {"name": "INTEGER$ebnf$1", "symbols": [/[-+]/], "postprocess": id},
-    {"name": "INTEGER$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "INTEGER$ebnf$2", "symbols": [/[0-9]/]},
-    {"name": "INTEGER$ebnf$2", "symbols": ["INTEGER$ebnf$2", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "INTEGER", "symbols": ["INTEGER$ebnf$1", "INTEGER$ebnf$2"], "postprocess": (data) => parseInt((data[0] === '-' ? '-' : '') + str(data[1]))},
-    {"name": "_$ebnf$1", "symbols": [/[\s]/]},
-    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": () => null}
-]
-  , ParserStart: "SEQUENCE"
-}
-if (typeof module !== 'undefined'&& typeof module.exports !== 'undefined') {
-   module.exports = grammar;
-} else {
-   window.grammar = grammar;
-}
-})();
-
-
-/***/ }),
-/* 13 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__actionHelpers__ = __webpack_require__(1);
-
-
-function getScore(thing) {
-  return thing.actions
-    ? thing
-    : __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["e" /* wrap */](__WEBPACK_IMPORTED_MODULE_0__actionHelpers__["c" /* get */](thing))
-}
-
-/* harmony default export */ __webpack_exports__["a"] = (getScore);
-
-
-/***/ }),
-/* 14 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__actionHelpers__ = __webpack_require__(1);
-
-
-
-// Repeat or trim a list of actions to the given length.
-function extend(actions, length) {
-  let loopLength = __WEBPACK_IMPORTED_MODULE_1__actionHelpers__["d" /* lengthOf */](actions)
-  let wholeRepetitions = Math.floor(length / loopLength)
-  let lastRepetitionLength = length % loopLength
-  let lastActions = trim(lastRepetitionLength, actions)
-  let actionLists = wholeRepetitions
-    ? Array(wholeRepetitions).fill(actions)
-    : []
-  actionLists.push(lastActions)
-  return __WEBPACK_IMPORTED_MODULE_1__actionHelpers__["b" /* concat */](actionLists)
-}
-
-// Trim a list of actions to the given length, shortening the last event if
-// necessary.
-// TODO should just shorten period, not dur
-function trim(length, actions) {
-  actions = actions.filter((a) => a.payload.time < length)
-  if (!actions.length) return actions
-  if (__WEBPACK_IMPORTED_MODULE_1__actionHelpers__["d" /* lengthOf */](actions) > length) {
-    let lastAction = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.last(actions)
-    lastAction = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('payload.dur', length - lastAction.payload.time, lastAction)
-    actions = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.initial(actions).concat(lastAction)
-  }
-  return actions
-}
-
-// Next 3 function adapted from
-// https://github.com/felipernb/algorithms.js/tree/master/src/algorithms/math
-
-function pairGcd(a, b) {
-  let tmp = a
-  a = Math.max(a, b)
-  b = Math.min(tmp, b)
-  while (b !== 0) {
-    tmp = b
-    b = a % b
-    a = tmp
-  }
-
-  return a
-}
-
-function pairLcm(a, b) {
-  if (a === 0 || b === 0) return 0
-  a = Math.abs(a)
-  b = Math.abs(b)
-  return a / pairGcd(a, b) * b
-}
-
-function lcm(values) {
-  return values.reduce(pairLcm)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-function mixScores(scores) {
-  let [loops, nonLoops] = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.partition((score) => score.loop, scores)
-    .map((scores) => scores.map(__WEBPACK_IMPORTED_MODULE_1__actionHelpers__["c" /* get */]))
-
-  if (loops.length) {
-    // If there are any non-loops, adjust the length of any loops to the length
-    // of the longest non-loop.
-    // If there are only loops, adjust their lengths to the lowest common
-    // multiple of all their lengths.
-    let length = nonLoops.length
-      ? __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.max(nonLoops.map(__WEBPACK_IMPORTED_MODULE_1__actionHelpers__["d" /* lengthOf */]))
-      : lcm(loops.map(__WEBPACK_IMPORTED_MODULE_1__actionHelpers__["d" /* lengthOf */]))
-    loops = loops.map((loop) => extend(loop, length))
-  }
-
-  let actionLists = loops.concat(nonLoops)
-  let mixed = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.flatten(actionLists)
-  let sorted = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.sortBy(['payload.time', 'payload.dur'], mixed)
-  let score = __WEBPACK_IMPORTED_MODULE_1__actionHelpers__["e" /* wrap */](__WEBPACK_IMPORTED_MODULE_1__actionHelpers__["a" /* clean */](sorted))
-  if (!nonLoops.length) score.loop = true
-  return score
-}
-
-/* harmony default export */ __webpack_exports__["a"] = (mixScores);
-
-
-/***/ }),
-/* 15 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_um_sequencer__ = __webpack_require__(16);
-
-
-
-let depsCache = {}
-
-function Player(audioContext) {
-  let sequencer = Object(__WEBPACK_IMPORTED_MODULE_1_um_sequencer__["a" /* default */])(() => audioContext.currentTime)
-  let stopCbs = {}
-
-  function lengthOf(score) {
-    let lastPayload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.last(score.actions).payload
-    return lastPayload.time + (lastPayload.dur || 0)
-  }
-
-  function eventsFrom(score) {
-    let length = lengthOf(score)
-    let nestedDisorderedEvents = score.actions
-      .filter((action) => action.type !== 'NOOP')
-      .map((action) => {
-        let { payload } = action
-        let id = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.uniqueId()
-        let startTime = payload.time + (payload.offset || 0)
-        startTime = wrap(startTime, length)
-        let startEvent = {
-          time: startTime,
-          callback: (t) => startAction(t, id, action),
-          ord: 1
-        }
-        if (!payload.dur) return [startEvent]
-        let endTime = startTime + payload.dur
-        endTime = wrap(endTime, length)
-        let stopEvent = {
-          time: endTime,
-          callback: (t) => endAction(t, id),
-          ord: 0
-        }
-        return [startEvent, stopEvent]
-      })
-    return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.sortBy(['time', 'ord'], __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.flatten(nestedDisorderedEvents))
-  }
-
-  function wrap(time, length) {
-    time = time % length
-    if(time >= 0) return time
-    return time + length
-  }
-
-  function startAction(time, id, action) {
-    let { payload } = action
-    let stopCb = dispatch(time, action)
-    if (!__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.isFunction(stopCb)) return
-    stopCbs[id] = stopCb
-  }
-
-  function endAction(time, id) {
-    let stopCb = stopCbs[id]
-    if (!stopCb) return
-    stopCbs[id] = undefined
-    stopCb(time)
-  }
-
-  function dispatch(time, action) {
-    let callback = action.payload.callback
-    return callback && callback(__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(action, { meta: { deadline: time } }))
-  }
-
-  function flushHangingNotes() {
-    let stopTime = audioContext.currentTime
-    __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.forEach((stopCb) => {
-      if (stopCb) { stopCb(stopTime) }
-    }, stopCbs)
-    stopCbs = {}
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-
-  function prepare(score) {
-    let promises = Object.keys(score.dependencies || {}).map((k) => {
-      return depsCache[k] || (depsCache[k] = score.dependencies[k]())
-    })
-    return Promise.all(promises)
-  }
-
-  async function play(score) {
-    let loopLength = lengthOf(score)
-    let events = eventsFrom(score)
-    let tempo = score.tempo || 120
-    await prepare(score)
-    flushHangingNotes()
-    sequencer.play(events, { tempo, loopLength })
-  }
-
-  function stop() {
-    sequencer.stop()
-    flushHangingNotes()
-  }
-
-  return { play, stop, prepare }
-}
-
-/* harmony default export */ __webpack_exports__["a"] = (Player);
-
-
-/***/ }),
-/* 16 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-function Sequencer(getCurrentTime, options = {}) {
-
-  // NOTE
-  // All absolute times are in seconds.
-  // All musical times are in whole notes.
-
-  //// Setup ///////////////////////////////////////////////////////////////////
-
-  let _interval = options.interval || 0.025 // Time between ticks.
-  let _lookahead = options.lookahead || 0.1 // Time to look ahead for events to schedule.
-  let _useWorker = options.useWorker == null ? true : options.useWorker
-  let _timerId
-  let _clockWorker
-  let _isPlaying = false
-  let _tempo
-  let _nextEventIndex
-  let _nextEventTime
-  let _events
-  let _deltas
-
-  if (_useWorker) {
-    _clockWorker = new Worker(clockWorkerUrl())
-    _clockWorker.onmessage = onTick
-  }
-
-  //// Playback ////////////////////////////////////////////////////////////////
-
-  function init(events, options) {
-    _tempo = options.tempo || 120
-
-    // Add the loop event if present & sort the events by time.
-    _events = events.slice()
-    if (options.loopLength) {
-      _events.push({ time: options.loopLength, loop: true })
-    }
-    _events.sort((a, b) => a.time - b.time)
-
-    // For each event, get the delta time since the previous event.
-    _deltas = _events.map(({ time, callback }, i, arr) => {
-      return i === 0 ? time : (time - arr[i - 1].time)
-    })
-
-    // Point the sequencer to the first event.
-    _nextEventIndex = 0
-
-    // Schedule the first event to play after a tick has passed.
-    _nextEventTime = getCurrentTime() + _interval + secsFromWholeNotes(_deltas[0])
-  }
-
-  // While there are notes that will need to play during the next lookahead period,
-  // schedule them and advance the pointer.
-  function onTick() {
-    let horizon = getCurrentTime() + _lookahead
-    while (_isPlaying && (_nextEventTime < horizon)) {
-      dispatch()
-      advance()
-    }
-  }
-
-  function dispatch() {
-    let callback = _events[_nextEventIndex].callback
-    if (callback) { callback(_nextEventTime) }
-  }
-
-  // Move the pointer to the next note.
-  function advance() {
-    let loop = _events[_nextEventIndex].loop
-    let isLastEvent = _nextEventIndex === _deltas.length - 1
-
-    // If we are not looping and this is the end of the sequence, stop.
-    if (isLastEvent && !loop) {
-      stop()
-      return
-    }
-
-    // If we are at the loop point, move it to the first note.
-    _nextEventIndex = loop ? 0 : _nextEventIndex + 1
-    _nextEventTime += secsFromWholeNotes(_deltas[_nextEventIndex])
-  }
-
-  function secsFromWholeNotes(whns) {
-    return whns * (240 / _tempo)
-  }
-
-  //// Clock ///////////////////////////////////////////////////////////////////
-
-  function startClock() {
-    if (_useWorker) {
-      _clockWorker.postMessage({ action: 'start', interval: _interval })
-    } else {
-      _timerId = setInterval(onTick, _interval * 1000)
-    }
-  }
-
-  function stopClock() {
-    if (_useWorker) {
-      _clockWorker.postMessage({ action: 'stop' })
-    } else {
-      clearInterval(_timerId)
-      _timerId = null
-    }
-  }
-
-  function ClockWorker() {
-    // NOTE This function runs in a separate context, so does not have access to
-    // instance variables!
-    let _workerTimerId
-    onmessage = (e) => {
-      let action = e.data.action
-
-      if (action === 'start') {
-        _workerTimerId = setInterval(() => {
-          postMessage({ action: 'tick' })
-        }, e.data.interval * 1000)
-      }
-
-      if (action === 'stop') {
-        clearInterval(_workerTimerId)
-        _workerTimerId = null
-      }
-    }
-  }
-
-  function clockWorkerUrl() {
-    let blob = new Blob(
-      [`(${ClockWorker.toString()})()`],
-      { type: 'application/javascript' }
-    )
-    return URL.createObjectURL(blob)
-  }
-
-  //// API /////////////////////////////////////////////////////////////////////
-
-  function play(events, options = {}) {
-    if (_isPlaying) { stop() }
-    _isPlaying = true
-    init(events, options)
-    startClock()
-  }
-
-  function stop() {
-    if (_isPlaying) {
-      _isPlaying = false
-      stopClock()
-    }
-  }
-
-  function changeTempo(tempo) {
-    // Tempo changes may take up to [lookahead] to take effect.
-    if (!_isPlaying) { return }
-    _tempo = tempo
-  }
-
-  function isPlaying() {
-    return _isPlaying
-  }
-
-  return { play, stop, changeTempo, isPlaying }
-}
-
-/* harmony default export */ __webpack_exports__["a"] = (Sequencer);
-
-
-/***/ }),
-/* 17 */
+/* 7 */,
+/* 8 */,
+/* 9 */,
+/* 10 */,
+/* 11 */,
+/* 12 */,
+/* 13 */,
+/* 14 */,
+/* 15 */,
+/* 16 */,
+/* 17 */,
+/* 18 */,
+/* 19 */,
+/* 20 */,
+/* 21 */,
+/* 22 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony export (immutable) */ __webpack_exports__["out"] = out;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__helpers__ = __webpack_require__(18);
-
-
-function out({ dev = 0, cha = 'all' } = {}) {
-  let midiOut
-
-  function prepare() {
-    return __WEBPACK_IMPORTED_MODULE_0__helpers__["b" /* enable */]()
-  }
-
-  function handle(action) {
-    midiOut = midiOut || __WEBPACK_IMPORTED_MODULE_0__helpers__["a" /* MidiOut */](dev)
-    let note = action.payload.nn || 69
-    let channel = action.payload.cha || cha
-    let velocity = action.payload.vel || 80
-    let deadline = action.meta.deadline
-    midiOut.playNote(note, channel, {
-      velocity,
-      rawVelocity: true,
-      time: deadline
-    })
-    return (deadline) => midiOut.stopNote(note, channel, { time: deadline })
-  }
-
-  return { prepare, handle, id: 'midi' }
-}
-
-
-/***/ }),
-/* 18 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (immutable) */ __webpack_exports__["b"] = enable;
-/* harmony export (immutable) */ __webpack_exports__["a"] = MidiOut;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_webmidi__ = __webpack_require__(19);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_webmidi___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_webmidi__);
-
-
-function enable() {
-  return new Promise((resolve, reject) => {
-    __WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.enable((err) => {
-      if (err) { reject(err) }
-      resolve()
-    })
-  })
-    .then(() => {
-      console.log('MIDI enabled successfully.')
-      console.log('Available outputs:')
-      console.log(__WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.outputs)
-    })
-    .catch((err) => {
-      console.log('MIDI could not be enabled.')
-      console.error(err)
-    })
-}
-
-function MidiOut(device) {
-  if (!__WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.outputs.length) {
-    throw new Error('No MIDI output found.')
-  }
-  if (!isNaN(device)) {
-    if (__WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.outputs.length <= device) {
-      throw new Error('MIDI output index not found.')
-    }
-    return __WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.outputs[device]
-  }
-  return __WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.getOutputByName(device)
-}
-
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
-
-WebMidi v2.0.0
-
-WebMidi.js helps you tame the Web MIDI API. Send and receive MIDI messages with ease. Control instruments with user-friendly functions (playNote, sendPitchBend, etc.). React to MIDI input with simple event listeners (noteon, pitchbend, controlchange, etc.).
-https://github.com/cotejp/webmidi
-
-
-The MIT License (MIT)
-
-Copyright (c) 2015-2017, Jean-Philippe Côté
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
-NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
-OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-*/
-
-!function(scope){"use strict";function WebMidi(){if(WebMidi.prototype._singleton)throw new Error("WebMidi is a singleton, it cannot be instantiated directly.");WebMidi.prototype._singleton=this,this._inputs=[],this._outputs=[],this._userHandlers={},this._stateChangeQueue=[],this._processingStateChange=!1,this._midiInterfaceEvents=["connected","disconnected"],this._notes=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"],this._semitones={C:0,D:2,E:4,F:5,G:7,A:9,B:11},Object.defineProperties(this,{MIDI_SYSTEM_MESSAGES:{value:{sysex:240,timecode:241,songposition:242,songselect:243,tuningrequest:246,sysexend:247,clock:248,start:250,"continue":251,stop:252,activesensing:254,reset:255,unknownsystemmessage:-1},writable:!1,enumerable:!0,configurable:!1},MIDI_CHANNEL_MESSAGES:{value:{noteoff:8,noteon:9,keyaftertouch:10,controlchange:11,channelmode:11,programchange:12,channelaftertouch:13,pitchbend:14},writable:!1,enumerable:!0,configurable:!1},MIDI_REGISTERED_PARAMETER:{value:{pitchbendrange:[0,0],channelfinetuning:[0,1],channelcoarsetuning:[0,2],tuningprogram:[0,3],tuningbank:[0,4],modulationrange:[0,5],azimuthangle:[61,0],elevationangle:[61,1],gain:[61,2],distanceratio:[61,3],maximumdistance:[61,4],maximumdistancegain:[61,5],referencedistanceratio:[61,6],panspreadangle:[61,7],rollangle:[61,8]},writable:!1,enumerable:!0,configurable:!1},MIDI_CONTROL_CHANGE_MESSAGES:{value:{bankselectcoarse:0,modulationwheelcoarse:1,breathcontrollercoarse:2,footcontrollercoarse:4,portamentotimecoarse:5,dataentrycoarse:6,volumecoarse:7,balancecoarse:8,pancoarse:10,expressioncoarse:11,effectcontrol1coarse:12,effectcontrol2coarse:13,generalpurposeslider1:16,generalpurposeslider2:17,generalpurposeslider3:18,generalpurposeslider4:19,bankselectfine:32,modulationwheelfine:33,breathcontrollerfine:34,footcontrollerfine:36,portamentotimefine:37,dataentryfine:38,volumefine:39,balancefine:40,panfine:42,expressionfine:43,effectcontrol1fine:44,effectcontrol2fine:45,holdpedal:64,portamento:65,sustenutopedal:66,softpedal:67,legatopedal:68,hold2pedal:69,soundvariation:70,resonance:71,soundreleasetime:72,soundattacktime:73,brightness:74,soundcontrol6:75,soundcontrol7:76,soundcontrol8:77,soundcontrol9:78,soundcontrol10:79,generalpurposebutton1:80,generalpurposebutton2:81,generalpurposebutton3:82,generalpurposebutton4:83,reverblevel:91,tremololevel:92,choruslevel:93,celestelevel:94,phaserlevel:95,databuttonincrement:96,databuttondecrement:97,nonregisteredparametercoarse:98,nonregisteredparameterfine:99,registeredparametercoarse:100,registeredparameterfine:101},writable:!1,enumerable:!0,configurable:!1},MIDI_CHANNEL_MODE_MESSAGES:{value:{allsoundoff:120,resetallcontrollers:121,localcontrol:122,allnotesoff:123,omnimodeoff:124,omnimodeon:125,monomodeon:126,polymodeon:127},writable:!1,enumerable:!0,configurable:!1}}),Object.defineProperties(this,{supported:{enumerable:!0,get:function(){return"requestMIDIAccess"in navigator}},enabled:{enumerable:!0,get:function(){return void 0!==this["interface"]}.bind(this)},inputs:{enumerable:!0,get:function(){return this._inputs}.bind(this)},outputs:{enumerable:!0,get:function(){return this._outputs}.bind(this)},sysexEnabled:{enumerable:!0,get:function(){return!(!this["interface"]||!this["interface"].sysexEnabled)}.bind(this)},time:{enumerable:!0,get:function(){return performance.now()}}})}function Input(midiInput){var that=this;this._userHandlers={channel:{},system:{}},this._midiInput=midiInput,Object.defineProperties(this,{connection:{enumerable:!0,get:function(){return that._midiInput.connection}},id:{enumerable:!0,get:function(){return that._midiInput.id}},manufacturer:{enumerable:!0,get:function(){return that._midiInput.manufacturer}},name:{enumerable:!0,get:function(){return that._midiInput.name}},state:{enumerable:!0,get:function(){return that._midiInput.state}},type:{enumerable:!0,get:function(){return that._midiInput.type}}}),this._initializeUserHandlers()}function Output(midiOutput){var that=this;this._midiOutput=midiOutput,Object.defineProperties(this,{connection:{enumerable:!0,get:function(){return that._midiOutput.connection}},id:{enumerable:!0,get:function(){return that._midiOutput.id}},manufacturer:{enumerable:!0,get:function(){return that._midiOutput.manufacturer}},name:{enumerable:!0,get:function(){return that._midiOutput.name}},state:{enumerable:!0,get:function(){return that._midiOutput.state}},type:{enumerable:!0,get:function(){return that._midiOutput.type}}})}var wm=new WebMidi;WebMidi.prototype.enable=function(callback,sysex){return this.enabled?void 0:this.supported?void navigator.requestMIDIAccess({sysex:sysex}).then(function(midiAccess){function onPortsOpen(){this._updateInputsAndOutputs(),this["interface"].onstatechange=this._onInterfaceStateChange.bind(this),"function"==typeof callback&&callback.call(this),events.forEach(function(event){this._onInterfaceStateChange(event)}.bind(this))}var events=[],promises=[];this["interface"]=midiAccess,this._resetInterfaceUserHandlers(),this["interface"].onstatechange=function(e){events.push(e)};for(var inputs=midiAccess.inputs.values(),input=inputs.next();input&&!input.done;input=inputs.next())promises.push(input.value.open());for(var outputs=midiAccess.outputs.values(),output=outputs.next();output&&!output.done;output=outputs.next())promises.push(output.value.open());Promise?Promise.all(promises).then(onPortsOpen.bind(this)):setTimeout(onPortsOpen.bind(this),200)}.bind(this),function(err){"function"==typeof callback&&callback.call(this,err)}.bind(this)):void("function"==typeof callback&&callback(new Error("The Web MIDI API is not supported by your browser.")))},WebMidi.prototype.disable=function(){if(!this.supported)throw new Error("The Web MIDI API is not supported by your browser.");this["interface"]&&(this["interface"].onstatechange=void 0),this["interface"]=void 0,this._inputs=[],this._outputs=[],this._resetInterfaceUserHandlers()},WebMidi.prototype.addListener=function(type,listener){if(!this.enabled)throw new Error("WebMidi must be enabled before adding event listeners.");if("function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(!(this._midiInterfaceEvents.indexOf(type)>=0))throw new TypeError("The specified event type is not supported.");return this._userHandlers[type].push(listener),this},WebMidi.prototype.hasListener=function(type,listener){if(!this.enabled)throw new Error("WebMidi must be enabled before checking event listeners.");if("function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(!(this._midiInterfaceEvents.indexOf(type)>=0))throw new TypeError("The specified event type is not supported.");for(var o=0;o<this._userHandlers[type].length;o++)if(this._userHandlers[type][o]===listener)return!0;return!1},WebMidi.prototype.removeListener=function(type,listener){if(!this.enabled)throw new Error("WebMidi must be enabled before removing event listeners.");if(void 0!==listener&&"function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(this._midiInterfaceEvents.indexOf(type)>=0)if(listener)for(var o=0;o<this._userHandlers[type].length;o++)this._userHandlers[type][o]===listener&&this._userHandlers[type].splice(o,1);else this._userHandlers[type]=[];else{if(void 0!==type)throw new TypeError("The specified event type is not supported.");this._resetInterfaceUserHandlers()}return this},WebMidi.prototype.getInputById=function(id){if(!this.enabled)throw new Error("WebMidi is not enabled.");for(var i=0;i<this.inputs.length;i++)if(this.inputs[i].id===id)return this.inputs[i];return!1},WebMidi.prototype.getOutputById=function(id){if(!this.enabled)throw new Error("WebMidi is not enabled.");for(var i=0;i<this.outputs.length;i++)if(this.outputs[i].id===id)return this.outputs[i];return!1},WebMidi.prototype.getInputByName=function(name){if(!this.enabled)throw new Error("WebMidi is not enabled.");for(var i=0;i<this.inputs.length;i++)if(~this.inputs[i].name.indexOf(name))return this.inputs[i];return!1},WebMidi.prototype.getOctave=function(number){return number&&number>=0&&127>=number?Math.floor(parseInt(number)/12-1)-1:void 0},WebMidi.prototype.getOutputByName=function(name){if(!this.enabled)throw new Error("WebMidi is not enabled.");for(var i=0;i<this.outputs.length;i++)if(~this.outputs[i].name.indexOf(name))return this.outputs[i];return!1},WebMidi.prototype.guessNoteNumber=function(input){var output=!1;if(input&&input.toFixed&&input>=0&&127>=input?output=Math.round(input):parseInt(input)>=0&&parseInt(input)<=127?output=parseInt(input):("string"==typeof input||input instanceof String)&&(output=this.noteNameToNumber(input)),output===!1)throw new Error("Invalid note number ("+input+").");return output},WebMidi.prototype.noteNameToNumber=function(name){"string"!=typeof name&&(name="");var matches=name.match(/([CDEFGAB])(#{0,2}|b{0,2})(-?\d+)/i);if(!matches)throw new RangeError("Invalid note name.");var semitones=wm._semitones[matches[1].toUpperCase()],octave=parseInt(matches[3]),result=12*(octave+2)+semitones;if(matches[2].toLowerCase().indexOf("b")>-1?result-=matches[2].length:matches[2].toLowerCase().indexOf("#")>-1&&(result+=matches[2].length),0>semitones||-2>octave||octave>8||0>result||result>127)throw new RangeError("Invalid note name or note outside valid range.");return result},WebMidi.prototype._updateInputsAndOutputs=function(){this._updateInputs(),this._updateOutputs()},WebMidi.prototype._updateInputs=function(){for(var i=0;i<this._inputs.length;i++){for(var remove=!0,updated=this["interface"].inputs.values(),input=updated.next();input&&!input.done;input=updated.next())if(this._inputs[i]._midiInput===input.value){remove=!1;break}remove&&this._inputs.splice(i,1)}this["interface"]&&this["interface"].inputs.forEach(function(nInput){for(var add=!0,j=0;j<this._inputs.length;j++)this._inputs[j]._midiInput===nInput&&(add=!1);add&&this._inputs.push(this._createInput(nInput))}.bind(this))},WebMidi.prototype._updateOutputs=function(){for(var i=0;i<this._outputs.length;i++){for(var remove=!0,updated=this["interface"].outputs.values(),output=updated.next();output&&!output.done;output=updated.next())if(this._outputs[i]._midiOutput===output.value){remove=!1;break}remove&&this._outputs.splice(i,1)}this["interface"]&&this["interface"].outputs.forEach(function(nOutput){for(var add=!0,j=0;j<this._outputs.length;j++)this._outputs[j]._midiOutput===nOutput&&(add=!1);add&&this._outputs.push(this._createOutput(nOutput))}.bind(this))},WebMidi.prototype._createInput=function(midiInput){var input=new Input(midiInput);return input._midiInput.onmidimessage=input._onMidiMessage.bind(input),input},WebMidi.prototype._createOutput=function(midiOutput){var output=new Output(midiOutput);return output._midiOutput.onmidimessage=output._onMidiMessage.bind(output),output},WebMidi.prototype._onInterfaceStateChange=function(e){this._updateInputsAndOutputs();var event={timestamp:e.timeStamp,type:e.port.state};this["interface"]&&"connected"===e.port.state?"output"===e.port.type?event.port=this.getOutputById(e.port.id):"input"===e.port.type&&(event.port=this.getInputById(e.port.id)):event.port={connection:"closed",id:e.port.id,manufacturer:e.port.manufacturer,name:e.port.name,state:e.port.state,type:e.port.type},this._userHandlers[e.port.state].forEach(function(handler){handler(event)})},WebMidi.prototype._resetInterfaceUserHandlers=function(){for(var i=0;i<this._midiInterfaceEvents.length;i++)this._userHandlers[this._midiInterfaceEvents[i]]=[]},Input.prototype.addListener=function(type,channel,listener){var that=this;if(void 0===channel&&(channel="all"),Array.isArray(channel)||(channel=[channel]),channel.forEach(function(item){if("all"!==item&&!(item>=1&&16>=item))throw new RangeError("The 'channel' parameter is invalid.")}),"function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(wm.MIDI_SYSTEM_MESSAGES[type])this._userHandlers.system[type]||(this._userHandlers.system[type]=[]),this._userHandlers.system[type].push(listener);else{if(!wm.MIDI_CHANNEL_MESSAGES[type])throw new TypeError("The specified event type is not supported.");if(channel.indexOf("all")>-1){channel=[];for(var j=1;16>=j;j++)channel.push(j)}this._userHandlers.channel[type]||(this._userHandlers.channel[type]=[]),channel.forEach(function(ch){that._userHandlers.channel[type][ch]||(that._userHandlers.channel[type][ch]=[]),that._userHandlers.channel[type][ch].push(listener)})}return this},Input.prototype.on=Input.prototype.addListener,Input.prototype.hasListener=function(type,channel,listener){var that=this;if("function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(void 0===channel&&(channel="all"),channel.constructor!==Array&&(channel=[channel]),wm.MIDI_SYSTEM_MESSAGES[type]){for(var o=0;o<this._userHandlers.system[type].length;o++)if(this._userHandlers.system[type][o]===listener)return!0}else if(wm.MIDI_CHANNEL_MESSAGES[type]){if(channel.indexOf("all")>-1){channel=[];for(var j=1;16>=j;j++)channel.push(j)}return this._userHandlers.channel[type]?channel.every(function(chNum){var listeners=that._userHandlers.channel[type][chNum];return listeners&&listeners.indexOf(listener)>-1}):!1}return!1},Input.prototype.removeListener=function(type,channel,listener){var that=this;if(void 0!==listener&&"function"!=typeof listener)throw new TypeError("The 'listener' parameter must be a function.");if(void 0===channel&&(channel="all"),channel.constructor!==Array&&(channel=[channel]),wm.MIDI_SYSTEM_MESSAGES[type])if(void 0===listener)this._userHandlers.system[type]=[];else for(var o=0;o<this._userHandlers.system[type].length;o++)this._userHandlers.system[type][o]===listener&&this._userHandlers.system[type].splice(o,1);else if(wm.MIDI_CHANNEL_MESSAGES[type]){if(channel.indexOf("all")>-1){channel=[];for(var j=1;16>=j;j++)channel.push(j)}if(!this._userHandlers.channel[type])return this;channel.forEach(function(chNum){var listeners=that._userHandlers.channel[type][chNum];if(listeners)if(void 0===listener)that._userHandlers.channel[type][chNum]=[];else for(var l=0;l<listeners.length;l++)listeners[l]===listener&&listeners.splice(l,1)})}else{if(void 0!==type)throw new TypeError("The specified event type is not supported.");this._initializeUserHandlers()}return this},Input.prototype._initializeUserHandlers=function(){for(var prop1 in wm.MIDI_CHANNEL_MESSAGES)wm.MIDI_CHANNEL_MESSAGES.hasOwnProperty(prop1)&&(this._userHandlers.channel[prop1]={});for(var prop2 in wm.MIDI_SYSTEM_MESSAGES)wm.MIDI_SYSTEM_MESSAGES.hasOwnProperty(prop2)&&(this._userHandlers.system[prop2]=[])},Input.prototype._onMidiMessage=function(e){e.data[0]<240?this._parseChannelEvent(e):e.data[0]<=255&&this._parseSystemEvent(e)},Input.prototype._parseChannelEvent=function(e){var data1,data2,command=e.data[0]>>4,channel=(15&e.data[0])+1;e.data.length>1&&(data1=e.data[1],data2=e.data.length>2?e.data[2]:void 0);var event={target:this,data:e.data,timestamp:e.timeStamp,channel:channel};command===wm.MIDI_CHANNEL_MESSAGES.noteoff||command===wm.MIDI_CHANNEL_MESSAGES.noteon&&0===data2?(event.type="noteoff",event.note={number:data1,name:wm._notes[data1%12],octave:wm.getOctave(data1)},event.velocity=data2/127,event.rawVelocity=data2):command===wm.MIDI_CHANNEL_MESSAGES.noteon?(event.type="noteon",event.note={number:data1,name:wm._notes[data1%12],octave:wm.getOctave(data1)},event.velocity=data2/127,event.rawVelocity=data2):command===wm.MIDI_CHANNEL_MESSAGES.keyaftertouch?(event.type="keyaftertouch",event.note={number:data1,name:wm._notes[data1%12],octave:wm.getOctave(data1)},event.value=data2/127):command===wm.MIDI_CHANNEL_MESSAGES.controlchange&&data1>=0&&119>=data1?(event.type="controlchange",event.controller={number:data1,name:this.getCcNameByNumber(data1)},event.value=data2):command===wm.MIDI_CHANNEL_MESSAGES.channelmode&&data1>=120&&127>=data1?(event.type="channelmode",event.controller={number:data1,name:this.getChannelModeByNumber(data1)},event.value=data2):command===wm.MIDI_CHANNEL_MESSAGES.programchange?(event.type="programchange",event.value=data1):command===wm.MIDI_CHANNEL_MESSAGES.channelaftertouch?(event.type="channelaftertouch",event.value=data1/127):command===wm.MIDI_CHANNEL_MESSAGES.pitchbend?(event.type="pitchbend",event.value=((data2<<7)+data1-8192)/8192):event.type="unknownchannelmessage",this._userHandlers.channel[event.type]&&this._userHandlers.channel[event.type][channel]&&this._userHandlers.channel[event.type][channel].forEach(function(callback){callback(event)})},Input.prototype.getCcNameByNumber=function(number){if(number=parseInt(number),!(number>=0&&119>=number))throw new RangeError("The control change number must be between 0 and 119.");for(var cc in wm.MIDI_CONTROL_CHANGE_MESSAGES)if(number===wm.MIDI_CONTROL_CHANGE_MESSAGES[cc])return cc;return void 0},Input.prototype.getChannelModeByNumber=function(number){if(number=parseInt(number),!(number>=120&&status<=127))throw new RangeError("The control change number must be between 120 and 127.");for(var cm in wm.MIDI_CHANNEL_MODE_MESSAGES)if(number===wm.MIDI_CHANNEL_MODE_MESSAGES[cm])return cm},Input.prototype._parseSystemEvent=function(e){var command=e.data[0],event={target:this,data:e.data,timestamp:e.timeStamp};command===wm.MIDI_SYSTEM_MESSAGES.sysex?event.type="sysex":command===wm.MIDI_SYSTEM_MESSAGES.timecode?event.type="timecode":command===wm.MIDI_SYSTEM_MESSAGES.songposition?event.type="songposition":command===wm.MIDI_SYSTEM_MESSAGES.songselect?(event.type="songselect",event.song=e.data[1]):command===wm.MIDI_SYSTEM_MESSAGES.tuningrequest?event.type="tuningrequest":command===wm.MIDI_SYSTEM_MESSAGES.clock?event.type="clock":command===wm.MIDI_SYSTEM_MESSAGES.start?event.type="start":command===wm.MIDI_SYSTEM_MESSAGES["continue"]?event.type="continue":command===wm.MIDI_SYSTEM_MESSAGES.stop?event.type="stop":command===wm.MIDI_SYSTEM_MESSAGES.activesensing?event.type="activesensing":command===wm.MIDI_SYSTEM_MESSAGES.reset?event.type="reset":event.type="unknownsystemmessage",this._userHandlers.system[event.type]&&this._userHandlers.system[event.type].forEach(function(callback){callback(event)})},Output.prototype.send=function(status,data,timestamp){if(!(status>=128&&255>=status))throw new RangeError("The status byte must be an integer between 128 (0x80) and 255 (0xFF).");Array.isArray(data)||(data=parseInt(data)>=0&&parseInt(data)<=127?[parseInt(data)]:[]);var message=[status];return data.forEach(function(item){if(!(item>=0&&255>=item))throw new RangeError("The data bytes must be integers between 0 (0x00) and 255 (0xFF).");message.push(item)}),this._midiOutput.send(message,parseFloat(timestamp)||0),this},Output.prototype.sendSysex=function(manufacturer,data,options){if(!wm.sysexEnabled)throw new Error("SysEx message support must first be activated.");return options=options||{},manufacturer=[].concat(manufacturer),data.forEach(function(item){if(0>item||item>127)throw new RangeError("The data bytes of a SysEx message must be integers between 0 (0x00) and 127 (0x7F).")}),data=manufacturer.concat(data,wm.MIDI_SYSTEM_MESSAGES.sysexend),this.send(wm.MIDI_SYSTEM_MESSAGES.sysex,data,this._parseTimeParameter(options.time)),this},Output.prototype.sendTimecodeQuarterFrame=function(value,options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.timecode,value,this._parseTimeParameter(options.time)),this},Output.prototype.sendSongPosition=function(value,options){value=parseInt(value)||0,options=options||{};var msb=value>>7&127,lsb=127&value;return this.send(wm.MIDI_SYSTEM_MESSAGES.songposition,[msb,lsb],this._parseTimeParameter(options.time)),this},Output.prototype.sendSongSelect=function(value,options){if(value=parseInt(value),options=options||{},!(value>=0&&127>=value))throw new RangeError("The song number must be between 0 and 127.");return this.send(wm.MIDI_SYSTEM_MESSAGES.songselect,[value],this._parseTimeParameter(options.time)),this},Output.prototype.sendTuningRequest=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.tuningrequest,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendClock=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.clock,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendStart=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.start,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendContinue=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES["continue"],void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendStop=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.stop,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendActiveSensing=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.activesensing,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.sendReset=function(options){return options=options||{},this.send(wm.MIDI_SYSTEM_MESSAGES.reset,void 0,this._parseTimeParameter(options.time)),this},Output.prototype.stopNote=function(note,channel,options){if("all"===note)return this.sendChannelMode("allnotesoff",0,channel,options);var nVelocity=64;return options=options||{},options.velocity=parseFloat(options.velocity),options.rawVelocity?!isNaN(options.velocity)&&options.velocity>=0&&options.velocity<=127&&(nVelocity=options.velocity):!isNaN(options.velocity)&&options.velocity>=0&&options.velocity<=1&&(nVelocity=127*options.velocity),this._convertNoteToArray(note).forEach(function(item){this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.noteoff<<4)+(ch-1),[item,Math.round(nVelocity)],this._parseTimeParameter(options.time))}.bind(this))}.bind(this)),this},Output.prototype.playNote=function(note,channel,options){var nVelocity=64;if(options=options||{},options.velocity=parseFloat(options.velocity),options.rawVelocity?!isNaN(options.velocity)&&options.velocity>=0&&options.velocity<=127&&(nVelocity=options.velocity):!isNaN(options.velocity)&&options.velocity>=0&&options.velocity<=1&&(nVelocity=127*options.velocity),options.time=this._parseTimeParameter(options.time),this._convertNoteToArray(note).forEach(function(item){this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.noteon<<4)+(ch-1),[item,Math.round(nVelocity)],options.time)}.bind(this))}.bind(this)),options.duration=parseFloat(options.duration),options.duration){options.duration<=0&&(options.duration=0);var nRelease=64;options.release=parseFloat(options.release),options.rawVelocity?!isNaN(options.release)&&options.release>=0&&options.release<=127&&(nRelease=options.release):!isNaN(options.release)&&options.release>=0&&options.release<=1&&(nRelease=127*options.release),this._convertNoteToArray(note).forEach(function(item){this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.noteoff<<4)+(ch-1),[item,Math.round(nRelease)],(options.time||wm.time)+options.duration)}.bind(this))}.bind(this))}return this},Output.prototype.sendKeyAftertouch=function(note,channel,pressure,options){var that=this;if(options=options||{},1>channel||channel>16)throw new RangeError("The channel must be between 1 and 16.");pressure=parseFloat(pressure),(isNaN(pressure)||0>pressure||pressure>1)&&(pressure=.5);var nPressure=Math.round(127*pressure);return this._convertNoteToArray(note).forEach(function(item){that._convertChannelToArray(channel).forEach(function(ch){that.send((wm.MIDI_CHANNEL_MESSAGES.keyaftertouch<<4)+(ch-1),[item,nPressure],that._parseTimeParameter(options.time))})}),this},Output.prototype.sendControlChange=function(controller,value,channel,options){if(options=options||{},"string"==typeof controller){if(controller=wm.MIDI_CONTROL_CHANGE_MESSAGES[controller],!controller)throw new TypeError("Invalid controller name.")}else if(controller=parseInt(controller),!(controller>=0&&119>=controller))throw new RangeError("Controller numbers must be between 0 and 119.");if(value=parseInt(value)||0,!(value>=0&&127>=value))throw new RangeError("Controller value must be between 0 and 127.");return this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.controlchange<<4)+(ch-1),[controller,value],this._parseTimeParameter(options.time))}.bind(this)),this},Output.prototype._selectRegisteredParameter=function(parameter,channel,time){var that=this;if(parameter[0]=parseInt(parameter[0]),!(parameter[0]>=0&&parameter[0]<=127))throw new RangeError("The control65 value must be between 0 and 127");if(parameter[1]=parseInt(parameter[1]),!(parameter[1]>=0&&parameter[1]<=127))throw new RangeError("The control64 value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(101,parameter[0],channel,{time:time}),that.sendControlChange(100,parameter[1],channel,{time:time})}),this},Output.prototype._selectNonRegisteredParameter=function(parameter,channel,time){var that=this;if(parameter[0]=parseInt(parameter[0]),!(parameter[0]>=0&&parameter[0]<=127))throw new RangeError("The control63 value must be between 0 and 127");if(parameter[1]=parseInt(parameter[1]),!(parameter[1]>=0&&parameter[1]<=127))throw new RangeError("The control62 value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(99,parameter[0],channel,{time:time}),that.sendControlChange(98,parameter[1],channel,{time:time})}),this},Output.prototype._setCurrentRegisteredParameter=function(data,channel,time){var that=this;if(data=[].concat(data),data[0]=parseInt(data[0]),!(data[0]>=0&&data[0]<=127))throw new RangeError("The msb value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(6,data[0],channel,{time:time})}),data[1]=parseInt(data[1]),data[1]>=0&&data[1]<=127&&this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(38,data[1],channel,{time:time})}),this},Output.prototype._deselectRegisteredParameter=function(channel,time){var that=this;return this._convertChannelToArray(channel).forEach(function(ch){that.sendControlChange(101,127,channel,{time:time}),that.sendControlChange(100,127,channel,{time:time})}),this},Output.prototype.setRegisteredParameter=function(parameter,data,channel,options){var that=this;if(options=options||{},!Array.isArray(parameter)){if(!wm.MIDI_REGISTERED_PARAMETER[parameter])throw new Error("The specified parameter is not available.");parameter=wm.MIDI_REGISTERED_PARAMETER[parameter]}return this._convertChannelToArray(channel).forEach(function(ch){that._selectRegisteredParameter(parameter,channel,options.time),that._setCurrentRegisteredParameter(data,channel,options.time),that._deselectRegisteredParameter(channel,options.time)}),this},Output.prototype.setNonRegisteredParameter=function(parameter,data,channel,options){var that=this;if(options=options||{},!(parameter[0]>=0&&parameter[0]<=127&&parameter[1]>=0&&parameter[1]<=127))throw new Error("Position 0 and 1 of the 2-position parameter array must both be between 0 and 127.");return data=[].concat(data),this._convertChannelToArray(channel).forEach(function(ch){that._selectNonRegisteredParameter(parameter,channel,options.time),that._setCurrentRegisteredParameter(data,channel,options.time),that._deselectRegisteredParameter(channel,options.time)}),this},Output.prototype.incrementRegisteredParameter=function(parameter,channel,options){var that=this;if(options=options||{},!Array.isArray(parameter)){if(!wm.MIDI_REGISTERED_PARAMETER[parameter])throw new Error("The specified parameter is not available.");parameter=wm.MIDI_REGISTERED_PARAMETER[parameter]}return this._convertChannelToArray(channel).forEach(function(ch){that._selectRegisteredParameter(parameter,channel,options.time),that.sendControlChange(96,0,channel,{time:options.time}),that._deselectRegisteredParameter(channel,options.time)}),this},Output.prototype.decrementRegisteredParameter=function(parameter,channel,options){if(options=options||{},!Array.isArray(parameter)){if(!wm.MIDI_REGISTERED_PARAMETER[parameter])throw new TypeError("The specified parameter is not available.");parameter=wm.MIDI_REGISTERED_PARAMETER[parameter]}return this._convertChannelToArray(channel).forEach(function(ch){this._selectRegisteredParameter(parameter,channel,options.time),this.sendControlChange(97,0,channel,{time:options.time}),this._deselectRegisteredParameter(channel,options.time)}.bind(this)),this},Output.prototype.setPitchBendRange=function(semitones,cents,channel,options){var that=this;if(options=options||{},semitones=parseInt(semitones)||0,!(semitones>=0&&127>=semitones))throw new RangeError("The semitones value must be between 0 and 127");if(cents=parseInt(cents)||0,!(cents>=0&&127>=cents))throw new RangeError("The cents value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("pitchbendrange",[semitones,cents],channel,{time:options.time})}),this},Output.prototype.setModulationRange=function(semitones,cents,channel,options){var that=this;if(options=options||{},semitones=parseInt(semitones)||0,!(semitones>=0&&127>=semitones))throw new RangeError("The semitones value must be between 0 and 127");if(cents=parseInt(cents)||0,!(cents>=0&&127>=cents))throw new RangeError("The cents value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("modulationrange",[semitones,cents],channel,{time:options.time})}),this},Output.prototype.setMasterTuning=function(value,channel,options){var that=this;if(options=options||{},value=parseFloat(value)||0,-65>=value||value>=64)throw new RangeError("The value must be a decimal number larger than -65 and smaller than 64.");var coarse=parseInt(value)+64,fine=value-parseInt(value);fine=Math.round((fine+1)/2*16383);var msb=fine>>7&127,lsb=127&fine;return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("channelcoarsetuning",coarse,channel,{time:options.time}),that.setRegisteredParameter("channelfinetuning",[msb,lsb],channel,{time:options.time})}),this},Output.prototype.setTuningProgram=function(value,channel,options){var that=this;if(options=options||{},value=parseInt(value)||0,!(value>=0&&127>=value))throw new RangeError("The program value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("tuningprogram",value,channel,{time:options.time})}),this},Output.prototype.setTuningBank=function(value,channel,options){var that=this;if(options=options||{},value=parseInt(value)||0,!(value>=0&&127>=value))throw new RangeError("The bank value must be between 0 and 127");return this._convertChannelToArray(channel).forEach(function(ch){that.setRegisteredParameter("tuningbank",value,channel,{time:options.time})}),this},Output.prototype.sendChannelMode=function(command,value,channel,options){if(options=options||{},"string"==typeof command){if(command=wm.MIDI_CHANNEL_MODE_MESSAGES[command],!command)throw new TypeError("Invalid channel mode message name.")}else if(command=parseInt(command),!(command>=120&&127>=command))throw new RangeError("Channel mode numerical identifiers must be between 120 and 127.");if(value=parseInt(value)||0,0>value||value>127)throw new RangeError("Value must be an integer between 0 and 127.");return this._convertChannelToArray(channel).forEach(function(ch){this.send((wm.MIDI_CHANNEL_MESSAGES.channelmode<<4)+(ch-1),[command,value],this._parseTimeParameter(options.time))}.bind(this)),this},Output.prototype.sendProgramChange=function(program,channel,options){var that=this;if(options=options||{},program=parseInt(program),isNaN(program)||0>program||program>127)throw new RangeError("Program numbers must be between 0 and 127.");return this._convertChannelToArray(channel).forEach(function(ch){
-that.send((wm.MIDI_CHANNEL_MESSAGES.programchange<<4)+(ch-1),[program],that._parseTimeParameter(options.time))}),this},Output.prototype.sendChannelAftertouch=function(pressure,channel,options){var that=this;options=options||{},pressure=parseFloat(pressure),(isNaN(pressure)||0>pressure||pressure>1)&&(pressure=.5);var nPressure=Math.round(127*pressure);return this._convertChannelToArray(channel).forEach(function(ch){that.send((wm.MIDI_CHANNEL_MESSAGES.channelaftertouch<<4)+(ch-1),[nPressure],that._parseTimeParameter(options.time))}),this},Output.prototype.sendPitchBend=function(bend,channel,options){var that=this;if(options=options||{},bend=parseFloat(bend),isNaN(bend)||-1>bend||bend>1)throw new RangeError("Pitch bend value must be between -1 and 1.");var nLevel=Math.round((bend+1)/2*16383),msb=nLevel>>7&127,lsb=127&nLevel;return this._convertChannelToArray(channel).forEach(function(ch){that.send((wm.MIDI_CHANNEL_MESSAGES.pitchbend<<4)+(ch-1),[lsb,msb],that._parseTimeParameter(options.time))}),this},Output.prototype._parseTimeParameter=function(time){var parsed,value;return"string"==typeof time&&"+"===time.substring(0,1)?(parsed=parseFloat(time),parsed&&parsed>0&&(value=wm.time+parsed)):(parsed=parseFloat(time),parsed>wm.time&&(value=parsed)),value},Output.prototype._convertNoteToArray=function(note){var notes=[];return Array.isArray(note)||(note=[note]),note.forEach(function(item){notes.push(wm.guessNoteNumber(item))}),notes},Output.prototype._convertChannelToArray=function(channel){if(("all"===channel||void 0===channel)&&(channel=["all"]),Array.isArray(channel)||(channel=[channel]),channel.indexOf("all")>-1){channel=[];for(var i=1;16>=i;i++)channel.push(i)}return channel.forEach(function(ch){if(!(ch>=1&&16>=ch))throw new RangeError("MIDI channels must be between 1 and 16.")}),channel},Output.prototype._onMidiMessage=function(e){}, true?!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = (function(){return wm}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)):"undefined"!=typeof module&&module.exports?module.exports=wm:scope.WebMidi||(scope.WebMidi=wm)}(this);
-
-/***/ }),
-/* 20 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_soundfont_player__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_soundfont_player__ = __webpack_require__(23);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_soundfont_player___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_soundfont_player__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json__ = __webpack_require__(36);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json__ = __webpack_require__(38);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json__);
 
 
@@ -2610,18 +1310,18 @@ function Soundfont(audioContext) {
   return instruments
 }
 
-/* harmony default export */ __webpack_exports__["a"] = (Soundfont);
+/* harmony default export */ __webpack_exports__["default"] = (Soundfont);
 
 
 /***/ }),
-/* 21 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var load = __webpack_require__(22)
-var player = __webpack_require__(25)
+var load = __webpack_require__(24)
+var player = __webpack_require__(27)
 
 /**
  * Load a soundfont instrument. It returns a promise that resolves to a
@@ -2697,7 +1397,7 @@ function nameToUrl (name, sf, format) {
 
 // In the 1.0.0 release it will be:
 // var Soundfont = {}
-var Soundfont = __webpack_require__(34)
+var Soundfont = __webpack_require__(36)
 Soundfont.instrument = instrument
 Soundfont.nameToUrl = nameToUrl
 
@@ -2706,14 +1406,14 @@ if (typeof window !== 'undefined') window.Soundfont = Soundfont
 
 
 /***/ }),
-/* 22 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var base64 = __webpack_require__(23)
-var fetch = __webpack_require__(24)
+var base64 = __webpack_require__(25)
+var fetch = __webpack_require__(26)
 
 // Given a regex, return a function that test if against a string
 function fromRegex (r) {
@@ -2860,7 +1560,7 @@ if (typeof window !== 'undefined') window.loadAudio = load
 
 
 /***/ }),
-/* 23 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2903,7 +1603,7 @@ module.exports = { decode: decode }
 
 
 /***/ }),
-/* 24 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2934,17 +1634,17 @@ module.exports = function (url, type) {
 
 
 /***/ }),
-/* 25 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var player = __webpack_require__(26)
-var events = __webpack_require__(28)
-var notes = __webpack_require__(29)
-var scheduler = __webpack_require__(31)
-var midi = __webpack_require__(32)
+var player = __webpack_require__(28)
+var events = __webpack_require__(30)
+var notes = __webpack_require__(31)
+var scheduler = __webpack_require__(33)
+var midi = __webpack_require__(34)
 
 function SamplePlayer (ac, source, options) {
   return midi(scheduler(notes(events(player(ac, source, options)))))
@@ -2955,14 +1655,14 @@ if (typeof window !== 'undefined') window.SamplePlayer = SamplePlayer
 
 
 /***/ }),
-/* 26 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* global AudioBuffer */
 
 
-var ADSR = __webpack_require__(27)
+var ADSR = __webpack_require__(29)
 
 var EMPTY = {}
 var DEFAULTS = {
@@ -3174,7 +1874,7 @@ module.exports = SamplePlayer
 
 
 /***/ }),
-/* 27 */
+/* 29 */
 /***/ (function(module, exports) {
 
 module.exports = ADSR
@@ -3340,7 +2040,7 @@ function getValue(start, end, fromTime, toTime, at){
 
 
 /***/ }),
-/* 28 */
+/* 30 */
 /***/ (function(module, exports) {
 
 
@@ -3372,13 +2072,13 @@ function chain (fn1, fn2) {
 
 
 /***/ }),
-/* 29 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var note = __webpack_require__(30)
+var note = __webpack_require__(32)
 var isMidi = function (n) { return n !== null && n !== [] && n >= 0 && n < 129 }
 var toMidi = function (n) { return isMidi(n) ? +n : note.midi(n) }
 
@@ -3415,7 +2115,7 @@ function mapBuffers (buffers, toKey) {
 
 
 /***/ }),
-/* 30 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3571,7 +2271,7 @@ module.exports = parser
 
 
 /***/ }),
-/* 31 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3640,10 +2340,10 @@ module.exports = function (player) {
 
 
 /***/ }),
-/* 32 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var midimessage = __webpack_require__(33)
+var midimessage = __webpack_require__(35)
 
 module.exports = function (player) {
   /**
@@ -3695,20 +2395,20 @@ module.exports = function (player) {
 
 
 /***/ }),
-/* 33 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var require;var require;(function(e){if(true){module.exports=e()}else if(typeof define==="function"&&define.amd){define([],e)}else{var t;if(typeof window!=="undefined"){t=window}else if(typeof global!=="undefined"){t=global}else if(typeof self!=="undefined"){t=self}else{t=this}t.midimessage=e()}})(function(){var e,t,s;return function o(e,t,s){function a(n,i){if(!t[n]){if(!e[n]){var l=typeof require=="function"&&require;if(!i&&l)return require(n,!0);if(r)return r(n,!0);var h=new Error("Cannot find module '"+n+"'");throw h.code="MODULE_NOT_FOUND",h}var c=t[n]={exports:{}};e[n][0].call(c.exports,function(t){var s=e[n][1][t];return a(s?s:t)},c,c.exports,o,e,t,s)}return t[n].exports}var r=typeof require=="function"&&require;for(var n=0;n<s.length;n++)a(s[n]);return a}({1:[function(e,t,s){"use strict";Object.defineProperty(s,"__esModule",{value:true});s["default"]=function(e){function t(e){this._event=e;this._data=e.data;this.receivedTime=e.receivedTime;if(this._data&&this._data.length<2){console.warn("Illegal MIDI message of length",this._data.length);return}this._messageCode=e.data[0]&240;this.channel=e.data[0]&15;switch(this._messageCode){case 128:this.messageType="noteoff";this.key=e.data[1]&127;this.velocity=e.data[2]&127;break;case 144:this.messageType="noteon";this.key=e.data[1]&127;this.velocity=e.data[2]&127;break;case 160:this.messageType="keypressure";this.key=e.data[1]&127;this.pressure=e.data[2]&127;break;case 176:this.messageType="controlchange";this.controllerNumber=e.data[1]&127;this.controllerValue=e.data[2]&127;if(this.controllerNumber===120&&this.controllerValue===0){this.channelModeMessage="allsoundoff"}else if(this.controllerNumber===121){this.channelModeMessage="resetallcontrollers"}else if(this.controllerNumber===122){if(this.controllerValue===0){this.channelModeMessage="localcontroloff"}else{this.channelModeMessage="localcontrolon"}}else if(this.controllerNumber===123&&this.controllerValue===0){this.channelModeMessage="allnotesoff"}else if(this.controllerNumber===124&&this.controllerValue===0){this.channelModeMessage="omnimodeoff"}else if(this.controllerNumber===125&&this.controllerValue===0){this.channelModeMessage="omnimodeon"}else if(this.controllerNumber===126){this.channelModeMessage="monomodeon"}else if(this.controllerNumber===127){this.channelModeMessage="polymodeon"}break;case 192:this.messageType="programchange";this.program=e.data[1];break;case 208:this.messageType="channelpressure";this.pressure=e.data[1]&127;break;case 224:this.messageType="pitchbendchange";var t=e.data[2]&127;var s=e.data[1]&127;this.pitchBend=(t<<8)+s;break}}return new t(e)};t.exports=s["default"]},{}]},{},[1])(1)});
 //# sourceMappingURL=dist/index.js.map
 
 /***/ }),
-/* 34 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var parser = __webpack_require__(35)
+var parser = __webpack_require__(37)
 
 /**
  * Create a Soundfont object
@@ -3849,7 +2549,7 @@ module.exports = Soundfont
 
 
 /***/ }),
-/* 35 */
+/* 37 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -4062,7 +2762,7 @@ function oct (src) { return (parse(src) || {}).oct }
 
 
 /***/ }),
-/* 36 */
+/* 38 */
 /***/ (function(module, exports) {
 
 module.exports = ["accordion","acoustic_bass","acoustic_grand_piano","acoustic_guitar_nylon","acoustic_guitar_steel","agogo","alto_sax","applause","bag_pipe","banjo","baritone_sax","bassoon","bird_tweet","blown_bottle","brass_section","breath_noise","bright_acoustic_piano","celesta","cello","choir_aahs","church_organ","clarinet","clavichord","contrabass","distortion_guitar","drawbar_organ","dulcimer","electric_bass_finger","electric_bass_pick","electric_grand_piano","electric_guitar_clean","electric_guitar_jazz","electric_guitar_muted","electric_piano_1","electric_piano_2","english_horn","fiddle","flute","french_horn","fretless_bass","fx_1_rain","fx_2_soundtrack","fx_3_crystal","fx_4_atmosphere","fx_5_brightness","fx_6_goblins","fx_7_echoes","fx_8_scifi","glockenspiel","guitar_fret_noise","guitar_harmonics","gunshot","harmonica","harpsichord","helicopter","honkytonk_piano","kalimba","koto","lead_1_square","lead_2_sawtooth","lead_3_calliope","lead_4_chiff","lead_5_charang","lead_6_voice","lead_7_fifths","lead_8_bass_lead","marimba","melodic_tom","music_box","muted_trumpet","oboe","ocarina","orchestra_hit","orchestral_harp","overdriven_guitar","pad_1_new_age","pad_2_warm","pad_3_polysynth","pad_4_choir","pad_5_bowed","pad_6_metallic","pad_7_halo","pad_8_sweep","pan_flute","percussive_organ","piccolo","pizzicato_strings","recorder","reed_organ","reverse_cymbal","rock_organ","seashore","shakuhachi","shamisen","shanai","sitar","slap_bass_1","slap_bass_2","soprano_sax","steel_drums","string_ensemble_1","string_ensemble_2","synth_bass_1","synth_bass_2","synth_drum","synth_voice","synthbrass_1","synthbrass_2","synthstrings_1","synthstrings_2","taiko_drum","tango_accordion","telephone_ring","tenor_sax","timpani","tinkle_bell","tremolo_strings","trombone","trumpet","tuba","tubular_bells","vibraphone","viola","violin","voice_oohs","whistle","woodblock","xylophone"]

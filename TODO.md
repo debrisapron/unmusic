@@ -1,7 +1,8 @@
 - Replace um.part with um.assign, a function which applies middlewares to the signal chain
   - All middlewares are a single function
   - Signature is (action, deps, next)
-  - If called with no args, returns deps, id & clock, which are cached using id as key
+  - If called with null action, returns deps, id & clock, which are cached using id as key
+  - deps object should include um itself & the current score
   - Processors (event fx) are applied to the action before calling next with the new action
   - Audio fx are applied by connecting the returned node to an fx node & returning the fx node
   - Convert existing destinations to middlewares

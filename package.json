@@ -1,12 +1,10 @@
 {
   "name": "unmusic",
-  "main": "dist/unmusic",
   "module": "src",
   "version": "0.4.0",
   "description": "",
   "scripts": {
     "test": "jest",
-    "test:watch": "karma start",
     "build": "webpack",
     "build:grammar": "nearleyc src/scoring/umlang/grammar.ne > src/scoring/umlang/grammar.js"
   },
@@ -25,7 +23,10 @@
   },
   "jest": {
     "setupFiles": [
-      "./__setupTests"
+      "./__tests__/__setup"
+    ],
+    "testPathIgnorePatterns": [
+      "/__tests__/__"
     ]
   },
   "babel": {

@@ -1,8 +1,9 @@
 (() => {
 
   // Setup um
-  window.um = window.Unmusic.default()
-  let umPiano = um.instr.sf.acousticGrandPiano()
+  window.um = window.Unmusic.core.default()
+  window.sf = window.Unmusic.soundfont.default(um.audioContext)
+  let umPiano = sf.acousticGrandPiano()
   umPiano.prepare()
 
   // Setup editor
