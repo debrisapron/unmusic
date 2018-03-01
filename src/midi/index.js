@@ -12,13 +12,13 @@ export function out({ device = 0, channel = 'all' } = {}) {
     let note = action.payload.nn || 69
     let cha = action.payload.cha || channel
     let vel = action.payload.vel || 80
-    let deadline = action.meta.deadline
+    let time = action.meta.time
     midiOut.playNote(note, cha, {
+      time,
       velocity: vel,
       rawVelocity: true,
-      time: deadline
     })
-    return (deadline) => midiOut.stopNote(note, cha, { time: deadline })
+    return (time) => midiOut.stopNote(note, cha, { time })
   }
 
   return { prepare, handle }

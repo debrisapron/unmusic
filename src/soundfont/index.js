@@ -22,11 +22,11 @@ function Instrument(name) {
     function handle(action) {
       let note = action.payload.nn || 69
       let gain = ((action.payload.vel || 80) / 127) * (params.gain || 1)
-      let deadline = action.meta.deadline
+      let time = action.meta.time
       let destination = action.meta.destination || _audioContext.destination
-      let node = _player.play(note, deadline, _.merge(params, { gain }))
+      let node = _player.play(note, time, _.merge(params, { gain }))
       node.connect(destination)
-      return (deadline) => node.stop(deadline)
+      return (time) => node.stop(time)
     }
 
     return { prepare, handle }

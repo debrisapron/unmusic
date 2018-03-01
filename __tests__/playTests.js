@@ -3,12 +3,12 @@ import MockSequencer from '../__mocks__/um-sequencer.js'
 describe('play', () => {
 
   test('can play a simple score', async () => {
-    let starts = []
-    let stops = []
+    let startedActions = []
+    let stoppedActions = []
     let dur = 1/4
     let handlers = [(action) => {
-      starts.push([action.meta.deadline, action])
-      return (time) => stops.push([time, action])
+      startedActions.push(action)
+      return (time) => stoppedActions.push(action)
     }]
     let score = { actions: [
       { type: 'NOTE', payload: { time: 0,   nn: 0, dur, handlers } },
@@ -26,10 +26,10 @@ describe('play', () => {
     // Simulate sequencer calling first 6 callbacks
     events.slice(0, 6).forEach((ev) => ev.callback(0))
     um.stop()
-    const notes = starts.map((start) => start[1].payload.nn)
+    const notes = startedActions.map((action) => action.payload.nn)
     const expNotes = [0, 1, 2]
     expect(notes).toMatchObject(expNotes)
-    const stoppedNotes = stops.map((stop) => stop[1].payload.nn)
+    const stoppedNotes = stoppedActions.map((action) => action.payload.nn)
     expect(stoppedNotes).toMatchObject(expNotes)
   })
 

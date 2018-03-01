@@ -61,7 +61,7 @@ function Player(audioContext) {
     let handler = _.get('payload.handlers[0]', action)
     if (!handler) { return }
     let callback = handler.handle || handler
-    return callback(_.merge(action, { meta: { deadline: time } }))
+    return callback(_.merge(action, { meta: { time } }))
   }
 
   function flushHangingNotes() {
