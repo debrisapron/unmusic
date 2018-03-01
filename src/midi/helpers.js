@@ -1,7 +1,10 @@
 import WebMidi from 'webmidi'
 
+let midiEnabled
+
 export function enable() {
-  return new Promise((resolve, reject) => {
+  if (midiEnabled) { return midiEnabled }
+  midiEnabled = new Promise((resolve, reject) => {
     WebMidi.enable((err) => {
       if (err) { reject(err) }
       resolve()
@@ -16,6 +19,7 @@ export function enable() {
       console.log('MIDI could not be enabled.')
       console.error(err)
     })
+  return midiEnabled
 }
 
 export function MidiOut(device) {

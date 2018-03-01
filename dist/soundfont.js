@@ -1276,41 +1276,41 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
-function Instrument(audioContext, name) {
-  let player
+function Instrument(name) {
+  let _audioContext
+  let _player
 
-  async function prepare() {
-    player = await Object(__WEBPACK_IMPORTED_MODULE_1_soundfont_player__["instrument"])(audioContext, name)
+  async function prepare({ audioContext }) {
+    // Make sure subsequent invocations of this function don't reload font.
+    if (_player) { return }
+    _player = '__LOADING__'
+    _audioContext = audioContext
+    _player = await Object(__WEBPACK_IMPORTED_MODULE_1_soundfont_player__["instrument"])(audioContext, name)
 
     // Override player's destination, we will do the patching ourselves.
-    player.out.disconnect(audioContext.destination)
+    _player.out.disconnect(audioContext.destination)
   }
 
   return (params = {}) => {
 
-    function start(action) {
+    function handle(action) {
       let note = action.payload.nn || 69
       let gain = ((action.payload.vel || 80) / 127) * (params.gain || 1)
       let deadline = action.meta.deadline
-      let destination = action.meta.destination || audioContext.destination
-      let node = player.play(note, deadline, __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(params, { gain }))
+      let destination = action.meta.destination || _audioContext.destination
+      let node = _player.play(note, deadline, __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(params, { gain }))
       node.connect(destination)
       return (deadline) => node.stop(deadline)
     }
 
-    return { prepare, start, id: `sf-${name}` }
+    return { prepare, handle }
   }
 }
 
-function Soundfont(audioContext) {
-  let instruments = {}
-  __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default.a.forEach((instrName) => {
-    instruments[__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.camelCase(instrName)] = Instrument(audioContext, instrName)
-  })
-  return instruments
-}
+let soundfont = {}
+__WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default.a.forEach((name) => soundfont[__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.camelCase(name)] = Instrument(name))
 
-/* harmony default export */ __webpack_exports__["default"] = (Soundfont);
+/* harmony default export */ __webpack_exports__["default"] = (soundfont);
 
 
 /***/ }),

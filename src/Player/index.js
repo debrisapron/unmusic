@@ -1,8 +1,6 @@
 import _ from 'lodash/fp'
 import Sequencer from 'um-sequencer'
 
-let depsCache = {}
-
 function Player(audioContext) {
   let sequencer = Sequencer(() => audioContext.currentTime)
   let stopCbs = {}
@@ -60,8 +58,10 @@ function Player(audioContext) {
   }
 
   function dispatch(time, action) {
-    let callback = action.payload.callback
-    return callback && callback(_.merge(action, { meta: { deadline: time } }))
+    let handler = _.get('payload.handlers[0]', action)
+    if (!handler) { return }
+    let callback = handler.handle || handler
+    return callback(_.merge(action, { meta: { deadline: time } }))
   }
 
   function flushHangingNotes() {
@@ -75,9 +75,16 @@ function Player(audioContext) {
   //////////////////////////////////////////////////////////////////////////////
 
   function prepare(score) {
-    let promises = Object.keys(score.dependencies || {}).map((k) => {
-      return depsCache[k] || (depsCache[k] = score.dependencies[k]())
-    })
+    let handlers = _.uniq(_.flatten(
+      score.actions.map((action) => {
+        return (action.payload && action.payload.handlers) || []
+      })
+    ))
+    let promises = _.compact(
+      handlers.map(({ prepare }) => {
+        return prepare && prepare({ audioContext, score })
+      })
+    )
     return Promise.all(promises)
   }
 

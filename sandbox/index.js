@@ -2,9 +2,9 @@
 
   // Setup um
   window.um = window.Unmusic.core.default()
-  window.sf = window.Unmusic.soundfont.default(um.audioContext)
+  window.sf = window.Unmusic.soundfont.default
   let umPiano = sf.acousticGrandPiano()
-  umPiano.prepare()
+  umPiano.prepare({ audioContext: um.audioContext })
 
   // Setup editor
   let DEFAULT_CODE = `um.play(
@@ -78,9 +78,13 @@
 
   function resetQhListeners() {
     let heldKeys = {}
+    // TODO Convert text note to midi note.
     qh.keyDown = (note) => {
       if (!qhHotkeysActive) { activateQhHotkeys() }
-      heldKeys[note] = umPiano.start({ payload: { nn: note, vel: 127 }, meta: { deadline: 0 } })
+      heldKeys[note] = umPiano.handle({
+        payload: { nn: note, vel: 127 },
+        meta: { deadline: 0 }
+      })
     }
     qh.keyUp = (note) => {
       heldKeys[note](0)

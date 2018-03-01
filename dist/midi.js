@@ -84,28 +84,28 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__helpers__ = __webpack_require__(20);
 
 
-function out({ dev = 0, cha = 'all' } = {}) {
+function out({ device = 0, channel = 'all' } = {}) {
   let midiOut
 
-  function prepare() {
-    return __WEBPACK_IMPORTED_MODULE_0__helpers__["b" /* enable */]()
+  async function prepare() {
+    await __WEBPACK_IMPORTED_MODULE_0__helpers__["b" /* enable */]()
+    midiOut = __WEBPACK_IMPORTED_MODULE_0__helpers__["a" /* MidiOut */](device)
   }
 
   function handle(action) {
-    midiOut = midiOut || __WEBPACK_IMPORTED_MODULE_0__helpers__["a" /* MidiOut */](dev)
     let note = action.payload.nn || 69
-    let channel = action.payload.cha || cha
-    let velocity = action.payload.vel || 80
+    let cha = action.payload.cha || channel
+    let vel = action.payload.vel || 80
     let deadline = action.meta.deadline
-    midiOut.playNote(note, channel, {
-      velocity,
+    midiOut.playNote(note, cha, {
+      velocity: vel,
       rawVelocity: true,
       time: deadline
     })
-    return (deadline) => midiOut.stopNote(note, channel, { time: deadline })
+    return (deadline) => midiOut.stopNote(note, cha, { time: deadline })
   }
 
-  return { prepare, handle, id: 'midi' }
+  return { prepare, handle }
 }
 
 
@@ -121,8 +121,11 @@ function out({ dev = 0, cha = 'all' } = {}) {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_webmidi___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_webmidi__);
 
 
+let midiEnabled
+
 function enable() {
-  return new Promise((resolve, reject) => {
+  if (midiEnabled) { return midiEnabled }
+  midiEnabled = new Promise((resolve, reject) => {
     __WEBPACK_IMPORTED_MODULE_0_webmidi___default.a.enable((err) => {
       if (err) { reject(err) }
       resolve()
@@ -137,6 +140,7 @@ function enable() {
       console.log('MIDI could not be enabled.')
       console.error(err)
     })
+  return midiEnabled
 }
 
 function MidiOut(device) {

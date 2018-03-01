@@ -6,15 +6,15 @@ describe('play', () => {
     let starts = []
     let stops = []
     let dur = 1/4
-    let callback = (action) => {
+    let handlers = [(action) => {
       starts.push([action.meta.deadline, action])
       return (time) => stops.push([time, action])
-    }
+    }]
     let score = { actions: [
-      { type: 'NOTE', payload: { time: 0,   nn: 0, dur, callback } },
-      { type: 'NOTE', payload: { time: 1/4, nn: 1, dur, callback } },
-      { type: 'NOTE', payload: { time: 1/2, nn: 2, dur, callback } },
-      { type: 'NOTE', payload: { time: 3/4, nn: 3, dur, callback } }
+      { type: 'NOTE', payload: { time: 0,   nn: 0, dur, handlers } },
+      { type: 'NOTE', payload: { time: 1/4, nn: 1, dur, handlers } },
+      { type: 'NOTE', payload: { time: 1/2, nn: 2, dur, handlers } },
+      { type: 'NOTE', payload: { time: 3/4, nn: 3, dur, handlers } }
     ], tempo: 130 }
     await um.play(score)
     let [events, { tempo, loopLength }] = MockSequencer.__args.playArgs
@@ -32,4 +32,6 @@ describe('play', () => {
     const stoppedNotes = stops.map((stop) => stop[1].payload.nn)
     expect(stoppedNotes).toMatchObject(expNotes)
   })
+
+  // TODO Test handlers with prepare.
 })
