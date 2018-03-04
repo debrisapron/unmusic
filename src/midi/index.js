@@ -1,6 +1,6 @@
 import * as helpers from './helpers'
 
-export function out({ device = 0, channel = 'all' } = {}) {
+export function Out({ device = 0, channel = 'all' } = {}) {
   let midiOut
 
   async function prepare() {

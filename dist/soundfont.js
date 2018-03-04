@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 22);
+/******/ 	return __webpack_require__(__webpack_require__.s = 24);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -1261,30 +1261,30 @@ module.exports = {};
 /* 19 */,
 /* 20 */,
 /* 21 */,
-/* 22 */
+/* 22 */,
+/* 23 */,
+/* 24 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_soundfont_player__ = __webpack_require__(23);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_soundfont_player__ = __webpack_require__(25);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_soundfont_player___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_soundfont_player__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json__ = __webpack_require__(38);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json__ = __webpack_require__(40);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json__);
 
 
 
 
 function Instrument(name) {
-  let _audioContext
   let _player
 
   async function prepare({ audioContext }) {
     // Make sure subsequent invocations of this function don't reload font.
     if (_player) { return }
     _player = '__LOADING__'
-    _audioContext = audioContext
     _player = await Object(__WEBPACK_IMPORTED_MODULE_1_soundfont_player__["instrument"])(audioContext, name)
 
     // Override player's destination, we will do the patching ourselves.
@@ -1296,11 +1296,12 @@ function Instrument(name) {
     function handle(action) {
       let note = action.payload.nn || 69
       let gain = ((action.payload.vel || 80) / 127) * (params.gain || 1)
-      let deadline = action.meta.deadline
-      let destination = action.meta.destination || _audioContext.destination
-      let node = _player.play(note, deadline, __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(params, { gain }))
-      node.connect(destination)
-      return (deadline) => node.stop(deadline)
+      let time = action.meta.time
+      let node = _player.play(note, time, __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(params, { gain }))
+      return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(action, { meta: {
+        stopCbs: [(time) => node.stop(time)],
+        outputNode: node
+      } })
     }
 
     return { prepare, handle }
@@ -1308,20 +1309,22 @@ function Instrument(name) {
 }
 
 let soundfont = {}
-__WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default.a.forEach((name) => soundfont[__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.camelCase(name)] = Instrument(name))
+__WEBPACK_IMPORTED_MODULE_2_soundfont_player_musyngkite_json___default.a.forEach((name) => {
+  soundfont[__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.upperFirst(__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.camelCase(name))] = Instrument(name)
+})
 
 /* harmony default export */ __webpack_exports__["default"] = (soundfont);
 
 
 /***/ }),
-/* 23 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var load = __webpack_require__(24)
-var player = __webpack_require__(27)
+var load = __webpack_require__(26)
+var player = __webpack_require__(29)
 
 /**
  * Load a soundfont instrument. It returns a promise that resolves to a
@@ -1397,7 +1400,7 @@ function nameToUrl (name, sf, format) {
 
 // In the 1.0.0 release it will be:
 // var Soundfont = {}
-var Soundfont = __webpack_require__(36)
+var Soundfont = __webpack_require__(38)
 Soundfont.instrument = instrument
 Soundfont.nameToUrl = nameToUrl
 
@@ -1406,14 +1409,14 @@ if (typeof window !== 'undefined') window.Soundfont = Soundfont
 
 
 /***/ }),
-/* 24 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var base64 = __webpack_require__(25)
-var fetch = __webpack_require__(26)
+var base64 = __webpack_require__(27)
+var fetch = __webpack_require__(28)
 
 // Given a regex, return a function that test if against a string
 function fromRegex (r) {
@@ -1560,7 +1563,7 @@ if (typeof window !== 'undefined') window.loadAudio = load
 
 
 /***/ }),
-/* 25 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1603,7 +1606,7 @@ module.exports = { decode: decode }
 
 
 /***/ }),
-/* 26 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1634,17 +1637,17 @@ module.exports = function (url, type) {
 
 
 /***/ }),
-/* 27 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var player = __webpack_require__(28)
-var events = __webpack_require__(30)
-var notes = __webpack_require__(31)
-var scheduler = __webpack_require__(33)
-var midi = __webpack_require__(34)
+var player = __webpack_require__(30)
+var events = __webpack_require__(32)
+var notes = __webpack_require__(33)
+var scheduler = __webpack_require__(35)
+var midi = __webpack_require__(36)
 
 function SamplePlayer (ac, source, options) {
   return midi(scheduler(notes(events(player(ac, source, options)))))
@@ -1655,14 +1658,14 @@ if (typeof window !== 'undefined') window.SamplePlayer = SamplePlayer
 
 
 /***/ }),
-/* 28 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* global AudioBuffer */
 
 
-var ADSR = __webpack_require__(29)
+var ADSR = __webpack_require__(31)
 
 var EMPTY = {}
 var DEFAULTS = {
@@ -1874,7 +1877,7 @@ module.exports = SamplePlayer
 
 
 /***/ }),
-/* 29 */
+/* 31 */
 /***/ (function(module, exports) {
 
 module.exports = ADSR
@@ -2040,7 +2043,7 @@ function getValue(start, end, fromTime, toTime, at){
 
 
 /***/ }),
-/* 30 */
+/* 32 */
 /***/ (function(module, exports) {
 
 
@@ -2072,13 +2075,13 @@ function chain (fn1, fn2) {
 
 
 /***/ }),
-/* 31 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var note = __webpack_require__(32)
+var note = __webpack_require__(34)
 var isMidi = function (n) { return n !== null && n !== [] && n >= 0 && n < 129 }
 var toMidi = function (n) { return isMidi(n) ? +n : note.midi(n) }
 
@@ -2115,7 +2118,7 @@ function mapBuffers (buffers, toKey) {
 
 
 /***/ }),
-/* 32 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2271,7 +2274,7 @@ module.exports = parser
 
 
 /***/ }),
-/* 33 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2340,10 +2343,10 @@ module.exports = function (player) {
 
 
 /***/ }),
-/* 34 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var midimessage = __webpack_require__(35)
+var midimessage = __webpack_require__(37)
 
 module.exports = function (player) {
   /**
@@ -2395,20 +2398,20 @@ module.exports = function (player) {
 
 
 /***/ }),
-/* 35 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var require;var require;(function(e){if(true){module.exports=e()}else if(typeof define==="function"&&define.amd){define([],e)}else{var t;if(typeof window!=="undefined"){t=window}else if(typeof global!=="undefined"){t=global}else if(typeof self!=="undefined"){t=self}else{t=this}t.midimessage=e()}})(function(){var e,t,s;return function o(e,t,s){function a(n,i){if(!t[n]){if(!e[n]){var l=typeof require=="function"&&require;if(!i&&l)return require(n,!0);if(r)return r(n,!0);var h=new Error("Cannot find module '"+n+"'");throw h.code="MODULE_NOT_FOUND",h}var c=t[n]={exports:{}};e[n][0].call(c.exports,function(t){var s=e[n][1][t];return a(s?s:t)},c,c.exports,o,e,t,s)}return t[n].exports}var r=typeof require=="function"&&require;for(var n=0;n<s.length;n++)a(s[n]);return a}({1:[function(e,t,s){"use strict";Object.defineProperty(s,"__esModule",{value:true});s["default"]=function(e){function t(e){this._event=e;this._data=e.data;this.receivedTime=e.receivedTime;if(this._data&&this._data.length<2){console.warn("Illegal MIDI message of length",this._data.length);return}this._messageCode=e.data[0]&240;this.channel=e.data[0]&15;switch(this._messageCode){case 128:this.messageType="noteoff";this.key=e.data[1]&127;this.velocity=e.data[2]&127;break;case 144:this.messageType="noteon";this.key=e.data[1]&127;this.velocity=e.data[2]&127;break;case 160:this.messageType="keypressure";this.key=e.data[1]&127;this.pressure=e.data[2]&127;break;case 176:this.messageType="controlchange";this.controllerNumber=e.data[1]&127;this.controllerValue=e.data[2]&127;if(this.controllerNumber===120&&this.controllerValue===0){this.channelModeMessage="allsoundoff"}else if(this.controllerNumber===121){this.channelModeMessage="resetallcontrollers"}else if(this.controllerNumber===122){if(this.controllerValue===0){this.channelModeMessage="localcontroloff"}else{this.channelModeMessage="localcontrolon"}}else if(this.controllerNumber===123&&this.controllerValue===0){this.channelModeMessage="allnotesoff"}else if(this.controllerNumber===124&&this.controllerValue===0){this.channelModeMessage="omnimodeoff"}else if(this.controllerNumber===125&&this.controllerValue===0){this.channelModeMessage="omnimodeon"}else if(this.controllerNumber===126){this.channelModeMessage="monomodeon"}else if(this.controllerNumber===127){this.channelModeMessage="polymodeon"}break;case 192:this.messageType="programchange";this.program=e.data[1];break;case 208:this.messageType="channelpressure";this.pressure=e.data[1]&127;break;case 224:this.messageType="pitchbendchange";var t=e.data[2]&127;var s=e.data[1]&127;this.pitchBend=(t<<8)+s;break}}return new t(e)};t.exports=s["default"]},{}]},{},[1])(1)});
 //# sourceMappingURL=dist/index.js.map
 
 /***/ }),
-/* 36 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var parser = __webpack_require__(37)
+var parser = __webpack_require__(39)
 
 /**
  * Create a Soundfont object
@@ -2549,7 +2552,7 @@ module.exports = Soundfont
 
 
 /***/ }),
-/* 37 */
+/* 39 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -2762,7 +2765,7 @@ function oct (src) { return (parse(src) || {}).oct }
 
 
 /***/ }),
-/* 38 */
+/* 40 */
 /***/ (function(module, exports) {
 
 module.exports = ["accordion","acoustic_bass","acoustic_grand_piano","acoustic_guitar_nylon","acoustic_guitar_steel","agogo","alto_sax","applause","bag_pipe","banjo","baritone_sax","bassoon","bird_tweet","blown_bottle","brass_section","breath_noise","bright_acoustic_piano","celesta","cello","choir_aahs","church_organ","clarinet","clavichord","contrabass","distortion_guitar","drawbar_organ","dulcimer","electric_bass_finger","electric_bass_pick","electric_grand_piano","electric_guitar_clean","electric_guitar_jazz","electric_guitar_muted","electric_piano_1","electric_piano_2","english_horn","fiddle","flute","french_horn","fretless_bass","fx_1_rain","fx_2_soundtrack","fx_3_crystal","fx_4_atmosphere","fx_5_brightness","fx_6_goblins","fx_7_echoes","fx_8_scifi","glockenspiel","guitar_fret_noise","guitar_harmonics","gunshot","harmonica","harpsichord","helicopter","honkytonk_piano","kalimba","koto","lead_1_square","lead_2_sawtooth","lead_3_calliope","lead_4_chiff","lead_5_charang","lead_6_voice","lead_7_fifths","lead_8_bass_lead","marimba","melodic_tom","music_box","muted_trumpet","oboe","ocarina","orchestra_hit","orchestral_harp","overdriven_guitar","pad_1_new_age","pad_2_warm","pad_3_polysynth","pad_4_choir","pad_5_bowed","pad_6_metallic","pad_7_halo","pad_8_sweep","pan_flute","percussive_organ","piccolo","pizzicato_strings","recorder","reed_organ","reverse_cymbal","rock_organ","seashore","shakuhachi","shamisen","shanai","sitar","slap_bass_1","slap_bass_2","soprano_sax","steel_drums","string_ensemble_1","string_ensemble_2","synth_bass_1","synth_bass_2","synth_drum","synth_voice","synthbrass_1","synthbrass_2","synthstrings_1","synthstrings_2","taiko_drum","tango_accordion","telephone_ring","tenor_sax","timpani","tinkle_bell","tremolo_strings","trombone","trumpet","tuba","tubular_bells","vibraphone","viola","violin","voice_oohs","whistle","woodblock","xylophone"]

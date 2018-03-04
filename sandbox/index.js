@@ -3,7 +3,7 @@
   // Setup um
   window.um = window.Unmusic.core.default()
   window.sf = window.Unmusic.soundfont.default
-  let umPiano = sf.acousticGrandPiano()
+  let umPiano = sf.AcousticGrandPiano()
   umPiano.prepare({ audioContext: um.audioContext })
 
   // Setup editor
@@ -84,7 +84,7 @@
       heldKeys[note] = umPiano.handle({
         payload: { nn: note, vel: 127 },
         meta: { deadline: 0 }
-      })
+      }).meta.stopCbs[0]
     }
     qh.keyUp = (note) => {
       heldKeys[note](0)

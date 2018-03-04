@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 8);
+/******/ 	return __webpack_require__(__webpack_require__.s = 10);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -1257,7 +1257,7 @@ module.exports = {};
 /* harmony export (immutable) */ __webpack_exports__["a"] = clean;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__umlang_eval__ = __webpack_require__(14);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__umlang_eval__ = __webpack_require__(8);
 
 
 
@@ -1311,11 +1311,228 @@ function clean(actions) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nearley__ = __webpack_require__(14);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nearley___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_nearley__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__grammar__ = __webpack_require__(15);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__grammar___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2__grammar__);
+
+
+
+
+let DEFAULT_DURATION = 1/4
+let PARAM_ALIASES = {
+  d: 'dur',
+  duration: 'dur',
+  v: 'vel',
+  velocity: 'vel'
+}
+let MIDDLE_A_NN = 69
+let PITCH_CLASSES = {
+  'C': -9, 'C♯': -8, 'D♭': -8, 'D': -7,
+  'D♯': -6, 'E♭': -6, 'E': -5, 'F': -4,
+  'F♯': -3, 'G♭': -3, 'G': -2, 'G♯': -1,
+  'A♭': -1, 'A': 0, 'A♯': 1, 'B♭': 1, 'B': 2
+}
+
+function noteActionFrom(instruction) {
+  let nn = nnFrom(instruction)
+  let payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.omit(['oct'], instruction.context)
+  payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('nn', nn, payload)
+  return { payload, type: 'NOTE' }
+}
+
+function nnFrom(instruction) {
+  switch(instruction.data.type) {
+    case 'PITCH_CLASS':
+      let value = instruction.data.value.replace('#', '♯').replace('b', '♭')
+      return (instruction.context.oct * 12) + MIDDLE_A_NN + PITCH_CLASSES[value]
+    case 'RELATIVE':
+      return (instruction.context.oct * 12) + MIDDLE_A_NN + instruction.data.value
+    case 'MIDI':
+      return instruction.data.value
+  }
+  throw new Error('This note type is unknown to the score generator')
+}
+
+function trigActionFrom(instruction) {
+  let payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.omit(['oct'], instruction.context)
+  payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('name', instruction.data, payload)
+  return { payload, type: 'TRIG' }
+}
+
+function restActionFrom(instruction) {
+  return { type: 'NOOP', payload: { time: instruction.context.time } }
+}
+
+function generateScore(instructions) {
+  return instructions.map((instruction) => {
+    switch(instruction.type) {
+      case 'NOTE': return noteActionFrom(instruction)
+      case 'TRIG': return trigActionFrom(instruction)
+      case 'REST': return restActionFrom(instruction)
+    }
+    throw new Error('This instruction type is unknown to the score generator')
+  })
+}
+
+function optimizeIntermediate(instructions) {
+  let lastIndex = instructions.length - 1
+  instructions = instructions.filter(({ type }, i) => type !== 'REST' || i === lastIndex)
+  let last = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.last(instructions)
+  if (last.type === 'REST') {
+    // HACK all aboard for mutation central
+    last.context.time = last.context.time + last.context.dur
+    delete last.context.dur
+  }
+  return instructions
+}
+
+function normalizeParamName(param) {
+  return PARAM_ALIASES[param] || param
+}
+
+function generateIntermediate(parsings) {
+  let context = { time: 0, oct: 0, dur: DEFAULT_DURATION }
+  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.compact(parsings.map((parsing) => {
+    let [type, data] = parsing
+    if (type === 'SETTING') {
+      context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set(normalizeParamName(data.param), data.value, context)
+      return null
+    }
+    if (type === 'OCTAVE_CHANGE') {
+      context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('oct', context.oct + data, context)
+      return null
+    }
+    let instruction = { context, data, type }
+    context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('time', context.time + context.dur, context)
+    return instruction
+  }))
+}
+
+function parse(s) {
+  let parser = new __WEBPACK_IMPORTED_MODULE_1_nearley___default.a.Parser(__WEBPACK_IMPORTED_MODULE_2__grammar___default.a.ParserRules, __WEBPACK_IMPORTED_MODULE_2__grammar___default.a.ParserStart)
+  parser.feed(s)
+  let parsings = parser.results
+  if (parsings.length > 1) {
+    throw new Error('Syntax error in sequence: combination is ambiguous')
+  }
+  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.compact(parsings[0])
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+function umlangEval(s) {
+  s = (s || '').trim()
+  return generateScore(optimizeIntermediate(generateIntermediate(parse(s))))
+}
+
+/* harmony default export */ __webpack_exports__["a"] = (umlangEval);
+
+
+/***/ }),
+/* 9 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash__ = __webpack_require__(9);
+/* harmony export (immutable) */ __webpack_exports__["wrapScoringFunction"] = wrapScoringFunction;
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "config", function() { return config; });
+/* harmony export (immutable) */ __webpack_exports__["flow"] = flow;
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "loop", function() { return loop; });
+/* harmony export (immutable) */ __webpack_exports__["mix"] = mix;
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "offset", function() { return offset; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "arrange", function() { return arrange; });
+/* harmony export (immutable) */ __webpack_exports__["seq"] = seq;
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "tempo", function() { return tempo; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "tran", function() { return tran; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__concatScores__ = __webpack_require__(16);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__getScore__ = __webpack_require__(17);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__mixScores__ = __webpack_require__(18);
+
+
+
+
+
+function wrapScoringFunction(fn) {
+  return fn.length === 1
+    ? (thing) => fn(Object(__WEBPACK_IMPORTED_MODULE_2__getScore__["a" /* default */])(thing))
+    : __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["curry"]((options, thing) => fn(options, Object(__WEBPACK_IMPORTED_MODULE_2__getScore__["a" /* default */])(thing)))
+}
+
+let config = wrapScoringFunction((opts, score) => {
+  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('config', __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["merge"](score.config || {}, opts), score)
+})
+
+function flow(...args) {
+  if (__WEBPACK_IMPORTED_MODULE_0_lodash_fp__["isFunction"](args[0])) { return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["pipe"](args) }
+  let [thing, ...fns] = args
+  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["pipe"](fns)(Object(__WEBPACK_IMPORTED_MODULE_2__getScore__["a" /* default */])(thing))
+}
+
+let loop = wrapScoringFunction((score) => {
+  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('loop', true, score)
+})
+
+function mix(...args) {
+  return Object(__WEBPACK_IMPORTED_MODULE_3__mixScores__["a" /* default */])(args)
+}
+
+let offset = wrapScoringFunction((amount, score) => {
+  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["cloneDeep"](score)
+  score.actions.forEach(({ payload, type }) => {
+    if (type === 'NOOP') { return }
+    payload.offset = amount
+  })
+  return score
+})
+
+let arrange = wrapScoringFunction((handler, score) => {
+  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["cloneDeep"](score)
+  score.actions.forEach(({ payload, type }) => {
+    if (type === 'NOOP') { return }
+    payload.handlers = payload.handlers || []
+    payload.handlers.push(handler)
+  })
+  return score
+})
+
+function seq(...args) {
+  let [fns, scores] = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["partition"](__WEBPACK_IMPORTED_MODULE_0_lodash_fp__["isFunction"], args)
+  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["pipe"](fns)(Object(__WEBPACK_IMPORTED_MODULE_1__concatScores__["a" /* default */])(scores))
+}
+
+let tempo = wrapScoringFunction((bpm, score) => {
+  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('tempo', bpm, score)
+})
+
+let tran = wrapScoringFunction((amount, score) => {
+  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["cloneDeep"](score)
+  score.actions.forEach(({ payload }) => {
+    if (payload.nn == null) { return }
+    payload.nn = payload.nn + amount
+  })
+  return score
+})
+
+
+/***/ }),
+/* 10 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash__ = __webpack_require__(11);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Player__ = __webpack_require__(10);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__core__ = __webpack_require__(12);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Player__ = __webpack_require__(12);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__core_umlang_eval__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__core__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__processors__ = __webpack_require__(19);
+
+
 
 
 
@@ -1329,11 +1546,14 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
   let player = Object(__WEBPACK_IMPORTED_MODULE_1__Player__["a" /* default */])(audioContext)
 
   // um itself is the seq function
-  let um = __WEBPACK_IMPORTED_MODULE_2__core__["seq"]
-  Object(__WEBPACK_IMPORTED_MODULE_0_lodash__["merge"])(um, __WEBPACK_IMPORTED_MODULE_2__core__)
+  let um = __WEBPACK_IMPORTED_MODULE_3__core__["seq"]
+  Object(__WEBPACK_IMPORTED_MODULE_0_lodash__["merge"])(um, __WEBPACK_IMPORTED_MODULE_3__core__)
   um.audioContext = audioContext
+  um.eval = __WEBPACK_IMPORTED_MODULE_2__core_umlang_eval__["a" /* default */]
   um.play = player.play
+  um.playOnce = player.playOnce
   um.stop = player.stop
+  um.proc = __WEBPACK_IMPORTED_MODULE_4__processors__
 
   return um
 }
@@ -1342,7 +1562,7 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
 
 
 /***/ }),
-/* 9 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -18447,13 +18667,13 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(2)(module)))
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_um_sequencer__ = __webpack_require__(11);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_um_sequencer__ = __webpack_require__(13);
 
 
 
@@ -18513,11 +18733,27 @@ function Player(audioContext) {
     stopCb(time)
   }
 
+  // TODO Move the handler composition stuff into eventsFrom.
   function dispatch(time, action) {
-    let handler = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.get('payload.handlers[0]', action)
-    if (!handler) { return }
-    let callback = handler.handle || handler
-    return callback(__WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(action, { meta: { deadline: time } }))
+    let handlers = action.payload && action.payload.handlers
+    if (!(handlers && handlers.length)) { return }
+    let callbacks = handlers.map((handler) => handler.handle || handler)
+    action = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('meta.time', time, action)
+
+    // Do all the things.
+    let completedAction = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.pipe(callbacks)(action)
+
+    // Connect action's WAA output node (if returned).
+    let outputNode = completedAction.meta.outputNode
+    if (outputNode) {
+      outputNode.connect(audioContext.destination)
+    }
+
+    // Create stop callback which calls all action's stop callbacks (if returned).
+    let actionStopCbs = completedAction.meta.stopCbs
+    if (actionStopCbs && actionStopCbs.length) {
+      return (stopTime) => actionStopCbs.forEach((cb) => cb(stopTime))
+    }
   }
 
   function flushHangingNotes() {
@@ -18544,8 +18780,8 @@ function Player(audioContext) {
     return Promise.all(promises)
   }
 
-  async function play(score) {
-    let loopLength = lengthOf(score)
+  async function play(score, { loop = true } = {}) {
+    let loopLength = loop && lengthOf(score)
     let events = eventsFrom(score)
     let tempo = score.tempo || 120
     await prepare(score)
@@ -18553,19 +18789,23 @@ function Player(audioContext) {
     sequencer.play(events, { tempo, loopLength })
   }
 
+  function playOnce(score) {
+    play(score, { loop: false })
+  }
+
   function stop() {
     sequencer.stop()
     flushHangingNotes()
   }
 
-  return { play, stop, prepare }
+  return { play, playOnce, stop, prepare }
 }
 
 /* harmony default export */ __webpack_exports__["a"] = (Player);
 
 
 /***/ }),
-/* 11 */
+/* 13 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18733,240 +18973,7 @@ function Sequencer(getCurrentTime, options = {}) {
 
 
 /***/ }),
-/* 12 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony export (immutable) */ __webpack_exports__["wrapScoringFunction"] = wrapScoringFunction;
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "config", function() { return config; });
-/* harmony export (immutable) */ __webpack_exports__["flow"] = flow;
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "loop", function() { return loop; });
-/* harmony export (immutable) */ __webpack_exports__["mix"] = mix;
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "offset", function() { return offset; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "arrange", function() { return arrange; });
-/* harmony export (immutable) */ __webpack_exports__["seq"] = seq;
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "tempo", function() { return tempo; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "tran", function() { return tran; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__concatScores__ = __webpack_require__(13);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__getScore__ = __webpack_require__(17);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__mixScores__ = __webpack_require__(18);
-
-
-
-
-
-function wrapScoringFunction(fn) {
-  return fn.length === 1
-    ? (thing) => fn(Object(__WEBPACK_IMPORTED_MODULE_2__getScore__["a" /* default */])(thing))
-    : __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["curry"]((options, thing) => fn(options, Object(__WEBPACK_IMPORTED_MODULE_2__getScore__["a" /* default */])(thing)))
-}
-
-let config = wrapScoringFunction((opts, score) => {
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('config', __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["merge"](score.config || {}, opts), score)
-})
-
-function flow(...args) {
-  if (__WEBPACK_IMPORTED_MODULE_0_lodash_fp__["isFunction"](args[0])) { return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["pipe"](args) }
-  let [thing, ...fns] = args
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["pipe"](fns)(Object(__WEBPACK_IMPORTED_MODULE_2__getScore__["a" /* default */])(thing))
-}
-
-let loop = wrapScoringFunction((score) => {
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('loop', true, score)
-})
-
-function mix(...args) {
-  return Object(__WEBPACK_IMPORTED_MODULE_3__mixScores__["a" /* default */])(args)
-}
-
-let offset = wrapScoringFunction((amount, score) => {
-  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["cloneDeep"](score)
-  score.actions.forEach(({ payload, type }) => {
-    if (type === 'NOOP') { return }
-    payload.offset = amount
-  })
-  return score
-})
-
-let arrange = wrapScoringFunction((handler, score) => {
-  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["cloneDeep"](score)
-  score.actions.forEach(({ payload, type }) => {
-    if (type === 'NOOP') { return }
-    payload.handlers = payload.handlers || []
-    payload.handlers.push(handler)
-  })
-  return score
-})
-
-function seq(...args) {
-  let [fns, scores] = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["partition"](__WEBPACK_IMPORTED_MODULE_0_lodash_fp__["isFunction"], args)
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["pipe"](fns)(Object(__WEBPACK_IMPORTED_MODULE_1__concatScores__["a" /* default */])(scores))
-}
-
-let tempo = wrapScoringFunction((bpm, score) => {
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('tempo', bpm, score)
-})
-
-let tran = wrapScoringFunction((amount, score) => {
-  score = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["cloneDeep"](score)
-  score.actions.forEach(({ payload }) => {
-    if (payload.nn == null) { return }
-    payload.nn = payload.nn + amount
-  })
-  return score
-})
-
-
-/***/ }),
-/* 13 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__actionHelpers__ = __webpack_require__(7);
-
-
-function concatScores(scores) {
-  let actionLists = scores.map(__WEBPACK_IMPORTED_MODULE_0__actionHelpers__["c" /* get */])
-  return __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["e" /* wrap */](
-    __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["a" /* clean */](
-      __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["b" /* concat */](actionLists)
-    )
-  )
-}
-
-/* harmony default export */ __webpack_exports__["a"] = (concatScores);
-
-
-/***/ }),
 /* 14 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nearley__ = __webpack_require__(15);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nearley___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_nearley__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__grammar__ = __webpack_require__(16);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__grammar___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2__grammar__);
-
-
-
-
-let DEFAULT_DURATION = 1/4
-let PARAM_ALIASES = {
-  d: 'dur',
-  duration: 'dur',
-  v: 'vel',
-  velocity: 'vel'
-}
-let MIDDLE_A_NN = 69
-let PITCH_CLASSES = {
-  'C': -9, 'C♯': -8, 'D♭': -8, 'D': -7,
-  'D♯': -6, 'E♭': -6, 'E': -5, 'F': -4,
-  'F♯': -3, 'G♭': -3, 'G': -2, 'G♯': -1,
-  'A♭': -1, 'A': 0, 'A♯': 1, 'B♭': 1, 'B': 2
-}
-
-function noteActionFrom(instruction) {
-  let nn = nnFrom(instruction)
-  let payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.omit(['oct'], instruction.context)
-  payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('nn', nn, payload)
-  return { payload, type: 'NOTE' }
-}
-
-function nnFrom(instruction) {
-  switch(instruction.data.type) {
-    case 'PITCH_CLASS':
-      let value = instruction.data.value.replace('#', '♯').replace('b', '♭')
-      return (instruction.context.oct * 12) + MIDDLE_A_NN + PITCH_CLASSES[value]
-    case 'RELATIVE':
-      return (instruction.context.oct * 12) + MIDDLE_A_NN + instruction.data.value
-    case 'MIDI':
-      return instruction.data.value
-  }
-  throw new Error('This note type is unknown to the score generator')
-}
-
-function trigActionFrom(instruction) {
-  let payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.omit(['oct'], instruction.context)
-  payload = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('name', instruction.data, payload)
-  return { payload, type: 'TRIG' }
-}
-
-function restActionFrom(instruction) {
-  return { type: 'NOOP', payload: { time: instruction.context.time } }
-}
-
-function generateScore(instructions) {
-  return instructions.map((instruction) => {
-    switch(instruction.type) {
-      case 'NOTE': return noteActionFrom(instruction)
-      case 'TRIG': return trigActionFrom(instruction)
-      case 'REST': return restActionFrom(instruction)
-    }
-    throw new Error('This instruction type is unknown to the score generator')
-  })
-}
-
-function optimizeIntermediate(instructions) {
-  let lastIndex = instructions.length - 1
-  instructions = instructions.filter(({ type }, i) => type !== 'REST' || i === lastIndex)
-  let last = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.last(instructions)
-  if (last.type === 'REST') {
-    // HACK all aboard for mutation central
-    last.context.time = last.context.time + last.context.dur
-    delete last.context.dur
-  }
-  return instructions
-}
-
-function normalizeParamName(param) {
-  return PARAM_ALIASES[param] || param
-}
-
-function generateIntermediate(parsings) {
-  let context = { time: 0, oct: 0, dur: DEFAULT_DURATION }
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.compact(parsings.map((parsing) => {
-    let [type, data] = parsing
-    if (type === 'SETTING') {
-      context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set(normalizeParamName(data.param), data.value, context)
-      return null
-    }
-    if (type === 'OCTAVE_CHANGE') {
-      context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('oct', context.oct + data, context)
-      return null
-    }
-    let instruction = { context, data, type }
-    context = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('time', context.time + context.dur, context)
-    return instruction
-  }))
-}
-
-function parse(s) {
-  let parser = new __WEBPACK_IMPORTED_MODULE_1_nearley___default.a.Parser(__WEBPACK_IMPORTED_MODULE_2__grammar___default.a.ParserRules, __WEBPACK_IMPORTED_MODULE_2__grammar___default.a.ParserStart)
-  parser.feed(s)
-  let parsings = parser.results
-  if (parsings.length > 1) {
-    throw new Error('Syntax error in sequence: combination is ambiguous')
-  }
-  return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.compact(parsings[0])
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-function umlangEval(s) {
-  s = (s || '').trim()
-  return generateScore(optimizeIntermediate(generateIntermediate(parse(s))))
-}
-
-/* harmony default export */ __webpack_exports__["a"] = (umlangEval);
-
-
-/***/ }),
-/* 15 */
 /***/ (function(module, exports) {
 
 (function(root, factory) {
@@ -19362,7 +19369,7 @@ function umlangEval(s) {
 
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports) {
 
 // Generated automatically by nearley, version 2.11.1
@@ -19446,6 +19453,26 @@ if (typeof module !== 'undefined'&& typeof module.exports !== 'undefined') {
    window.grammar = grammar;
 }
 })();
+
+
+/***/ }),
+/* 16 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__actionHelpers__ = __webpack_require__(7);
+
+
+function concatScores(scores) {
+  let actionLists = scores.map(__WEBPACK_IMPORTED_MODULE_0__actionHelpers__["c" /* get */])
+  return __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["e" /* wrap */](
+    __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["a" /* clean */](
+      __WEBPACK_IMPORTED_MODULE_0__actionHelpers__["b" /* concat */](actionLists)
+    )
+  )
+}
+
+/* harmony default export */ __webpack_exports__["a"] = (concatScores);
 
 
 /***/ }),
@@ -19556,6 +19583,46 @@ function mixScores(scores) {
 }
 
 /* harmony default export */ __webpack_exports__["a"] = (mixScores);
+
+
+/***/ }),
+/* 19 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony export (immutable) */ __webpack_exports__["tran"] = tran;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__core__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Tran__ = __webpack_require__(20);
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "Tran", function() { return __WEBPACK_IMPORTED_MODULE_1__Tran__["a"]; });
+
+
+
+
+function tran(amount, score) {
+  return __WEBPACK_IMPORTED_MODULE_0__core__["arrange"](Object(__WEBPACK_IMPORTED_MODULE_1__Tran__["a" /* default */])(amount), score)
+}
+
+
+/***/ }),
+/* 20 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_lodash_fp__);
+
+
+function Tran(amount) {
+  return (action) => {
+    if (action.payload && action.payload.nn) {
+      action = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('payload.nn', action.payload.nn + amount, action)
+    }
+    return action
+  }
+}
+
+/* harmony default export */ __webpack_exports__["a"] = (Tran);
 
 
 /***/ })

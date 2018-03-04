@@ -57,11 +57,27 @@ function Player(audioContext) {
     stopCb(time)
   }
 
+  // TODO Move the handler composition stuff into eventsFrom.
   function dispatch(time, action) {
-    let handler = _.get('payload.handlers[0]', action)
-    if (!handler) { return }
-    let callback = handler.handle || handler
-    return callback(_.merge(action, { meta: { time } }))
+    let handlers = action.payload && action.payload.handlers
+    if (!(handlers && handlers.length)) { return }
+    let callbacks = handlers.map((handler) => handler.handle || handler)
+    action = _.set('meta.time', time, action)
+
+    // Do all the things.
+    let completedAction = _.pipe(callbacks)(action)
+
+    // Connect action's WAA output node (if returned).
+    let outputNode = completedAction.meta.outputNode
+    if (outputNode) {
+      outputNode.connect(audioContext.destination)
+    }
+
+    // Create stop callback which calls all action's stop callbacks (if returned).
+    let actionStopCbs = completedAction.meta.stopCbs
+    if (actionStopCbs && actionStopCbs.length) {
+      return (stopTime) => actionStopCbs.forEach((cb) => cb(stopTime))
+    }
   }
 
   function flushHangingNotes() {
@@ -88,8 +104,8 @@ function Player(audioContext) {
     return Promise.all(promises)
   }
 
-  async function play(score) {
-    let loopLength = lengthOf(score)
+  async function play(score, { loop = true } = {}) {
+    let loopLength = loop && lengthOf(score)
     let events = eventsFrom(score)
     let tempo = score.tempo || 120
     await prepare(score)
@@ -97,12 +113,16 @@ function Player(audioContext) {
     sequencer.play(events, { tempo, loopLength })
   }
 
+  function playOnce(score) {
+    play(score, { loop: false })
+  }
+
   function stop() {
     sequencer.stop()
     flushHangingNotes()
   }
 
-  return { play, stop, prepare }
+  return { play, playOnce, stop, prepare }
 }
 
 export default Player

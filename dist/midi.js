@@ -70,21 +70,21 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 19);
+/******/ 	return __webpack_require__(__webpack_require__.s = 21);
 /******/ })
 /************************************************************************/
 /******/ ({
 
-/***/ 19:
+/***/ 21:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony export (immutable) */ __webpack_exports__["out"] = out;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__helpers__ = __webpack_require__(20);
+/* harmony export (immutable) */ __webpack_exports__["Out"] = Out;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__helpers__ = __webpack_require__(22);
 
 
-function out({ device = 0, channel = 'all' } = {}) {
+function Out({ device = 0, channel = 'all' } = {}) {
   let midiOut
 
   async function prepare() {
@@ -96,13 +96,13 @@ function out({ device = 0, channel = 'all' } = {}) {
     let note = action.payload.nn || 69
     let cha = action.payload.cha || channel
     let vel = action.payload.vel || 80
-    let deadline = action.meta.deadline
+    let time = action.meta.time
     midiOut.playNote(note, cha, {
+      time,
       velocity: vel,
       rawVelocity: true,
-      time: deadline
     })
-    return (deadline) => midiOut.stopNote(note, cha, { time: deadline })
+    return (time) => midiOut.stopNote(note, cha, { time })
   }
 
   return { prepare, handle }
@@ -111,13 +111,13 @@ function out({ device = 0, channel = 'all' } = {}) {
 
 /***/ }),
 
-/***/ 20:
+/***/ 22:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["b"] = enable;
 /* harmony export (immutable) */ __webpack_exports__["a"] = MidiOut;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_webmidi__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_webmidi__ = __webpack_require__(23);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_webmidi___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_webmidi__);
 
 
@@ -159,7 +159,7 @@ function MidiOut(device) {
 
 /***/ }),
 
-/***/ 21:
+/***/ 23:
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
