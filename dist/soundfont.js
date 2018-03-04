@@ -1298,8 +1298,9 @@ function Instrument(name) {
       let gain = ((action.payload.vel || 80) / 127) * (params.gain || 1)
       let time = action.meta.time
       let node = _player.play(note, time, __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(params, { gain }))
+      let stopCb = (time) => node.stop(time)
       return __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.merge(action, { meta: {
-        stopCbs: [(time) => node.stop(time)],
+        stopCbs: [stopCb],
         outputNode: node
       } })
     }

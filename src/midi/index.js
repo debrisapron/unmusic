@@ -18,7 +18,8 @@ export function Out({ device = 0, channel = 'all' } = {}) {
       velocity: vel,
       rawVelocity: true,
     })
-    return (time) => midiOut.stopNote(note, cha, { time })
+    let stopCb = (time) => midiOut.stopNote(note, cha, { time })
+    return _.merge(action, { meta: { stopCbs: [stopCb] } })
   }
 
   return { prepare, handle }

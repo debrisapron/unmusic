@@ -19615,10 +19615,8 @@ function tran(amount, score) {
 
 function Tran(amount) {
   return (action) => {
-    if (action.payload && action.payload.nn) {
-      action = __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('payload.nn', action.payload.nn + amount, action)
-    }
-    return action
+    if (action.type !== 'NOTE') { return action }
+    return __WEBPACK_IMPORTED_MODULE_0_lodash_fp__["set"]('payload.nn', action.payload.nn + amount, action)
   }
 }
 
