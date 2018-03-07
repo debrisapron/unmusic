@@ -65,7 +65,9 @@ function Player(audioContext) {
     action = _.set('meta.time', time, action)
 
     // Do all the things.
-    let completedAction = _.pipe(callbacks)(action)
+    let completedAction = callbacks.reduce((action, callback) => {
+      return callback(action, { audioContext })
+    }, action)
 
     // Connect action's WAA output node (if returned).
     let outputNode = completedAction.meta.outputNode
@@ -98,7 +100,7 @@ function Player(audioContext) {
     ))
     let promises = _.compact(
       handlers.map(({ prepare }) => {
-        return prepare && prepare({ audioContext, score })
+        return prepare && prepare({ audioContext })
       })
     )
     return Promise.all(promises)
