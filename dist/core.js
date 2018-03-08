@@ -18741,7 +18741,9 @@ function Player(audioContext) {
     action = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.set('meta.time', time, action)
 
     // Do all the things.
-    let completedAction = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.pipe(callbacks)(action)
+    let completedAction = callbacks.reduce((action, callback) => {
+      return callback(action, { audioContext })
+    }, action)
 
     // Connect action's WAA output node (if returned).
     let outputNode = completedAction.meta.outputNode
@@ -18774,7 +18776,7 @@ function Player(audioContext) {
     ))
     let promises = __WEBPACK_IMPORTED_MODULE_0_lodash_fp___default.a.compact(
       handlers.map(({ prepare }) => {
-        return prepare && prepare({ audioContext, score })
+        return prepare && prepare({ audioContext })
       })
     )
     return Promise.all(promises)

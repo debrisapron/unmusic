@@ -81,10 +81,13 @@
     // TODO Convert text note to midi note.
     qh.keyDown = (note) => {
       if (!qhHotkeysActive) { activateQhHotkeys() }
-      heldKeys[note] = umPiano.handle({
+      let action = {
         payload: { nn: note, vel: 127 },
-        meta: { deadline: 0 }
-      }).meta.stopCbs[0]
+        meta: { time: 0 }
+      }
+      action = umPiano.handle(action)
+      action.meta.outputNode.connect(um.audioContext.destination)
+      heldKeys[note] = action.meta.stopCbs[0]
     }
     qh.keyUp = (note) => {
       heldKeys[note](0)
