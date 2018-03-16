@@ -4,6 +4,15 @@
 
 unmusic (um) is a JS library for composing & live-coding music.
 
+## Example
+
+```
+// Plays a repeating four-note piano sequence
+import Unmusic from 'unmusic'
+let um = Unmusic()
+um.play(um.part(um.instr.sf.acousticGrandPiano(), 'C E G F'))
+```
+
 ## Why another music library?
 
 I want to
@@ -14,15 +23,6 @@ I want to
 - Use a workflow which provides rapid feedback (live coding)
 - Easily integrate/build on the best work of the Web Audio API development community
 - Use a modern, functional JavaScript style that emphasizes the strengths of ES201x & ditches pointless complexity like prototypal inheritance & `this`
-
-## Example
-
-```
-// Plays a repeating four-note piano sequence
-import Unmusic from 'unmusic'
-let um = Unmusic()
-um.play(um.part(um.instr.sf.acousticGrandPiano(), 'C E G F'))
-```
 
 ## Installation
 

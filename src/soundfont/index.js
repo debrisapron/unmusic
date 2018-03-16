@@ -3,19 +3,19 @@ import { instrument as createInstrument } from 'soundfont-player'
 import musyngkite from 'soundfont-player/musyngkite.json'
 
 function Instrument(name) {
-  let _player
-
-  async function prepare({ audioContext }) {
-    // Make sure subsequent invocations of this function don't reload font.
-    if (_player) { return }
-    _player = '__LOADING__'
-    _player = await createInstrument(audioContext, name)
-
-    // Override player's destination, we will do the patching ourselves.
-    _player.out.disconnect(audioContext.destination)
-  }
-
   return (params = {}) => {
+    let _player
+
+    async function prepare({ audioContext }) {
+      // Make sure subsequent invocations of this function don't reload font.
+      if (_player) { return }
+      _player = '__LOADING__'
+      let outNode = audioContext.createGain()
+      _player = await createInstrument(audioContext, name, {
+        soundfont: 'MusyngKite',
+        destination: outNode
+      })
+    }
 
     function handle(action) {
       let note = action.payload.nn || 69
@@ -25,7 +25,7 @@ function Instrument(name) {
       let stopCb = (time) => node.stop(time)
       return _.merge(action, { meta: {
         stopCbs: [stopCb],
-        outputNode: node
+        outputNode: _player.out
       } })
     }
 

@@ -1,14 +1,15 @@
 (() => {
 
   // Setup um
-  window.um = window.Unmusic.core.default()
-  window.sf = window.Unmusic.soundfont.default
+  window.um = Unmusic()
+  window.sf = um.soundfont
+  window.fx = um.effects
   let umPiano = sf.AcousticGrandPiano()
   umPiano.prepare({ audioContext: um.audioContext })
 
   // Setup editor
   let DEFAULT_CODE = `um.play(
-  um.part(um.instr.sf.acousticGrandPiano(), 'A B C D')
+  um.arrange(sf.AcousticGrandPiano(), 'A B C D')
 )`
   let editor = ace.edit("editor")
   editor.setTheme("ace/theme/monokai")
