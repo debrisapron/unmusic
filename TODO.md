@@ -1,1 +1,5 @@
+- Offline arpeggiator
 - Proper docs
+- Make all namespaces into factories
+- Tests for other namespaces
+- um.Sequencer, instantiates new sequencers (optionally) synced to main one

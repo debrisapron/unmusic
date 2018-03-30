@@ -1,1 +1,1 @@
-module.exports = require('./dist/unmusic').default
+module.exports = require('./dist/unmusic')

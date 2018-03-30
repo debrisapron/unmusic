@@ -4,6 +4,7 @@
   window.um = Unmusic()
   window.sf = um.soundfont
   window.fx = um.effects
+  window.ns = um.instruments
   let umPiano = sf.AcousticGrandPiano()
   umPiano.prepare({ audioContext: um.audioContext })
 
