@@ -1,7 +1,7 @@
 import _ from 'lodash/fp'
 import Sequencer from 'um-sequencer'
 
-function Player(audioContext) {
+export default function Player(audioContext) {
   let sequencer = Sequencer(() => audioContext.currentTime)
   let stopCbs = {}
 
@@ -126,5 +126,3 @@ function Player(audioContext) {
 
   return { play, playOnce, stop, prepare }
 }
-
-export default Player

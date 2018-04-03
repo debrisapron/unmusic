@@ -1,7 +1,7 @@
 import { arrange } from '../core'
 import ThreeOsc from './ThreeOsc'
 
-function Instruments(P) {
+export default function Instruments(P) {
 
   // TODO Currying!
   function threeOsc(config, score) {
@@ -10,5 +10,3 @@ function Instruments(P) {
 
   return { threeOsc }
 }
-
-export default Instruments

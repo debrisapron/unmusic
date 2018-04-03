@@ -104,9 +104,7 @@ function parse(s) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function umlangEval(s) {
+export default function umlangEval(s) {
   s = (s || '').trim()
   return generateScore(optimizeIntermediate(generateIntermediate(parse(s))))
 }
-
-export default umlangEval

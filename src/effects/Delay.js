@@ -1,6 +1,6 @@
 import Effect from './Effect'
 
-function Delay(config) {
+export default function Delay(config) {
   return Effect((P) => {
     let params = _.isPlainObject(config) ? config : { wet: config }
     return P({
@@ -15,5 +15,3 @@ function Delay(config) {
     )
   })
 }
-
-export default Delay

@@ -33,9 +33,7 @@ function Instrument(name) {
   }
 }
 
-let soundfont = {}
-musyngkite.forEach((name) => {
-  soundfont[_.upperFirst(_.camelCase(name))] = Instrument(name)
-})
-
-export default soundfont
+export default musyngkite.reduce((obj, name) => {
+  obj[_.upperFirst(_.camelCase(name))] = Instrument(name)
+  return obj
+}, {})

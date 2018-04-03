@@ -1,6 +1,6 @@
 import Instrument from './Instrument'
 
-function ThreeOsc(P, config) {
+export default function ThreeOsc(P, config) {
   return Instrument(P, Voice)
 
   function Voice(frequency) {
@@ -24,5 +24,3 @@ function ThreeOsc(P, config) {
     ).set(config)
   }
 }
-
-export default ThreeOsc

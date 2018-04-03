@@ -15,7 +15,7 @@ function getDefaultAudioContext() {
     (window.__umAudioContext = new window.AudioContext())
 }
 
-function Unmusic(audioContext = getDefaultAudioContext()) {
+export default function Unmusic(audioContext = getDefaultAudioContext()) {
   let player = Player(audioContext)
   let P = Partch(audioContext)
 
@@ -37,5 +37,3 @@ function Unmusic(audioContext = getDefaultAudioContext()) {
 
   return um
 }
-
-export default Unmusic

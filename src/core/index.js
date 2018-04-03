@@ -1,13 +1,25 @@
 import * as _ from 'lodash/fp'
 import concatScores from './concatScores'
+import getArpeggio from './getArpeggio'
 import getScore from './getScore'
 import mixScores from './mixScores'
 
+// TODO Remove this. Too "clever".
 export function wrapScoringFunction(fn) {
   return fn.length === 1
     ? (thing) => fn(getScore(thing))
     : _.curry((options, thing) => fn(options, getScore(thing)))
 }
+
+export let arpeg = wrapScoringFunction((opts, score) => {
+  score = _.clone(score)
+  let [noteActions, nonNoteActions] = _.partition((action) => {
+    return action.type === 'NOTE'
+  }, score.actions)
+  noteActions = getArpeggio(noteActions, opts)
+  score.actions = _.sortBy('payload.time', noteActions.concat(nonNoteActions))
+  return score
+})
 
 export let config = wrapScoringFunction((opts, score) => {
   return _.set('config', _.merge(score.config || {}, opts), score)

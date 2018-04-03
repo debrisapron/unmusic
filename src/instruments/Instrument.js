@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-function Instrument(P, createVoice) {
+export default function Instrument(P, createVoice) {
   let node
   let connectionSources = new Set()
 
@@ -29,5 +29,3 @@ function Instrument(P, createVoice) {
 
   return { prepare, handle }
 }
-
-export default Instrument

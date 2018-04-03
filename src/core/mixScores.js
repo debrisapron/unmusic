@@ -55,9 +55,7 @@ function lcm(values) {
   return values.reduce(pairLcm)
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-function mixScores(scores) {
+export default function mixScores(scores) {
   let [loops, nonLoops] = _.partition((score) => score.loop, scores)
     .map((scores) => scores.map(actionHelpers.get))
 
@@ -79,5 +77,3 @@ function mixScores(scores) {
   if (!nonLoops.length) score.loop = true
   return score
 }
-
-export default mixScores

@@ -3,7 +3,7 @@ import Partch from 'partch'
 
 let P
 
-function Effect(createNode) {
+export default function Effect(createNode) {
   let node
   let connectionSources = new Set()
 
@@ -25,5 +25,3 @@ function Effect(createNode) {
 
   return { prepare, handle }
 }
-
-export default Effect
