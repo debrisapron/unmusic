@@ -100,6 +100,22 @@ describe('arpeg', () => {
     expect(um.arpeg({ patt: 'DU' }, score)).toMatchObject(expScore)
   })
 
+  test('can play arpeggio at different octaves', () => {
+    let score = { actions: [
+      { type: 'NOTE', payload: { time: 0, nn: 73, dur: 1/4 } },
+      { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } },
+      { type: 'NOOP', payload: { time: 1/4 } }
+    ] }
+    let expScore = { actions: [
+      { type: 'NOTE', payload: { time: 0/16, nn: 81, dur: 1/16 } },
+      { type: 'NOTE', payload: { time: 1/16, nn: 85, dur: 1/16 } },
+      { type: 'NOTE', payload: { time: 2/16, nn: 93, dur: 1/16 } },
+      { type: 'NOTE', payload: { time: 3/16, nn: 97, dur: 1/16 } },
+      { type: 'NOOP', payload: { time: 4/16 } }
+    ] }
+    expect(um.arpeg({ patt: ['u1', 'u2'] }, score)).toMatchObject(expScore)
+  })
+
   test('should include attributes of matched chord note', () => {
     let score = { actions: [
       { type: 'NOTE', payload: { time: 0, nn: 73, dur: 1/4 } },

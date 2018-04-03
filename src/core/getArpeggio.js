@@ -1,3 +1,6 @@
+// NOTE While the outer function is pure, inside it the design is very very
+// imperative, with uncontrolled mutation all over the shop. Might be good to
+// rethink...
 import * as _ from 'lodash/fp'
 import * as actionHelpers from './actionHelpers'
 
@@ -23,11 +26,19 @@ function LoopList(arr) {
 
 // TODO Make sure length of arpeg is never longer than length of sequence (will
 // require sorting notes & non-notes here).
-export default function getArpeggio(actions, { dur = 1/16, patt = 'u' }) {
+export default function getArpeggio(actions, { dur = 1/16, patt = ['u'] }) {
   let length = actionHelpers.lengthOf(actions)
   let payloads = actions.map((action) => action.payload)
-  let pattLoop = LoopList(patt.split(''))
+  let pattLoop = LoopList(_.isArray(patt) ? patt : patt.split(''))
   let prevNote
+
+  function getTransposition() {
+    return parseInt(pattLoop.current().split('')[1] || 0) * 12
+  }
+
+  function getDir() {
+    return pattLoop.current().toLowerCase().startsWith('d') ? -1 : 1
+  }
 
   // Gets next note in current direction (-1 or +1). If no note is found in that
   // direction (i.e. we've hit boundary of chord), returns null.
@@ -41,10 +52,6 @@ export default function getArpeggio(actions, { dur = 1/16, patt = 'u' }) {
       : sortedChord.find((note) => note.nn < prevNote.nn)
   }
 
-  function getDir() {
-    return pattLoop.current().toLowerCase() === 'd' ? -1 : 1
-  }
-
   function getNoteOfChord(chord) {
     if (!chord.length) {
       pattLoop.reset()
@@ -56,11 +63,12 @@ export default function getArpeggio(actions, { dur = 1/16, patt = 'u' }) {
     }
     let note = getNextNote(chord)
     if (!note) {
-      // If new dir is same as previous dir, or new dir is capitalized,
+      // We've hit the end of the chord.
+      // If new mode is same as previous mode, or new mode is capitalized,
       // reset to first note of chord.
-      let oldDir = pattLoop.current()
-      let newDir = pattLoop.advance()
-      if (newDir === newDir.toUpperCase() || newDir === oldDir) {
+      let oldMode = pattLoop.current().split('')[0]
+      let newMode = pattLoop.advance().split('')[0]
+      if (newMode === newMode.toUpperCase() || newMode === oldMode) {
         prevNote = null
       }
       note = getNextNote(chord)
@@ -79,7 +87,8 @@ export default function getArpeggio(actions, { dur = 1/16, patt = 'u' }) {
       let chord = getChordPlayingAtTime(time)
       let note = getNoteOfChord(chord)
       prevNote = note
-      return { ...note, time, dur }
+      if (!note) { return null }
+      return { ...note, nn: note.nn + getTransposition(), time, dur }
     })
     return _.compact(notesAndRests)
   }
