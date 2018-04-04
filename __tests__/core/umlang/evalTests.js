@@ -16,6 +16,27 @@ describe('umlang evaluator', () => {
     expect(um.eval(s)).toMatchObject(expected)
   })
 
+  test('can eval an enumerated chord', () => {
+    let s = '{A B C}'
+    let expected = [
+      { type: 'NOTE', payload: { time: 0, nn: 69, dur: 1/4 } },
+      { type: 'NOTE', payload: { time: 0, nn: 71, dur: 1/4 } },
+      { type: 'NOTE', payload: { time: 0, nn: 60, dur: 1/4 } }
+    ]
+    expect(um.eval(s)).toMatchObject(expected)
+  })
+
+  test('should make chords have length of longest member', () => {
+    let s = '{A B /2 C} D'
+    let expected = [
+      { type: 'NOTE', payload: { time: 0,   nn: 69, dur: 1/4 } },
+      { type: 'NOTE', payload: { time: 0,   nn: 71, dur: 1/4 } },
+      { type: 'NOTE', payload: { time: 0,   nn: 60, dur: 1/2 } },
+      { type: 'NOTE', payload: { time: 1/2, nn: 62, dur: 1/4 } }
+    ]
+    expect(um.eval(s)).toMatchObject(expected)
+  })
+
   test('can set duration', () => {
     let s = 'd=/8 A'
     let expected = [
@@ -33,12 +54,14 @@ describe('umlang evaluator', () => {
   })
 
   test('can chain different settings, notes and rests', () => {
-    let s = '  < d=/8 C dur=/16 -10 /8 _ /4 M55 _  '
+    let s = '  < d=/8 C dur=/16 -10 /8 _ /4 M55 {C D} _  '
     let expected = [
-      { type: 'NOTE', payload: { time: 0,     nn: 48, dur: 1/8 } },
-      { type: 'NOTE', payload: { time: 1/8,   nn: 47, dur: 1/16 } },
-      { type: 'NOTE', payload: { time: 5/16,  nn: 55, dur: 1/4 } },
-      { type: 'NOOP', payload: { time: 13/16 } }
+      { type: 'NOTE', payload: { time: 0,    nn: 48, dur: 1/8 } },
+      { type: 'NOTE', payload: { time: 1/8,  nn: 47, dur: 1/16 } },
+      { type: 'NOTE', payload: { time: 5/16, nn: 55, dur: 1/4 } },
+      { type: 'NOTE', payload: { time: 9/16, nn: 48, dur: 1/4 } },
+      { type: 'NOTE', payload: { time: 9/16, nn: 50, dur: 1/4 } },
+      { type: 'NOOP', payload: { time: 17/16 } }
     ]
     expect(um.eval(s)).toMatchObject(expected)
   })

@@ -17,13 +17,6 @@ let PITCH_CLASSES = {
   'A♭': -1, 'A': 0, 'A♯': 1, 'B♭': 1, 'B': 2
 }
 
-function noteActionFrom(instruction) {
-  let nn = nnFrom(instruction)
-  let payload = _.omit(['oct'], instruction.context)
-  payload = _.set('nn', nn, payload)
-  return { payload, type: 'NOTE' }
-}
-
 function nnFrom(instruction) {
   switch(instruction.data.type) {
     case 'PITCH_CLASS':
@@ -37,6 +30,13 @@ function nnFrom(instruction) {
   throw new Error('This note type is unknown to the score generator')
 }
 
+function noteActionFrom(instruction) {
+  let nn = nnFrom(instruction)
+  let payload = _.omit(['oct'], instruction.context)
+  payload = _.set('nn', nn, payload)
+  return { payload, type: 'NOTE' }
+}
+
 function trigActionFrom(instruction) {
   let payload = _.omit(['oct'], instruction.context)
   payload = _.set('name', instruction.data, payload)
@@ -48,14 +48,15 @@ function restActionFrom(instruction) {
 }
 
 function generateScore(instructions) {
-  return instructions.map((instruction) => {
+  return _.flatten(instructions.map((instruction) => {
     switch(instruction.type) {
       case 'NOTE': return noteActionFrom(instruction)
       case 'TRIG': return trigActionFrom(instruction)
       case 'REST': return restActionFrom(instruction)
+      case 'CHORD_GROUP': return generateScore(instruction.data)
     }
     throw new Error('This instruction type is unknown to the score generator')
-  })
+  }))
 }
 
 function optimizeIntermediate(instructions) {
@@ -74,20 +75,39 @@ function normalizeParamName(param) {
   return PARAM_ALIASES[param] || param
 }
 
-function generateIntermediate(parsings) {
-  let context = { time: 0, oct: 0, dur: DEFAULT_DURATION }
+function generateIntermediate(
+  parsings,
+  context = { time: 0, oct: 0, dur: DEFAULT_DURATION }
+) {
   return _.compact(parsings.map((parsing) => {
     let [type, data] = parsing
+    let dur = context.dur
+
+    // For settings, apply the setting to the context object & return.
     if (type === 'SETTING') {
       context = _.set(normalizeParamName(data.param), data.value, context)
       return null
     }
+
+    // For octave changes, apply the octave to the context object & return.
     if (type === 'OCTAVE_CHANGE') {
       context = _.set('oct', context.oct + data, context)
       return null
     }
+
+    // For chord groups, run the members of the chord through
+    // generateIntermediate, set all the members to start at the current time
+    // and set the group duration to the duration of the longest member.
+    // NOTE It is not necessary to optimize group members since a group cannot
+    // contain rests.
+    if (type === 'CHORD_GROUP') {
+      data = generateIntermediate(data, context)
+      data = data.map(_.set('context.time', context.time))
+      dur = _.max(data.map((ins) => ins.context.dur))
+    }
+
     let instruction = { context, data, type }
-    context = _.set('time', context.time + context.dur, context)
+    context = _.set('time', context.time + dur, context)
     return instruction
   }))
 }
