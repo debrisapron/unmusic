@@ -1,4 +1,3 @@
-- Chords! Arrays will do for now
 - Proper docs
 - Make all namespaces into factories
 - Tests for other namespaces
