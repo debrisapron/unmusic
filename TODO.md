@@ -2,7 +2,8 @@ Next
 
 - Notes on keyboard
 - MIDI in
-- Docs
+- Docs (Side panel)
+- Console at bottom
 - More tests
 
 Then
