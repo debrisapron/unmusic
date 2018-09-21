@@ -27,6 +27,7 @@
 		<div id="editor-container"></div>
 	</body>
 
+	<script src="./app/index.js"></script>
 	<script>
 		// Monaco uses a custom amd loader that overrides node's require.
 		// Keep a reference to node's require so we can restore it after executing the amd loader file.
@@ -38,7 +39,6 @@
 		var amdRequire = global.require;
 		global.require = nodeRequire;
 	</script>
-
 	<script>
 		// require node modules before loader.js comes in
 		var path = require('path');
@@ -57,7 +57,7 @@
 		// workaround monaco-typescript not understanding the environment
 		self.process.browser = true;
 		amdRequire(['vs/editor/editor.main'], function() {
-			var editor = monaco.editor.create(document.getElementById('editor-container'), {
+			window.__editor = monaco.editor.create(document.getElementById('editor-container'), {
 				value: [
 					'function x() {',
 					'\tconsole.log("Hello world!");',
@@ -65,7 +65,7 @@
 				].join('\n'),
 				language: 'javascript'
 			});
+			window.__main()
 		});
 	</script>
-	<script src="./index.js"></script>
 </html>
