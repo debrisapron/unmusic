@@ -1,8 +1,8 @@
 // This is the entry point for the Electron app
 
-let path = require("path");
-let url = require("url");
-let electron = require("electron");
+let path = require('path')
+let url = require('url')
+let electron = require('electron')
 
 function createWindow() {
   let win = new electron.BrowserWindow({
@@ -10,15 +10,15 @@ function createWindow() {
     webPreferences: {
       zoomFactor: 1.5
     }
-  });
+  })
   win.loadURL(
     url.format({
-      pathname: path.join(__dirname, "index.html"),
-      protocol: "file:",
+      pathname: path.join(__dirname, 'app/index.html'),
+      protocol: 'file:',
       slashes: true
     })
-  );
-  // win.webContents.openDevTools({ mode: 'right' })
+  )
+  win.webContents.openDevTools({ mode: 'right' })
 }
 
-electron.app.on("ready", createWindow);
+electron.app.on('ready', createWindow)

@@ -1,62 +1,17 @@
+let playJs = require('./playJs')
+
 window.__main = () => {
   window.__editor.addAction({
-    // An unique identifier of the contributed action.
-    id: "my-unique-id",
-
-    // A label of the action that will be presented to the user.
-    label: "My Label!!!",
-
-    // An optional array of keybindings for the action.
-    keybindings: [
-      monaco.KeyMod.CtrlCmd | monaco.KeyCode.F10,
-      // chord
-      monaco.KeyMod.chord(
-        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_K,
-        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_M
-      )
-    ],
-
-    // A precondition for this action.
-    precondition: null,
-
-    // A rule to evaluate on top of the precondition in order to dispatch the keybindings.
-    keybindingContext: null,
-
-    contextMenuGroupId: "navigation",
-
+    id: 'toggle-play',
+    label: 'Toggle play/stop',
+    keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.Space],
+    contextMenuGroupId: 'playback',
     contextMenuOrder: 1.5,
-
-    // Method that will be executed when the action is triggered.
-    // @param editor The editor instance is passed in as a convinience
-    run: function(ed) {
-      alert("i'm running => " + ed.getPosition());
-      return null;
+    run(editor) {
+      playJs(editor.getValue())
     }
-  });
-};
-
-// const csound = require("csound-api");
-// const Csound = csound.Create();
-// csound.SetOption(Csound, "--output=dac");
-// csound.CompileOrc(
-//   Csound,
-//   `
-//   0dbfs = 1
-//   giFunctionTableID ftgen 0, 0, 16384, 10, 1
-//   instr A440
-//     outc oscili(0.5 * 0dbfs, 440, giFunctionTableID)
-//   endin
-// `
-// );
-// csound.ReadScore(
-//   Csound,
-//   `
-//   i "A440" 0 1
-//   e
-// `
-// );
-// if (csound.Start(Csound) === csound.SUCCESS) csound.Perform(Csound);
-// csound.Destroy(Csound);
+  })
+}
 
 // let Split = require("split.js");
 // let QwertyHancock = require("./qwerty-hancock");

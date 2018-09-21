@@ -12,7 +12,10 @@
   },
   "dependencies": {
     "csound-api": "^0.10.7",
+    "lodash": "^4.17.11",
     "monaco-editor": "^0.14.3",
-    "split.js": "^1.3.5"
+    "split.js": "^1.3.5",
+    "require-from-string": "^2.0.2",
+    "unmusic-core": "^0.1.1"
   }
 }
