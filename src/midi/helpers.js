@@ -2,7 +2,20 @@ import WebMidi from 'webmidi'
 
 let midiEnabled
 
-export function enable() {
+function getMidiOut(device) {
+  if (!WebMidi.outputs.length) {
+    throw new Error('No MIDI output found.')
+  }
+  if (!isNaN(device)) {
+    if (WebMidi.outputs.length <= device) {
+      throw new Error('MIDI output index not found.')
+    }
+    return WebMidi.outputs[device]
+  }
+  return WebMidi.getOutputByName(device)
+}
+
+export function init() {
   if (midiEnabled) { return midiEnabled }
   midiEnabled = new Promise((resolve, reject) => {
     WebMidi.enable((err) => {
@@ -22,15 +35,14 @@ export function enable() {
   return midiEnabled
 }
 
-export function MidiOut(device) {
-  if (!WebMidi.outputs.length) {
-    throw new Error('No MIDI output found.')
-  }
-  if (!isNaN(device)) {
-    if (WebMidi.outputs.length <= device) {
-      throw new Error('MIDI output index not found.')
-    }
-    return WebMidi.outputs[device]
-  }
-  return WebMidi.getOutputByName(device)
+export function playNote({ cha, dev, nn, time, vel }) {
+  return getMidiOut(dev).playNote(nn, cha, {
+    time,
+    velocity: vel,
+    rawVelocity: true,
+  })
+}
+
+export function stopNote({ cha, dev, nn, time }) {
+  return getMidiOut(dev).stopNote(nn, cha, { time })
 }

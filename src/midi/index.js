@@ -1,26 +1,13 @@
-import * as helpers from './helpers'
+import { arrange } from '../core'
+import In from './In'
+import Out from './Out'
 
-export function Out({ device = 0, channel = 'all' } = {}) {
-  let midiOut
+export default function Midi() {
 
-  async function prepare() {
-    await helpers.enable()
-    midiOut = helpers.MidiOut(device)
+  // TODO Currying!
+  function out(config, score) {
+    return arrange(Out(config), score)
   }
 
-  function handle(action) {
-    let note = action.payload.nn || 69
-    let cha = action.payload.cha || channel
-    let vel = action.payload.vel || 80
-    let time = action.meta.time
-    midiOut.playNote(note, cha, {
-      time,
-      velocity: vel,
-      rawVelocity: true,
-    })
-    let stopCb = (time) => midiOut.stopNote(note, cha, { time })
-    return _.merge(action, { meta: { stopCbs: [stopCb] } })
-  }
-
-  return { prepare, handle }
+  return { threeOsc }
 }

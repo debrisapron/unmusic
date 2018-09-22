@@ -18,7 +18,7 @@ export default function Player(audioContext) {
         let { payload } = action
         let id = _.uniqueId()
         let startTime = payload.time + (payload.offset || 0)
-        startTime = wrap(startTime, length)
+        startTime = wraparound(startTime, length)
         let startEvent = {
           time: startTime,
           callback: (t) => startAction(t, id, action),
@@ -26,7 +26,7 @@ export default function Player(audioContext) {
         }
         if (!payload.dur) return [startEvent]
         let endTime = startTime + payload.dur
-        endTime = wrap(endTime, length)
+        endTime = wraparound(endTime, length)
         let stopEvent = {
           time: endTime,
           callback: (t) => endAction(t, id),
@@ -37,7 +37,7 @@ export default function Player(audioContext) {
     return _.sortBy(['time', 'ord'], _.flatten(nestedDisorderedEvents))
   }
 
-  function wrap(time, length) {
+  function wraparound(time, length) {
     time = time % length
     if(time >= 0) return time
     return time + length

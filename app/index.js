@@ -1,4 +1,5 @@
 (() => {
+  let _ = require('lodash/fp')
 
   // Setup um
   window.um = Unmusic()
@@ -19,7 +20,7 @@
   editor.setValue(window.localStorage.getItem('code') || DEFAULT_CODE)
 
   // Setup editor listeners
-  editor.session.on('change', _.debounce(save, 500))
+  editor.session.on('change', _.debounce(500, save))
   editor.on('focus', deactivateQhHotkeys)
 
   // Setup buttons
