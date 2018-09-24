@@ -3,7 +3,8 @@
   "version": "0.8.0",
   "description": "",
   "scripts": {
-    "start": "electron main.js"
+    "start": "electron main.js",
+    "rebuild": "electron-rebuild"
   },
   "author": "DEBRIS APRON <debrisapron@gmail.com>",
   "devDependencies": {

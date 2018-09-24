@@ -12,11 +12,8 @@ let playJs = (js) => {
   if (!csScore) {
     return
   }
-  console.info('EVALUATING...')
-  console.info({
-    'um score': umScore,
-    'csound score': csScore
-  })
+  console.info('Compiling to csound score...')
+  console.info(csScore)
   csound.play(umScore.orch, csScore)
 }
 

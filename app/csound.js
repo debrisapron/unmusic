@@ -5,7 +5,7 @@ let play = (orch, score) => {
 
   csoundApi.SetOption(csound, '--output=dac')
   csoundApi.CompileOrc(csound, '0dbfs = 1\n' + orch)
-  csoundApi.ReadScore(score)
+  csoundApi.ReadScore(csound, score)
   if (csoundApi.Start(csound) === csoundApi.SUCCESS) csoundApi.Perform(csound)
   csoundApi.Destroy(csound)
 }

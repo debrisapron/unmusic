@@ -34,7 +34,9 @@ let csScoreFromUmScore = (umScore) => {
   let csLines = []
   let { actions, tempo } = umScore
   if (tempo) csLines.push(`t 0 ${tempo}`)
+  csLines.push('r1000')
   actions.forEach((action) => csLines.push(csActionFromUmAction(action)))
+  csLines.push('s')
   csLines.push('e')
   return csLines.filter((x) => x).join('\n')
 }
