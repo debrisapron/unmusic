@@ -15,10 +15,28 @@ let getInitialFile = () => {
   return path.join(process.cwd(), 'newSong.um.js')
 }
 
-let init = (editor) => {
+let getFileContents = (file) => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(file, 'utf8', (err, text) => {
+      if (err) {
+        if (err.code && err.code === 'ENOENT') {
+          resolve(null)
+        } else {
+          reject(err)
+        }
+        return
+      }
+      resolve(text)
+    })
+  })
+}
+
+let init = async (editor) => {
   let currFile = getInitialFile()
-  console.log({ currFile })
   let isSaving = false
+  let initialContents = await getFileContents(currFile)
+
+  editor.setValue(initialContents)
 
   editor.addAction({
     id: 'toggle-play',
