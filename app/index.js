@@ -1,16 +1,7 @@
-let playJs = require('./playJs')
+let Editor = require('./Editor')
 
 window.__main = () => {
-  window.__editor.addAction({
-    id: 'toggle-play',
-    label: 'Toggle play/stop',
-    keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.Space],
-    contextMenuGroupId: 'playback',
-    contextMenuOrder: 1.5,
-    run(editor) {
-      playJs(editor.getValue())
-    }
-  })
+  Editor.init(window.__editor)
 }
 
 // let Split = require("split.js");

@@ -4,11 +4,14 @@ let path = require('path')
 let url = require('url')
 let electron = require('electron')
 
+let openedFile = process.argv[2] || ''
+
 function createWindow() {
   let win = new electron.BrowserWindow({
     fullscreen: true,
     webPreferences: {
-      zoomFactor: 1.5
+      zoomFactor: 1.5,
+      additionalArguments: [`--um-opened-file=${openedFile}`]
     }
   })
   win.loadURL(
