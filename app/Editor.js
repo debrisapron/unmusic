@@ -60,6 +60,8 @@ let init = async (editor) => {
       })
     })
   )
+
+  window.addEventListener('resize', _.debounce(100, () => editor.layout()))
 }
 
 module.exports = { init }
