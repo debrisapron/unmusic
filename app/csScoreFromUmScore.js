@@ -18,13 +18,24 @@ let csParamsFromUmPayload = (payload) => {
 let csActionFromUmAction = (umAction) => {
   let { type, payload } = umAction
   if (type === 'NOOP') return
+
   let {
-    nn,
-    time,
     dur,
-    handlers: [instr]
+    handlers: [instr],
+    name,
+    nn,
+    time
   } = payload
-  let freq = twelveTet(nn)
+  let freq = 0
+
+  if (type === 'NOTE') {
+    freq = twelveTet(nn)
+  } else if (type === 'TRIG') {
+    instr = instr || name
+  } else {
+    return
+  }
+
   instr = isNaN(instr) ? `"${instr}"` : instr
   let params = csParamsFromUmPayload(payload)
   return `i ${instr} ${time} ${dur} ${freq} ${params}`.trim()
@@ -32,11 +43,11 @@ let csActionFromUmAction = (umAction) => {
 
 let csScoreFromUmScore = (umScore) => {
   let csLines = []
-  let { actions, tempo } = umScore
+  let { actions, tempo, loop } = umScore
   if (tempo) csLines.push(`t 0 ${tempo}`)
-  csLines.push('r1000')
+  if (loop) csLines.push('r1000')
   actions.forEach((action) => csLines.push(csActionFromUmAction(action)))
-  csLines.push('s')
+  if (loop) csLines.push('s')
   csLines.push('e')
   return csLines.filter((x) => x).join('\n')
 }

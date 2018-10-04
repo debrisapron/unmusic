@@ -3,6 +3,16 @@ let path = require('path')
 let _ = require('lodash/fp')
 let playJs = require('./playJs')
 let ipcRenderer = require('electron').ipcRenderer
+let um = require('unmusic-core')
+
+let SCORE_TEMPLATE = `module.exports = (um) => {
+  let {
+    ${Object.keys(um).join(', ')}
+  } = um
+
+  return // TODO: Your song
+}
+`
 
 let getInitialFile = () => {
   let openedFileArg = process.argv.find((s) =>
@@ -20,7 +30,7 @@ let getFileContents = (file) => {
     fs.readFile(file, 'utf8', (err, text) => {
       if (err) {
         if (err.code && err.code === 'ENOENT') {
-          resolve(null)
+          resolve(SCORE_TEMPLATE)
         } else {
           reject(err)
         }
@@ -35,6 +45,8 @@ let init = async (editor) => {
   let currFile = getInitialFile()
   let isSaving = false
   let initialContents = await getFileContents(currFile)
+
+  editor.getModel().updateOptions({ tabSize: 2 })
 
   editor.setValue(initialContents)
 

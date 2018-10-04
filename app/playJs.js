@@ -5,7 +5,7 @@ let csound = require('./csound')
 
 let playJs = (js) => {
   let umScore = umScoreFromJs(js)
-  console.log({ umScore })
+  console.log(umScore)
   // if (!(umScore && umScore.orch)) {
   //   return
   // }

@@ -59,8 +59,12 @@
 		amdRequire(['vs/editor/editor.main'], function() {
 			window.__editor = monaco.editor.create(document.getElementById('editor-container'), {
 				language: 'javascript',
-				lineNumbers: 'off',
-				theme: 'vs-dark'
+				lineNumbers: 'on',
+				theme: 'vs-dark',
+				wordWrap: 'wordWrapColumn',
+				formatOnType: true,
+				wordWrapColumn: 80,
+				rulers: [80]
 			});
 			window.__main()
 		});
