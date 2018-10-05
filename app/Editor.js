@@ -1,7 +1,7 @@
 let fs = require('fs')
 let path = require('path')
 let _ = require('lodash/fp')
-let playJs = require('./playJs')
+let transport = require('./transport')
 let ipcRenderer = require('electron').ipcRenderer
 let um = require('unmusic-core')
 
@@ -45,19 +45,21 @@ let init = async (editor) => {
   let currFile = getInitialFile()
   let isSaving = false
   let initialContents = await getFileContents(currFile)
+  let isPlaying = false
 
   editor.getModel().updateOptions({ tabSize: 2 })
 
   editor.setValue(initialContents)
 
   editor.addAction({
-    id: 'toggle-play',
-    label: 'Toggle play/stop',
-    keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.Space],
-    contextMenuGroupId: 'playback',
+    id: 'toggle-playback',
+    label: 'Toggle playback',
+    keybindings: [monaco.KeyMod.Shift | monaco.KeyCode.Space],
+    contextMenuGroupId: 'transport',
     contextMenuOrder: 1.5,
     run() {
-      playJs(editor.getValue())
+      isPlaying ? transport.stop() : transport.play(editor.getValue())
+      isPlaying = !isPlaying
     }
   })
 
