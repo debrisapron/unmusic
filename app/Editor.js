@@ -6,10 +6,6 @@ let ipcRenderer = require('electron').ipcRenderer
 let um = require('unmusic-core')
 
 let SCORE_TEMPLATE = `module.exports = (um) => {
-  let {
-    ${Object.keys(um).join(', ')}
-  } = um
-
   return // TODO: Your song
 }
 `
