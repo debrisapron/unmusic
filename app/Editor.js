@@ -1,9 +1,8 @@
 let fs = require('fs')
 let path = require('path')
 let _ = require('lodash/fp')
-let transport = require('./transport')
+let transport = require('../src/transport')
 let ipcRenderer = require('electron').ipcRenderer
-let um = require('unmusic-core')
 
 let SCORE_TEMPLATE = `module.exports = (um) => {
   return // TODO: Your song
@@ -41,7 +40,6 @@ let init = async (editor) => {
   let currFile = getInitialFile()
   let isSaving = false
   let initialContents = await getFileContents(currFile)
-  let isPlaying = false
 
   editor.getModel().updateOptions({ tabSize: 2 })
 
@@ -53,10 +51,7 @@ let init = async (editor) => {
     keybindings: [monaco.KeyMod.Shift | monaco.KeyCode.Space],
     contextMenuGroupId: 'transport',
     contextMenuOrder: 1.5,
-    run() {
-      isPlaying ? transport.stop() : transport.play(editor.getValue())
-      isPlaying = !isPlaying
-    }
+    run: transport.togglePlayback
   })
 
   editor.onDidChangeModelContent(

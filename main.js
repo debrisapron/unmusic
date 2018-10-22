@@ -21,7 +21,7 @@ function createWindow() {
       slashes: true
     })
   )
-  win.webContents.openDevTools({ mode: 'right' })
+  // win.webContents.openDevTools({ mode: 'right' })
 }
 
 electron.app.on('ready', createWindow)

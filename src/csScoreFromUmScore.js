@@ -15,10 +15,8 @@ let csParamsFromUmPayload = (payload) => {
   return arr.join(' ')
 }
 
-let csActionFromUmAction = (umAction) => {
+let defaultActionHandler = (umAction) => {
   let { type, payload } = umAction
-  if (type === 'NOOP') return
-
   let { dur, handlers, name, nn, time } = payload
   let [instr] = handlers || []
   let freq = 0
@@ -36,12 +34,23 @@ let csActionFromUmAction = (umAction) => {
   return `i ${instr} ${time} ${dur} ${freq} ${params}`.trim()
 }
 
+let csActionFromUmAction = (umAction) => {
+  let { type, payload } = umAction
+  if (type === 'NOOP') return
+  let { handlers } = payload
+  let [instr] = handlers || []
+  let handler = typeof instr === 'function' ? instr : defaultActionHandler
+  return handler(umAction)
+}
+
 let csScoreFromUmScore = (umScore) => {
   let csLines = []
   let { actions, tempo = 120, loop } = umScore
   if (loop) csLines.push('r1000')
   if (tempo) csLines.push(`t 0 ${tempo / 4}`)
-  actions.forEach((action) => csLines.push(csActionFromUmAction(action)))
+  actions.forEach(
+    (action) => (csLines = csLines.concat(csActionFromUmAction(action)))
+  )
   if (loop) csLines.push('s')
   csLines.push('e')
   return csLines.filter((x) => x).join('\n')
