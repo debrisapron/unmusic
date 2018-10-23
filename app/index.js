@@ -11,21 +11,21 @@ window.__main = () => {
 
 Split(['#editor-and-sidebar-container', '#footer-container'], {
   sizes: [75, 25],
-  gutterSize: 1,
+  gutterSize: 2,
   cursor: 'pointer',
   direction: 'vertical'
 })
 Split(['#editor-container', '#sidebar-container'], {
   sizes: [75, 25],
-  gutterSize: 1,
+  gutterSize: 2,
   cursor: 'row-resize'
 })
-Split(['#javascript-log-container', '#csound-log-container'], {
-  sizes: [50, 50],
-  gutterSize: 1,
-  cursor: 'pointer',
-  direction: 'vertical'
-})
+// Split(['#javascript-log-container', '#csound-log-container'], {
+//   sizes: [50, 50],
+//   gutterSize: 2,
+//   cursor: 'pointer',
+//   direction: 'vertical'
+// })
 
 // Split(['#editor-container', '#sidebar-container'], {
 //   sizes: [80, 20],

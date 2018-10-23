@@ -22,7 +22,7 @@
         -webkit-box-sizing: border-box;
         -moz-box-sizing: border-box;
         box-sizing: border-box;
-        overflow-y: auto;
+        overflow-y: hidden;
         overflow-x: hidden;
     }
 
@@ -30,6 +30,7 @@
         /* border: 1px solid #C0C0C0;
         box-shadow: inset 0 1px 2px #e4e4e4; */
         background-color: #333;
+        height: 100%;
     }
 
     .gutter {
@@ -60,16 +61,15 @@
     <div id="editor-and-sidebar-container" class="split">
       <div id="editor-container" class="split content split-horizontal"></div>
       <div id="sidebar-container" class="split split-horizontal">
-				<div id="javascript-log-container" class="split content">
-					JAVASCRIPT LOG
+				<div id="log-container" class="content">
+					
 				</div>
-				<div id="csound-log-container" class="split content">
+				<!-- <div id="csound-log-container" class="split content">
 					CSOUND LOG
-				</div>
+				</div> -->
 			</div>
     </div>
-    <div id="footer-container" class="split content">FOOTER
-    </div>
+    <div id="footer-container" class="split content"></div>
 	</body>
 
 	<script src="./index.js"></script>
