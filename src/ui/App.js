@@ -1,6 +1,7 @@
 import React from "react";
 import Split from "react-split";
 import Editor from "./Editor";
+import Log from "./Log";
 
 let App = () => {
   return (
@@ -15,8 +16,8 @@ let App = () => {
           <div className="split content split-horizontal">
             <Editor />
           </div>
-          <div className="split split-horizontal">
-            <div className="content" />
+          <div className="split content split-horizontal">
+            <Log />
           </div>
         </Split>
       </div>
