@@ -14,9 +14,7 @@ class Editor extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      code: "// type your code...",
-      width: 0,
-      height: 0
+      code: "// type your code..."
     };
   }
 
@@ -29,26 +27,20 @@ class Editor extends React.Component {
     console.log("onChange", newValue, e);
   }
 
-  setDimensions = el => {
-    const { width, height } = el;
-    this.setState({ width, height });
-  };
-
   render() {
-    const { code, width, height } = this.state;
+    const { code } = this.state;
+    const { width, height } = this.props;
     return (
-      <div style={{ width: "100%", height: "100%" }} ref={this.setDimensions}>
-        <MonacoEditor
-          width={width}
-          height={height}
-          language="javascript"
-          theme="vs-dark"
-          value={code}
-          options={EDITOR_OPTIONS}
-          onChange={this.onChange}
-          editorDidMount={this.editorDidMount}
-        />
-      </div>
+      <MonacoEditor
+        width={width}
+        height={height}
+        language="javascript"
+        theme="vs-dark"
+        value={code}
+        options={EDITOR_OPTIONS}
+        onChange={this.onChange}
+        editorDidMount={this.editorDidMount}
+      />
     );
   }
 }

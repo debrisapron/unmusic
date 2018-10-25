@@ -10,8 +10,8 @@ class Log extends React.Component {
     const { entries } = this.state;
     return (
       <div className="content">
-        {entries.map(entry => (
-          <Inspector theme="chromeDark" data={entry} />
+        {entries.map((entry, idx) => (
+          <Inspector theme="chromeDark" data={entry} key={idx} />
         ))}
       </div>
     );
