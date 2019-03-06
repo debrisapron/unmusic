@@ -12,18 +12,15 @@
     "electron-rebuild": "^1.8.2"
   },
   "dependencies": {
-    "csound-api": "^0.10.7",
-    "eslisp": "^0.7.6",
+    "console-feed": "^2.8.5",
     "lodash": "^4.17.11",
     "monaco-editor": "^0.14.3",
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
     "react-hyperscript": "^3.2.0",
-    "react-inspector": "^2.3.0",
     "react-monaco-editor": "^0.20.0",
     "react-split": "^2.0.1",
     "require-from-string": "^2.0.2",
-    "unmusic-core": "^0.2.0",
-    "webmidi": "^2.2.0"
+    "unmusic-core": "^0.2.0"
   }
 }

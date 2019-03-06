@@ -1,36 +1,28 @@
-"use strict";
-let umScoreFromJs = require("./umScoreFromJs");
-let csScoreFromUmScore = require("./csScoreFromUmScore");
-let csound = require("./csound");
+'use strict'
+let umScoreFromJs = require('./umScoreFromJs')
 
-let isPlaying = false;
+let isPlaying = false
 
-let play = js => {
-  if (isPlaying) return;
+let play = (js) => {
+  if (isPlaying) return
   try {
-    let umScore = umScoreFromJs(js);
-    console.log(umScore);
-    if (!umScore) return;
-    let csScore = csScoreFromUmScore(umScore);
-    if (!csScore) return;
-    isPlaying = true;
-    console.info("Compiling to csound score...");
-    console.info(csScore);
-    csound.play(umScore.orch, csScore);
+    let umScore = umScoreFromJs(js)
+    console.log(umScore)
+    if (!umScore) return
+    isPlaying = true
   } catch (err) {
-    isPlaying = false;
-    throw err;
+    isPlaying = false
+    throw err
   }
-};
+}
 
 let stop = () => {
-  if (!isPlaying) return;
-  isPlaying = false;
-  csound.stop();
-};
+  if (!isPlaying) return
+  isPlaying = false
+}
 
-let togglePlayback = js => {
-  isPlaying ? stop() : play(js);
-};
+let togglePlayback = (js) => {
+  isPlaying ? stop() : play(js)
+}
 
-export { togglePlayback };
+export { togglePlayback }

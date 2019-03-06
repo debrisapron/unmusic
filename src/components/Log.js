@@ -1,21 +1,24 @@
 'use strict'
 const h = require('react-hyperscript')
-const Inspector = require('react-inspector').default
+const { Hook, Console, Decode } = require('console-feed')
 
 class Log extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { entries: [{ foo: { bar: { baz: 1 } } }] }
+    this.state = { logs: [] }
+  }
+
+  componentDidMount() {
+    Hook(window.console, (log) =>
+      this.setState(({ logs }) => ({ logs: logs.concat(Decode(log)) }))
+    )
   }
 
   render() {
-    const { entries } = this.state
-    return h(
-      'div.content',
-      entries.map((entry, idx) =>
-        h(Inspector, { theme: 'chromeDark', data: entry, key: idx })
-      )
-    )
+    const { logs } = this.state
+    return h('div', { style: { backgroundColor: '#242424' } }, [
+      h(Console, { logs, variant: 'dark' })
+    ])
   }
 }
 

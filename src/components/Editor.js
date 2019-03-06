@@ -81,26 +81,10 @@ class Editor extends React.Component {
       currFile: getInitialFile(),
       value: ''
     }
+    this.editorDidMount = this.editorDidMount.bind(this)
     this.initEditor = this.initEditor.bind(this)
     this.syncEditor = this.syncEditor.bind(this)
   }
-
-  // async editorDidMount(editor, monaco) {
-  //   let { currFile } = this.state
-  //   let initialContents = await getFileContents(currFile)
-  //   this.setState({ value: initialContents })
-  //   editor.getModel().updateOptions({ tabSize: 2 })
-  //   editor.focus()
-  //
-  //   editor.addAction({
-  //     id: 'toggle-playback',
-  //     label: 'Toggle playback',
-  //     keybindings: [monaco.KeyMod.Shift | monaco.KeyCode.Space],
-  //     contextMenuGroupId: 'transport',
-  //     contextMenuOrder: 1.5,
-  //     run: () => console.log('!!!') //transport.togglePlayback
-  //   })
-  // }
 
   // onChange(newValue, e) {
   //   let { currFile } = this.state
@@ -133,11 +117,29 @@ class Editor extends React.Component {
     }
   }
 
+  async editorDidMount() {
+    this.syncEditor()
+    this.__editor.getModel().updateOptions({ tabSize: 2 })
+    this.__editor.focus()
+    this.__editor.addAction({
+      id: 'toggle-playback',
+      label: 'Toggle playback',
+      keybindings: [monaco.KeyMod.Shift | monaco.KeyCode.Space],
+      contextMenuGroupId: 'transport',
+      contextMenuOrder: 1.5,
+      run: () => console.log('!!!') //transport.togglePlayback
+    })
+
+    const { currFile } = this.state
+    const initialContents = await getFileContents(currFile)
+    this.setState({ value: initialContents })
+  }
+
   initEditor(el) {
     if (this.__editor) return
     loadMonacoIntoEl(el).then((editor) => {
       this.__editor = editor
-      this.syncEditor()
+      this.editorDidMount()
     })
   }
 
