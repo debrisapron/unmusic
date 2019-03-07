@@ -25,4 +25,4 @@ let togglePlayback = (js) => {
   isPlaying ? stop() : play(js)
 }
 
-export { togglePlayback }
+module.exports = { togglePlayback }

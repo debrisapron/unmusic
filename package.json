@@ -7,14 +7,11 @@
     "rebuild": "electron-rebuild"
   },
   "author": "DEBRIS APRON <debrisapron@gmail.com>",
-  "devDependencies": {
-    "electron": "^3.0.0",
-    "electron-rebuild": "^1.8.2"
-  },
   "dependencies": {
     "console-feed": "^2.8.5",
     "lodash": "^4.17.11",
     "monaco-editor": "^0.14.3",
+    "partch": "^0.12.0",
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
     "react-hyperscript": "^3.2.0",
@@ -22,5 +19,9 @@
     "react-split": "^2.0.1",
     "require-from-string": "^2.0.2",
     "unmusic-core": "^0.2.0"
+  },
+  "devDependencies": {
+    "electron": "^4.0.7",
+    "electron-rebuild": "^1.8.4"
   }
 }

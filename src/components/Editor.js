@@ -4,6 +4,7 @@ const path = require('path')
 const { app } = require('electron')
 const _ = require('lodash/fp')
 const h = require('react-hyperscript')
+const transport = require('../lib/transport')
 
 const EDITOR_OPTIONS = {
   language: 'javascript',
@@ -127,7 +128,7 @@ class Editor extends React.Component {
       keybindings: [monaco.KeyMod.Shift | monaco.KeyCode.Space],
       contextMenuGroupId: 'transport',
       contextMenuOrder: 1.5,
-      run: () => console.log('!!!') //transport.togglePlayback
+      run: () => transport.togglePlayback()
     })
 
     const { currFile } = this.state
